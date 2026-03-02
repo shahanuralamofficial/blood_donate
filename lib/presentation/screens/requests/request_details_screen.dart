@@ -109,7 +109,18 @@ class RequestDetailsScreen extends ConsumerWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        child: const Text('হ্যাঁ, রক্ত পেয়েছি (নিশ্চিত করুন)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        child: const Text('রক্ত পেয়েছি', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => _showNotReceivedDialog(context, ref, liveRequest),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('রক্ত পাইনি', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -280,8 +291,52 @@ class RequestDetailsScreen extends ConsumerWidget {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('রক্তদান সফলভাবে সম্পন্ন হয়েছে!')));
               }
-              if (isFullyCompleted && currentDonorId != null) {
+              if (currentDonorId != null) {
                 _showReviewDialog(context, currentDonorId);
+              }
+            },
+            child: const Text('নিশ্চিত করুন'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotReceivedDialog(BuildContext context, WidgetRef ref, BloodRequestModel req) {
+    String? selectedReason;
+    final reasons = ['দাতা আসেননি', 'দাতা টাকা চেয়েছেন', 'দাতা অযোগ্য ছিলেন', 'অন্যান্য'];
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('রক্ত না পাওয়ার কারণ'),
+        content: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: reasons.map((r) => RadioListTile<String>(
+              title: Text(r),
+              value: r,
+              groupValue: selectedReason,
+              onChanged: (v) => setState(() => selectedReason = v),
+            )).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('বাতিল')),
+          ElevatedButton(
+            onPressed: selectedReason == null ? null : () async {
+              // দাতার আইডি রিমুভ করা এবং স্ট্যাটাস পেন্ডিং এ ফেরত নেওয়া
+              await FirebaseFirestore.instance.collection('blood_requests').doc(req.requestId).update({
+                'status': 'pending',
+                'donorId': null,
+              });
+              
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                if (req.donorId != null) {
+                  _showReviewDialog(context, req.donorId!);
+                }
               }
             },
             child: const Text('নিশ্চিত করুন'),
