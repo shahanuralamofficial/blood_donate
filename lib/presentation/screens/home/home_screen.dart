@@ -13,6 +13,7 @@ import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
+import '../donors/donor_list_screen.dart'; // Added import
 import 'notification_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -162,7 +163,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-        Text('সবগুলো দেখুন', style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.w600)),
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DonorListScreen())),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              'সবগুলো দেখুন',
+              style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
       ],
     );
   }
