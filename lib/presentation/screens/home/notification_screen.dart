@@ -1,31 +1,174 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: Text('নোটিফিকেশন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: const Color(0xFFE53935),
-        foregroundColor: Colors.white,
+        title: Text('নোটিফিকেশন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.notifications_none_rounded, size: 80, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(
-              'এখনো কোনো নতুন নোটিফিকেশন নেই',
-              style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16),
+        actions: [
+          if (userId != null)
+            TextButton(
+              onPressed: () => _markAllAsRead(userId),
+              child: Text('সবগুলো পড়া হয়েছে', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 13)),
             ),
-          ],
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: userId == null 
+          ? const Center(child: Text('লগইন প্রয়োজন'))
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(userId)
+                  .collection('notifications')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.red));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                final notifications = snapshot.data!.docs;
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  itemCount: notifications.length,
+                  itemBuilder: (context, index) {
+                    final doc = notifications[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    return _buildNotificationCard(context, doc.id, userId, data);
+                  },
+                );
+              },
+            ),
+    );
+  }
+
+  void _markAllAsRead(String userId) async {
+    final batch = FirebaseFirestore.instance.batch();
+    final query = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    for (var doc in query.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
+  }
+
+  Widget _buildNotificationCard(BuildContext context, String docId, String userId, Map<String, dynamic> data) {
+    final bool isRead = data['isRead'] ?? false;
+    final String type = data['data']?['type'] ?? 'general';
+    final DateTime? time = (data['createdAt'] as Timestamp?)?.toDate();
+
+    IconData icon = Icons.notifications_rounded;
+    Color iconColor = Colors.blue;
+
+    if (type == 'emergency') {
+      icon = Icons.bloodtype_rounded;
+      iconColor = Colors.red;
+    } else if (type == 'chat') {
+      icon = Icons.chat_bubble_rounded;
+      iconColor = Colors.green;
+    } else if (data['title'].toString().contains('ধন্যবাদ') || data['title'].toString().contains('সফল')) {
+      icon = Icons.favorite_rounded;
+      iconColor = Colors.pink;
+    }
+
+    return Dismissible(
+      key: Key(docId),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        FirebaseFirestore.instance.collection('users').doc(userId).collection('notifications').doc(docId).delete();
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(color: Colors.red.shade100, borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isRead ? Colors.white : Colors.red.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(20),
+          border: isRead ? Border.all(color: Colors.grey.shade100) : Border.all(color: Colors.red.shade100, width: 1),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
         ),
+        child: ListTile(
+          onTap: () {
+            FirebaseFirestore.instance.collection('users').doc(userId).collection('notifications').doc(docId).update({'isRead': true});
+            // এখানে আপনি চাইলে নির্দিষ্ট পেজে নেভিগেট করার লজিক দিতে পারেন
+          },
+          contentPadding: const EdgeInsets.all(12),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          title: Text(
+            data['title'] ?? 'নতুন নোটিফিকেশন',
+            style: TextStyle(fontWeight: isRead ? FontWeight.normal : FontWeight.bold, fontSize: 15, color: Colors.black87),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(data['body'] ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+              const SizedBox(height: 8),
+              Text(
+                time != null ? DateFormat('hh:mm a, dd MMM').format(time) : '',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+              ),
+            ],
+          ),
+          trailing: !isRead ? Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)) : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(color: Colors.grey.shade50, shape: BoxShape.circle),
+            child: Icon(Icons.notifications_off_outlined, size: 80, color: Colors.grey.shade200),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'এখনো কোনো নোটিফিকেশন নেই',
+            style: GoogleFonts.notoSansBengali(color: Colors.grey.shade400, fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'নতুন কোনো আপডেট এলে এখানে দেখতে পাবেন।',
+            style: GoogleFonts.notoSansBengali(color: Colors.grey.shade300, fontSize: 12),
+          ),
+        ],
       ),
     );
   }
