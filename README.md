@@ -1,88 +1,51 @@
-# রক্তদান (Blood Donate) 🩸
+# রক্তদান - Blood Donation App 🩸
 
-A full-featured, fintech-aware Blood Donation Mobile Application built with Flutter and Firebase. This application facilitates seamless connections between blood donors and seekers, featuring a professional escrow-based payment system for paid donations, real-time tracking, and administrative oversight.
+**রক্তদান** একটি আধুনিক এবং শক্তিশালী ফ্লাটার অ্যাপ্লিকেশন, যা রক্তদাতা এবং গ্রহীতাদের মধ্যে একটি দ্রুত ও নির্ভরযোগ্য সেতুবন্ধন তৈরি করার জন্য ডিজাইন করা হয়েছে। এই অ্যাপটি পুরোপুরি ফ্রি এবং সামাজিক সেবামূলক কাজের জন্য তৈরি।
 
-## 🚀 Key Features
+## 🌟 প্রধান বৈশিষ্ট্যসমূহ (Features)
 
-### 1. Authentication & Role-Based Access
-- **Multi-Role System:** Donor, Patient, Clinic, and Admin roles.
-- **Secure Auth:** Firebase Email/Password authentication.
-- **Verification:** Administrative verification for clinics and premium donors.
+### ১. নিখুঁত রক্তদান ফ্লো (Smart Workflow)
+- **আবেদন করুন:** খুব সহজেই রক্তের জন্য আবেদন করা যায়।
+- **রিয়েল-টাইম স্ট্যাটাস:** আবেদন পেন্ডিং, গৃহীত, রক্ত দেওয়া হয়েছে বা সম্পন্ন হয়েছে কি না তা সাথে সাথে দেখা যায়।
+- **সমন্বয়কারী (Coordinator) সাপোর্ট:** দাতা নিজে রক্ত দিতে না পারলেও অন্য কারো মাধ্যমে রক্ত জোগাড় করে দিতে পারেন।
 
-### 2. Advanced Donor Profiles
-- **Comprehensive Data:** Blood group, gender, and last donation date tracking.
-- **Donation Types:** Supports both **Free** and **Paid** donation models.
-- **Location Intelligence:** Integrated Bangladesh administrative units (Division, District, Thana, Union).
+### ২. আধুনিক হোম স্ক্রিন (Dynamic Dashboard)
+- **রক্তদানের হিসাব:** আপনি মোট কত ব্যাগ রক্ত দিয়েছেন, কতটি আবেদন করেছেন এবং কত ব্যাগ রক্ত পেয়েছেন তার সঠিক হিসাব।
+- **রক্তদানের যোগ্যতা:** আপনি আবার কবে রক্ত দিতে পারবেন তার জন্য অটোমেটিক ৯০ দিনের কাউন্টডাউন।
+- **জরুরি আবেদন হাইলাইট:** জরুরি রক্তের আবেদনগুলো সবার উপরে লাল রঙে হাইলাইট করা থাকে।
 
-### 3. Location & Map Services 📍
-- **Proximity Search:** Find the nearest donors in real-time.
-- **Google Maps Integration:** Visual markers for donors and clinics.
-- **Priority Filtering:** Free donors are prioritized in search results.
+### ৩. রক্তদাতা অনুসন্ধান (Donor Search)
+- **দূরত্ব অনুযায়ী সর্টিং:** আপনার লোকেশন থেকে সবচেয়ে কাছের রক্তদাতাদের তালিকা আগে দেখা যাবে।
+- **সরাসরি যোগাযোগ:** অ্যাপ থেকে সরাসরি কল বা মেসেজ দেওয়ার সুবিধা।
+- **ফেভারিট লিস্ট:** প্রিয় দাতাদের সেভ করে রাখার সুবিধা।
 
-### 4. Fintech & Wallet System 💰
-- **Escrow Logic:** Securely hold payments until donation is confirmed.
-- **Automatic Fee Split:** Cloud Functions automatically handle the **80% (Donor) / 20% (App Owner)** revenue split.
-- **Digital Wallet:** Track earnings, pending withdrawals, and transaction history.
-- **Withdrawal Requests:** Formal process for donors to cash out their earnings.
+### ৪. চ্যাট এবং নোটিফিকেশন (Communication)
+- **রিয়েল-টাইম চ্যাট:** দাতা ও গ্রহীতার মধ্যে ইন-অ্যাপ মেসেজিং।
+- **স্মার্ট নোটিফিকেশন:** নতুন আবেদন বা মেসেজ আসলে সাথে সাথে এলার্ট।
 
-### 5. Blood Request Workflow
-- **Emergency Alerts:** One-tap emergency requests that trigger instant FCM push notifications to matching donors.
-- **In-App Messaging:** Real-time text coordination between donor and seeker.
-- **Status Tracking:** From 'Pending' to 'Accepted' and 'Completed'.
+### ৫. সম্মাননা ও র‍্যাঙ্ক (Gamification)
+- **ইউজার র‍্যাঙ্ক:** দাতার কাজের ওপর ভিত্তি করে Silver, Gold এবং Hero ব্যাজ।
+- **রিভিউ সিস্টেম:** রক্তদাতা কেমন ছিলেন তা নিয়ে গ্রহীতা রেটিং এবং মন্তব্য দিতে পারেন।
+- **কৃতজ্ঞতা বার্তা:** রক্ত পাওয়ার পর গ্রহীতা দাতাকে ধন্যবাদ বার্তা (Thank You Note) পাঠাতে পারেন।
 
-### 6. Clinic & Administrative Tools
-- **Clinic Registry:** Verified clinics visible on the map for safe donation environments.
-- **Admin Panel:** Comprehensive dashboard for user verification, transaction monitoring, and revenue analytics.
-- **Reporting:** Generate and download monthly earnings/donation reports in PDF format.
+### ৬. প্রফেশনাল রিপোর্ট (PDF Generation)
+- আপনার সব রক্তদান এবং আবেদনের ইতিহাস একটি প্রফেশনাল PDF ফাইল হিসেবে ডাউনলোড করার সুবিধা।
 
-## 🛠️ Tech Stack
-
-- **Frontend:** Flutter (Latest Stable)
+## 🛠 প্রযুক্তিগত তথ্য (Tech Stack)
+- **Framework:** Flutter
+- **Language:** Dart
+- **Database:** Firebase Firestore
+- **Authentication:** Firebase Auth
 - **State Management:** Riverpod
-- **Backend:** Firebase (Auth, Firestore, Storage, Cloud Functions, Messaging)
-- **Maps:** Google Maps API & Geolocator
-- **Architecture:** Clean Architecture (Data, Domain, Presentation layers)
-- **Design:** Material 3 with Noto Sans Bengali typography.
+- **Location Services:** Geolocator & Geocoding
+- **PDF Engine:** Pdf & Printing
 
-## ⚙️ Installation & Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/shahanuralamofficial/blood_donate.git
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Firebase Configuration:**
-   - Create a Firebase project and add Android/iOS apps.
-   - Download and place `google-services.json` and `GoogleService-Info.plist` in the respective directories.
-   - Run `flutterfire configure`.
-
-4. **Google Maps API:**
-   - Enable Maps SDK for Android/iOS in Google Cloud Console.
-   - Add your API key to `AndroidManifest.xml` and `AppDelegate.swift`.
-
-5. **Cloud Functions:**
-   - Deploy the provided functions in the `/functions` directory:
-   ```bash
-   firebase deploy --only functions
-   ```
-
-6. **Run the app:**
-   ```bash
-   flutter run
-   ```
-
-## 🛡️ Security & Ethics
-- **Firestore Security Rules:** Granular access control for wallets and personal data.
-- **Paid Donation Disclaimer:** Clear ethical guidelines and platform fees disclosure.
-- **Admin Oversight:** Ability to ban accounts for misuse or fraudulent requests.
-
-## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 🚀 কিভাবে শুরু করবেন?
+১. প্রোজেক্টটি ক্লোন করুন।
+২. আপনার নিজস্ব `google-services.json` ফাইলটি অ্যান্ড্রয়েড ফোল্ডারে যোগ করুন।
+৩. `flutter pub get` কমান্ডটি রান করুন।
+৪. `flutter run` দিয়ে অ্যাপটি চালু করুন।
 
 ---
-*Built with ❤️ for a better community.*
+**রক্ত দিন, জীবন বাঁচান।** ❤️
+Developed with love for humanity.
