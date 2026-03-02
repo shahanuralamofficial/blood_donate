@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart'; // Added missing import
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
