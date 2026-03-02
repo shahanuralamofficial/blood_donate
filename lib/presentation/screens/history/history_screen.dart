@@ -19,7 +19,7 @@ class HistoryScreen extends ConsumerWidget {
     final myDonationsAsync = ref.watch(myDonationsProvider);
 
     return DefaultTabController(
-      length: 4, // ট্যাব সংখ্যা ৪ করা হলো
+      length: 4,
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F7),
         appBar: AppBar(
@@ -52,19 +52,19 @@ class HistoryScreen extends ConsumerWidget {
             labelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15),
             unselectedLabelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.normal, fontSize: 14),
             tabs: const [
-              Tab(text: 'আমার আবেদন'),
+              Tab(text: 'রক্তের আবেদন'),
               Tab(text: 'রক্ত পেয়েছি'),
-              Tab(text: 'আমার রক্তদান'),
-              Tab(text: 'বাতিল'), // নতুন ট্যাব
+              Tab(text: 'রক্তদান'),
+              Tab(text: 'বাতিল'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // ১. আমার আবেদন (শুধুমাত্র পেন্ডিং এবং একসেপ্টেড)
+            // ১. আমার আবেদন (Pending/Accepted)
             _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'pending' || req.status == 'accepted' || req.status == 'donated'),
             
-            // ২. রক্ত পেয়েছি (শুধুমাত্র সম্পন্ন হওয়াগুলো)
+            // ২. রক্ত পেয়েছি (Completed)
             _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'completed'),
             
             // ৩. আমার রক্তদান
