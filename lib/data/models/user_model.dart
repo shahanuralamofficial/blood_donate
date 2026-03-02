@@ -20,13 +20,14 @@ class UserModel {
   
   // --- স্পেশাল ফিচার ফিল্ডস ---
   final DateTime? lastDonationDate;
-  final int totalDonations;        // মোট কত ব্যাগ রক্ত দিয়েছেন
-  final int totalRequests;         // মোট কতবার আবেদন করেছেন
-  final int totalReceived;         // মোট কতবার রক্ত পেয়েছেন
-  final int totalReceivedBags;     // মোট কত ব্যাগ রক্ত পেয়েছেন
-  final int totalCancelled;        // নতুন: মোট কতটি আবেদন বাতিল করেছেন
+  final int totalDonations;        
+  final int totalRequests;         
+  final int totalReceived;         
+  final int totalReceivedBags;     
+  final int totalCancelled;        
   final String rank;               
   final List<String> badges;
+  final bool rankUpdatePending;
 
   UserModel({
     required this.uid,
@@ -53,6 +54,7 @@ class UserModel {
     this.totalCancelled = 0,
     this.rank = 'Newbie',
     this.badges = const [],
+    this.rankUpdatePending = false,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -81,6 +83,7 @@ class UserModel {
       totalCancelled: map['totalCancelled'] ?? 0,
       rank: map['rank'] ?? 'Newbie',
       badges: List<String>.from(map['badges'] ?? []),
+      rankUpdatePending: map['rankUpdatePending'] ?? false,
     );
   }
 
@@ -110,6 +113,7 @@ class UserModel {
       'totalCancelled': totalCancelled,
       'rank': rank,
       'badges': badges,
+      'rankUpdatePending': rankUpdatePending,
     };
   }
 }
