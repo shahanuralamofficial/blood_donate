@@ -65,7 +65,6 @@ class RequestDetailsScreen extends ConsumerWidget {
                 _buildContactCard(context, isRequester, liveRequest),
                 const SizedBox(height: 32),
 
-                // ১. রক্তদানে রাজি হোন
                 if (!isRequester && liveRequest.status == 'pending')
                   ElevatedButton(
                     onPressed: () => _showAcceptDonationDialog(
@@ -90,7 +89,6 @@ class RequestDetailsScreen extends ConsumerWidget {
                     ),
                   ),
 
-                // ২. আমি রক্ত দিয়েছি
                 if (isDonor && liveRequest.status == 'accepted')
                   ElevatedButton(
                     onPressed: () => _updateStatus(
@@ -116,7 +114,6 @@ class RequestDetailsScreen extends ConsumerWidget {
                     ),
                   ),
 
-                // ৩. রক্ত পেয়েছি নিশ্চিত করুন
                 if (isRequester &&
                     (liveRequest.status == 'accepted' ||
                         liveRequest.status == 'donated'))
@@ -147,7 +144,6 @@ class RequestDetailsScreen extends ConsumerWidget {
                     ],
                   ),
 
-                // আবেদন বাতিল
                 if (isRequester &&
                     (liveRequest.status == 'pending' ||
                         liveRequest.status == 'accepted'))
@@ -185,7 +181,6 @@ class RequestDetailsScreen extends ConsumerWidget {
     );
   }
 
-  // ফিক্স: _updateStatus মেথডটি এখানে যোগ করা হলো
   void _updateStatus(
     BuildContext context,
     WidgetRef ref,
@@ -201,14 +196,13 @@ class RequestDetailsScreen extends ConsumerWidget {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
-        Navigator.pop(context); // সরাসরি হোম স্ক্রিনে ব্যাক করবে
+        Navigator.pop(context);
       }
     } catch (e) {
-      if (context.mounted) {
+      if (context.mounted)
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('ত্রুটি: $e')));
-      }
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -236,10 +230,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 value: bagsToDonate,
                 isExpanded: true,
                 items: List.generate(remainingBags, (index) => index + 1)
-                    .map(
-                      (e) =>
-                          DropdownMenuItem(value: e, child: Text('$e ব্যাগ')),
-                    )
+                    .map((e) => DropdownMenuItem(value: e, child: Text('$e ব্যাগ')))
                     .toList(),
                 onChanged: (v) => setState(() => bagsToDonate = v!),
               ),
@@ -257,8 +248,8 @@ class RequestDetailsScreen extends ConsumerWidget {
                   .read(bloodRequestRepositoryProvider)
                   .acceptRequest(req.requestId, donorId);
               if (context.mounted) {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Back to Home
+                Navigator.pop(context);
+                Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('রক্তদানে রাজি হওয়ার জন্য ধন্যবাদ!'),
@@ -310,18 +301,9 @@ class RequestDetailsScreen extends ConsumerWidget {
                 DropdownButton<int>(
                   value: receivedBags,
                   isExpanded: true,
-                  items:
-                      List.generate(
-                            req.bloodBags - req.donatedBags + 1,
-                            (index) => index + 1,
-                          )
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e,
-                              child: Text('$e ব্যাগ'),
-                            ),
-                          )
-                          .toList(),
+                  items: List.generate(req.bloodBags - req.donatedBags + 1, (index) => index + 1)
+                      .map((e) => DropdownMenuItem(value: e, child: Text('$e ব্যাগ')))
+                      .toList(),
                   onChanged: (v) => setState(() => receivedBags = v!),
                 ),
                 const SizedBox(height: 16),
@@ -414,10 +396,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 value: rating,
                 isExpanded: true,
                 items: [5.0, 4.0, 3.0, 2.0, 1.0]
-                    .map(
-                      (e) =>
-                          DropdownMenuItem(value: e, child: Text('$e স্টার ⭐')),
-                    )
+                    .map((e) => DropdownMenuItem(value: e, child: Text('$e স্টার ⭐')))
                     .toList(),
                 onChanged: (v) => setState(() => rating = v!),
               ),
@@ -436,18 +415,12 @@ class RequestDetailsScreen extends ConsumerWidget {
                 final donorRef = FirebaseFirestore.instance
                     .collection('users')
                     .doc(donorId);
-                await FirebaseFirestore.instance.runTransaction((
-                  transaction,
-                ) async {
+                await FirebaseFirestore.instance.runTransaction((transaction) async {
                   final snapshot = await transaction.get(donorRef);
                   if (snapshot.exists) {
-                    double currentRating =
-                        (snapshot.data()?['averageRating'] ?? 5.0).toDouble();
-                    int totalReviews =
-                        (snapshot.data()?['totalReviews'] ?? 0) + 1;
-                    double newRating =
-                        (currentRating * (totalReviews - 1) + rating) /
-                        totalReviews;
+                    double currentRating = (snapshot.data()?['averageRating'] ?? 5.0).toDouble();
+                    int totalReviews = (snapshot.data()?['totalReviews'] ?? 0) + 1;
+                    double newRating = (currentRating * (totalReviews - 1) + rating) / totalReviews;
                     transaction.update(donorRef, {
                       'averageRating': newRating,
                       'totalReviews': totalReviews,
@@ -478,30 +451,28 @@ class RequestDetailsScreen extends ConsumerWidget {
         title: const Text('আবেদন বাতিলের কারণ'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: reasons
-              .map(
-                (r) => RadioListTile<String>(
-                  title: Text(r),
-                  value: r,
-                  groupValue: selectedReason,
-                  onChanged: (v) async {
-                    await ref
-                        .read(bloodRequestRepositoryProvider)
-                        .updateRequestStatus(requestId, 'cancelled');
-                    final userRef = FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(requesterId);
-                    await userRef.update({
-                      'totalCancelled': FieldValue.increment(1),
-                    });
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    }
-                  },
-                ),
-              )
-              .toList(),
+          children: reasons.map((r) => RadioListTile<String>(
+            title: Text(r),
+            value: r,
+            groupValue: selectedReason,
+            onChanged: (v) async {
+              // স্ট্যাটাস আপডেট
+              await ref
+                  .read(bloodRequestRepositoryProvider)
+                  .updateRequestStatus(requestId, 'cancelled');
+              
+              // ইউজারের বাতিল করা আবেদনের সংখ্যা বাড়ানো (পয়েন্ট ফিক্স)
+              final userRef = FirebaseFirestore.instance.collection('users').doc(requesterId);
+              await userRef.update({
+                'totalCancelled': FieldValue.increment(1),
+              });
+
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Back to Home
+              }
+            },
+          )).toList(),
         ),
       ),
     );

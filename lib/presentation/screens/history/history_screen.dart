@@ -19,7 +19,7 @@ class HistoryScreen extends ConsumerWidget {
     final myDonationsAsync = ref.watch(myDonationsProvider);
 
     return DefaultTabController(
-      length: 3,
+      length: 4, // ট্যাব সংখ্যা ৪ করা হলো
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F7),
         appBar: AppBar(
@@ -55,19 +55,23 @@ class HistoryScreen extends ConsumerWidget {
               Tab(text: 'আমার আবেদন'),
               Tab(text: 'রক্ত পেয়েছি'),
               Tab(text: 'আমার রক্তদান'),
+              Tab(text: 'বাতিল'), // নতুন ট্যাব
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // ১. আমার আবেদন (পেন্ডিং, একসেপ্টেড এবং বাতিল - সব এখানে থাকবে)
-            _buildFilteredRequestList(myRequestsAsync, (req) => req.status != 'completed'),
+            // ১. আমার আবেদন (শুধুমাত্র পেন্ডিং এবং একসেপ্টেড)
+            _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'pending' || req.status == 'accepted' || req.status == 'donated'),
             
             // ২. রক্ত পেয়েছি (শুধুমাত্র সম্পন্ন হওয়াগুলো)
             _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'completed'),
             
             // ৩. আমার রক্তদান
             _buildRequestList(myDonationsAsync),
+
+            // ৪. বাতিল করা আবেদন
+            _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'cancelled'),
           ],
         ),
       ),
@@ -151,7 +155,7 @@ class HistoryScreen extends ConsumerWidget {
           child: Center(
             child: Text(
               req.bloodGroup, 
-              style: TextStyle(color: isCancelled ? Colors.grey : Color(0xFFE53935), fontWeight: FontWeight.bold, fontSize: 16)
+              style: TextStyle(color: isCancelled ? Colors.grey : const Color(0xFFE53935), fontWeight: FontWeight.bold, fontSize: 16)
             )
           ),
         ),
