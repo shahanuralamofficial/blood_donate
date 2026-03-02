@@ -108,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           'রক্তের আবেদন',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         onPressed: () => Navigator.push(
           context,
@@ -120,8 +120,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const Center(child: CircularProgressIndicator(color: Colors.red)),
         error: (e, _) => Center(child: Text('ত্রুটি: $e')),
         data: (user) {
-          if (user == null)
+          if (user == null) {
             return const Center(child: Text('ব্যবহারকারী পাওয়া যায়নি'));
+          }
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _handleCelebration(user);
@@ -132,10 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             slivers: [
               _buildAppBar(user),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _buildEligibilityCard(user),
                       const SizedBox(height: 20),
                       _buildActiveActivitySection(myRequests, myDonations),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
                       _buildNeedBloodBanner(),
                       const SizedBox(height: 28),
                       Text(
@@ -179,28 +177,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 140,
-      toolbarHeight: 80,
+      expandedHeight: 120,
+      toolbarHeight: 70,
       backgroundColor: const Color(0xFFE53935),
       elevation: 0,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      title: Row(
         children: [
-          Row(
-            children: [
-              Text(
-                'হ্যালো, $firstName',
-                style: GoogleFonts.notoSansBengali(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (user.rank != 'Newbie') _buildRankBadge(user.rank),
-            ],
+          Text(
+            'হ্যালো, $firstName',
+            style: GoogleFonts.notoSansBengali(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
+          const SizedBox(width: 8),
+          _buildRankBadge(user.rank),
         ],
       ),
       flexibleSpace: FlexibleSpaceBar(
@@ -213,16 +205,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.only(left: 16, bottom: 20),
+            padding: const EdgeInsets.only(left: 16, bottom: 12),
             child: Align(
               alignment: Alignment.bottomLeft,
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.location_on,
-                    color: Colors.white70,
-                    size: 14,
-                  ),
+                  const Icon(Icons.location_on, color: Colors.white70, size: 14),
                   const SizedBox(width: 4),
                   Text(
                     location,
@@ -236,52 +224,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(
-            Icons.notifications_none_rounded,
-            color: Colors.white,
-          ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotificationScreen()),
-          ),
+          icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen())),
         ),
         IconButton(
-          icon: const Icon(
-            Icons.chat_bubble_outline_rounded,
-            color: Colors.white,
-          ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatListScreen()),
-          ),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen())),
         ),
         IconButton(
           icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const DonorProfileScreen()),
-          ),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DonorProfileScreen())),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }
 
   Widget _buildRankBadge(String rank) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1),
-      ),
-      child: Text(
-        rank,
-        style: const TextStyle(
-          color: Colors.amber,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
+        gradient: LinearGradient(
+          colors: [Colors.amber.shade400, Colors.orange.shade800],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.stars_rounded, color: Colors.white, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            rank.toUpperCase(),
+            style: GoogleFonts.notoSans(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -293,91 +285,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         Row(
           children: [
-            _buildStatCard(
-              'দান করেছেন',
-              '${user.totalDonations} ব্যাগ',
-              Icons.bloodtype,
-              Colors.red,
-            ),
+            _buildStatCard('দান করেছেন', '${user.totalDonations} ব্যাগ', Icons.bloodtype, Colors.red),
             const SizedBox(width: 12),
-            _buildStatCard(
-              'আবেদন করেছেন',
-              '${user.totalRequests} টি',
-              Icons.post_add_rounded,
-              Colors.blue,
-            ),
+            _buildStatCard('আবেদন করেছেন', '${user.totalRequests} টি', Icons.post_add_rounded, Colors.blue),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            _buildStatCard(
-              'রক্ত পেয়েছেন',
-              '${user.totalReceivedBags} ব্যাগ',
-              Icons.volunteer_activism_rounded,
-              Colors.green,
-            ),
+            _buildStatCard('রক্ত পেয়েছেন', '${user.totalReceivedBags} ব্যাগ', Icons.volunteer_activism_rounded, Colors.green),
             const SizedBox(width: 12),
-            _buildStatCard(
-              'বাতিল করেছেন',
-              '${user.totalCancelled} টি',
-              Icons.cancel_outlined,
-              Colors.grey,
-            ),
+            _buildStatCard('বাতিল করেছেন', '${user.totalCancelled} টি', Icons.cancel_outlined, Colors.grey),
           ],
-        ),
-        const SizedBox(height: 12),
-        _buildStatCard(
-          'সেভ করেছেন',
-          '${user.savedDonors.length} জন রক্তদাতা',
-          Icons.favorite,
-          Colors.orange,
-          isFullWidth: true,
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color, {
-    bool isFullWidth = false,
-  }) {
-    final card = Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            label,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-          ),
-        ],
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+          ],
+        ),
       ),
     );
-
-    return isFullWidth
-        ? SizedBox(width: double.infinity, child: card)
-        : Expanded(child: card);
   }
 
   // ================= ELIGIBILITY CARD =================
@@ -393,36 +337,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         color: isEligible ? Colors.green.shade50 : Colors.orange.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isEligible ? Colors.green.shade200 : Colors.orange.shade200,
-        ),
+        border: Border.all(color: isEligible ? Colors.green.shade200 : Colors.orange.shade200),
       ),
       child: Row(
         children: [
-          Icon(
-            isEligible ? Icons.check_circle : Icons.timer,
-            color: isEligible ? Colors.green : Colors.orange,
-            size: 30,
-          ),
-          const SizedBox(width: 16),
+          Icon(isEligible ? Icons.check_circle : Icons.timer, color: isEligible ? Colors.green : Colors.orange, size: 24),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isEligible
-                      ? 'আপনি এখন রক্ত দান করতে পারবেন'
-                      : 'পরবর্তী রক্তদানের জন্য অপেক্ষা করুন',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                if (!isEligible)
-                  Text(
-                    'আরও $remainingDays দিন বাকি আছে।',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.blueGrey,
-                    ),
-                  ),
+                Text(isEligible ? 'আপনি এখন রক্ত দান করতে পারবেন' : 'পরবর্তী রক্তদানের জন্য অপেক্ষা করুন',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                if (!isEligible) Text('আরও $remainingDays দিন বাকি আছে।', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
               ],
             ),
           ),
@@ -433,35 +360,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // ================= ACTIVE ACTIVITY =================
 
-  Widget _buildActiveActivitySection(
-    AsyncValue<List<BloodRequestModel>> myReq,
-    AsyncValue<List<BloodRequestModel>> myDon,
-  ) {
+  Widget _buildActiveActivitySection(AsyncValue<List<BloodRequestModel>> myReq, AsyncValue<List<BloodRequestModel>> myDon) {
     return Column(
       children: [
         myReq.when(
           data: (requests) {
-            final active = requests
-                .where(
-                  (r) =>
-                      r.status == 'accepted' ||
-                      r.status == 'donated' ||
-                      r.status == 'cancelled',
-                )
-                .toList();
+            // Updated: Included 'pending' so users can see and cancel their own requests
+            final active = requests.where((r) => 
+              r.status == 'pending' || 
+              r.status == 'accepted' || 
+              r.status == 'donated' || 
+              r.status == 'cancelled'
+            ).toList();
+            
             if (active.isEmpty) return const SizedBox.shrink();
+            
             return Column(
-              children: active
-                  .map<Widget>(
-                    (req) => _buildActivityCard(
-                      req,
-                      req.status == 'cancelled'
-                          ? 'বাতিল আবেদন'
-                          : 'আপনার রক্ত প্রয়োজন',
-                      Colors.blue,
-                    ),
-                  )
-                  .toList(),
+              children: active.map<Widget>((req) {
+                String title = 'আপনার রক্ত প্রয়োজন';
+                Color color = Colors.blue;
+                
+                if (req.status == 'cancelled') {
+                  title = 'আপনার বাতিলকৃত আবেদন';
+                  color = Colors.grey;
+                } else if (req.status == 'pending') {
+                  title = 'আবেদন পেন্ডিং আছে';
+                  color = Colors.orange;
+                }
+                
+                return _buildActivityCard(req, title, color);
+              }).toList(),
             );
           },
           loading: () => const SizedBox.shrink(),
@@ -470,20 +398,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 8),
         myDon.when(
           data: (donations) {
-            final active = donations
-                .where((r) => r.status == 'accepted' || r.status == 'donated')
-                .toList();
+            final active = donations.where((r) => 
+              r.status == 'accepted' || 
+              r.status == 'donated' || 
+              r.status == 'cancelled'
+            ).toList();
+            
             if (active.isEmpty) return const SizedBox.shrink();
+            
             return Column(
-              children: active
-                  .map<Widget>(
-                    (req) => _buildActivityCard(
-                      req,
-                      'আপনি রক্ত দিচ্ছেন',
-                      Colors.green,
-                    ),
-                  )
-                  .toList(),
+              children: active.map<Widget>((req) {
+                String title = 'আপনি রক্ত দিচ্ছেন';
+                Color color = Colors.green;
+                
+                if (req.status == 'cancelled') {
+                  title = 'রক্তদান বাতিল হয়েছে';
+                  color = Colors.grey;
+                }
+                
+                return _buildActivityCard(req, title, color);
+              }).toList(),
             );
           },
           loading: () => const SizedBox.shrink(),
@@ -496,24 +430,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildActivityCard(BloodRequestModel req, String title, Color color) {
     return Card(
       elevation: 0,
-      color: color.withOpacity(0.05),
+      color: color.withOpacity(0.06),
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withOpacity(0.2)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: color.withOpacity(0.15))),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
-        ),
+        dense: true,
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
         subtitle: Text('হাসপাতাল: ${req.hospitalName}', style: const TextStyle(fontSize: 12)),
         trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
-        ),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
       ),
     );
   }
@@ -522,32 +447,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildRequestList(AsyncValue<List<BloodRequestModel>> requestsAsync) {
     return requestsAsync.when(
-      loading: () =>
-          const Center(child: CircularProgressIndicator(color: Colors.red)),
+      loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (requests) {
-        if (requests.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            width: double.infinity,
-            alignment: Alignment.center,
-            child: Text(
-              'কোন পেন্ডিং আবেদন নেই',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          );
-        }
-        final sorted = List<BloodRequestModel>.from(requests)
-          ..sort((a, b) => (a.isEmergency && !b.isEmergency) ? -1 : 1);
+        if (requests.isEmpty) return Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Text('কোন পেন্ডিং আবেদন নেই', style: TextStyle(color: Colors.grey.shade500))));
+        final sorted = List<BloodRequestModel>.from(requests)..sort((a, b) => (a.isEmergency && !b.isEmergency) ? -1 : 1);
         return ListView.builder(
           shrinkWrap: true,
           padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: sorted.length,
-          itemBuilder: (context, index) {
-            final req = sorted[index];
-            return _buildRequestCard(req);
-          },
+          itemBuilder: (context, index) => _buildRequestCard(sorted[index]),
         );
       },
     );
@@ -560,98 +470,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isUrgent
-            ? Border.all(color: Colors.red.shade200, width: 1.5)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: isUrgent ? Border.all(color: Colors.red.shade200, width: 1.2) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
-        ),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: isUrgent ? Colors.red : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    req.bloodGroup,
-                    style: TextStyle(
-                      color: isUrgent ? Colors.white : Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
+                width: 46, height: 46,
+                decoration: BoxDecoration(color: isUrgent ? Colors.red : Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
+                child: Center(child: Text(req.bloodGroup, style: TextStyle(color: isUrgent ? Colors.white : Colors.red, fontWeight: FontWeight.bold, fontSize: 16))),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      req.hospitalName,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      '${req.district}, ${req.thana}',
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 11,
-                      ),
-                    ),
+                    Text(req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(req.hospitalName, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+                    Text('${req.district}, ${req.thana}', style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
                   ],
                 ),
               ),
-              if (isUrgent)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'জরুরি',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(
-                  Icons.map_outlined,
-                  color: Colors.blue,
-                  size: 20,
-                ),
-                onPressed: () => _launchMapUrl(req.mapUrl ?? req.hospitalName),
+              if (isUrgent) Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(6)),
+                child: const Text('জরুরি', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(width: 4),
+              IconButton(icon: const Icon(Icons.map_outlined, color: Colors.blue, size: 20), onPressed: () => _launchMapUrl(req.mapUrl ?? req.hospitalName)),
             ],
           ),
         ),
@@ -662,41 +513,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildNeedBloodBanner() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF263238),
-        borderRadius: BorderRadius.circular(20),
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF263238), borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'আপনার কি রক্ত প্রয়োজন?',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('আপনার কি রক্ত প্রয়োজন?', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          const Text(
-            'নিমিষেই রক্তদাতা খুঁজে পেতে এখনই আবেদন করুন।',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
+          const Text('নিমিষেই রক্তদাতা খুঁজে পেতে আবেদন করুন।', style: TextStyle(color: Colors.white70, fontSize: 11)),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CreateRequestScreen()),
+          SizedBox(
+            height: 36,
+            child: ElevatedButton(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 16)),
+              child: const Text('আবেদন করুন', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('আবেদন করুন'),
           ),
         ],
       ),
