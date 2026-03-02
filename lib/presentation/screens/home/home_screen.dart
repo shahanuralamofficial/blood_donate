@@ -13,7 +13,7 @@ import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
-import '../donors/donor_list_screen.dart'; // Added import
+import '../donors/donor_list_screen.dart';
 import 'notification_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -167,14 +167,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DonorListScreen())),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              'সবগুলো দেখুন',
-              style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.bold),
-            ),
+            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
+            child: Text('সবগুলো দেখুন', style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -364,11 +358,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 8),
         myDon.when(
           data: (donations) {
-            final active = donations.where((r) => r.status == 'accepted' || r.status == 'donated' || r.status == 'cancelled').toList();
+            // Updated to show COMPLETED donations with Thank You notes on Home Screen
+            final active = donations.where((r) => r.status == 'accepted' || r.status == 'donated' || r.status == 'cancelled' || r.status == 'completed').toList();
             if (active.isEmpty) return const SizedBox.shrink();
             return Column(children: active.map<Widget>((req) {
               String title = 'আপনি রক্ত দিচ্ছেন'; Color color = Colors.green;
               if (req.status == 'cancelled') { title = 'রক্তদান বাতিল হয়েছে'; color = Colors.grey; }
+              else if (req.status == 'completed') {
+                return _buildThankYouCard(req); // Special card for thank you note
+              }
               return _buildActivityCard(req, title, color);
             }).toList());
           },
@@ -376,6 +374,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           error: (_, __) => const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+
+  Widget _buildThankYouCard(BloodRequestModel req) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.pink.shade50, Colors.white]),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.pink.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.favorite_rounded, color: Colors.pink, size: 20),
+              const SizedBox(width: 8),
+              Text('গ্রহীতার ধন্যবাদ বার্তা', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.pink.shade900)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            req.thankYouNote ?? 'রক্তদানের মাধ্যমে একটি প্রাণ বাঁচানোর জন্য আপনাকে অসংখ্য ধন্যবাদ!',
+            style: GoogleFonts.notoSansBengali(fontStyle: FontStyle.italic, color: Colors.blueGrey.shade800, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
+            child: Text('বিস্তারিত দেখুন', style: TextStyle(color: Colors.pink.shade700, fontWeight: FontWeight.bold, fontSize: 12, decoration: TextDecoration.underline)),
+          ),
+        ],
+      ),
     );
   }
 
