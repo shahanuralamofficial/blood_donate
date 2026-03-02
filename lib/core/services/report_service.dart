@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../data/models/blood_request_model.dart';
 
 class ReportService {
@@ -10,8 +12,12 @@ class ReportService {
     required List<BloodRequestModel> myRequests,
     required List<BloodRequestModel> myDonations,
   }) async {
-    final pdf = pw.Document();
+    // ১. পারমিশন চেক (অ্যান্ড্রয়েড ১০ এর নিচের জন্য প্রয়োজন হতে পারে)
+    if (Platform.isAndroid) {
+      await Permission.storage.request();
+    }
 
+    final pdf = pw.Document();
     final completedRequests = myRequests.where((r) => r.status == 'completed').toList();
 
     pdf.addPage(
@@ -50,14 +56,29 @@ class ReportService {
       ),
     );
 
-    // পয়েন্ট ৬: সরাসরি ফাইলে সেভ এবং প্রিন্ট প্রিভিউ
     try {
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
-        name: 'Blood_Report_${DateFormat('dd_MMM_yyyy').format(DateTime.now())}.pdf'
-      );
+      // ২. ফাইল লোকেশন খুঁজে বের করা (সরাসরি ডাউনলোড ফোল্ডার)
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Download');
+        if (!await directory.exists()) {
+          directory = await getExternalStorageDirectory();
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      final String fileName = 'Blood_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final String filePath = '${directory!.path}/$fileName';
+      final file = File(filePath);
+
+      // ৩. পিডিএফ সেভ করা
+      await file.writeAsBytes(await pdf.save());
+      
+      print('PDF saved to: $filePath');
+      // আপনি চাইলে এখানে একটি লোকাল নোটিফিকেশন বা স্ন্যাকবার দেখাতে পারেন
     } catch (e) {
-      print('PDF Error: $e');
+      print('PDF Save Error: $e');
     }
   }
 
