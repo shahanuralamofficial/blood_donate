@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/dio.dart' as dio_lib; // Use dio for API calls if needed
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -65,8 +64,6 @@ class NotificationService {
   }
 
   // --- Push Notification Trigger Logic ---
-  // In a real app, this should be done via Firebase Cloud Functions (Node.js)
-  // For client-side demo, we use Firestore-based notification triggers
   
   Future<void> sendNotificationToUser({
     required String receiverId,
@@ -75,28 +72,22 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // ১. ইউজারের টোকেন খুঁজে বের করা
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(receiverId).get();
-      final String? token = userDoc.data()?['fcmToken'];
-
-      if (token != null) {
-        // ২. ইউজারের ইন-অ্যাপ নোটিফিকেশন কালেকশনে সেভ করা
-        await FirebaseFirestore.instance.collection('users').doc(receiverId).collection('notifications').add({
-          'title': title,
-          'body': body,
-          'data': data,
-          'isRead': false,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        
-        print('Notification logged for $receiverId: $title');
-      }
+      // ১. ইউজারের ইন-অ্যাপ নোটিফিকেশন কালেকশনে সেভ করা
+      await FirebaseFirestore.instance.collection('users').doc(receiverId).collection('notifications').add({
+        'title': title,
+        'body': body,
+        'data': data,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      
+      print('Notification logged for $receiverId: $title');
     } catch (e) {
       print('Notification Error: $e');
     }
   }
 
-  // ৩. আশেপাশে থাকা রক্তদাতাদের জানানো
+  // ২. আশেপাশে থাকা রক্তদাতাদের জানানো
   Future<void> notifyNearbyDonors({
     required String district,
     required String bloodGroup,
