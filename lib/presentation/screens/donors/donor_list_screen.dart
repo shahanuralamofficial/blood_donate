@@ -9,6 +9,7 @@ import '../../providers/donor_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/services/location_service.dart';
 import '../chat/chat_screen.dart';
+import 'donor_public_profile_screen.dart';
 
 class DonorListScreen extends ConsumerStatefulWidget {
   const DonorListScreen({super.key});
@@ -175,110 +176,111 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
-      child: ClipRRect(
+      child: InkWell(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: user)));
+        },
         borderRadius: BorderRadius.circular(20),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // বাম পাশের ব্লাড গ্রুপ সেকশন
-              Container(
-                width: 70,
-                color: const Color(0xFFE53935).withOpacity(0.05),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(user.bloodGroup ?? '?', style: const TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.bold, fontSize: 24)),
-                    const Text('গ্রুপ', style: TextStyle(color: Color(0xFFE53935), fontSize: 10)),
-                  ],
-                ),
-              ),
-              
-              // মাঝখানের তথ্য সেকশন
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 70,
+                  color: const Color(0xFFE53935).withOpacity(0.05),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${user.name} (রক্তদাতা)',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                              overflow: TextOverflow.ellipsis,
+                      Text(user.bloodGroup ?? '?', style: const TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.bold, fontSize: 24)),
+                      const Text('গ্রুপ', style: TextStyle(color: Color(0xFFE53935), fontSize: 10)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                user.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () => _toggleSaveDonor(user.uid, (ref.read(currentUserDataProvider).value?.savedDonors ?? [])),
-                            child: Icon(isSaved ? Icons.favorite : Icons.favorite_border, color: Colors.orange, size: 22),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on_rounded, size: 14, color: Colors.blueGrey),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}',
-                              style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
+                            GestureDetector(
+                              onTap: () => _toggleSaveDonor(user.uid, (ref.read(currentUserDataProvider).value?.savedDonors ?? [])),
+                              child: Icon(isSaved ? Icons.favorite : Icons.favorite_border, color: Colors.orange, size: 22),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_rounded, size: 14, color: Colors.blueGrey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}',
+                                style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
+                                  const SizedBox(width: 2),
+                                  Text(rating.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                ],
+                              ),
+                            ),
+                            if (distance != null && distance > 0) ...[
+                              const SizedBox(width: 8),
+                              Text('• ${distance.toStringAsFixed(1)} কিমি দূরে', style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.call_rounded, color: Colors.green),
+                        onPressed: () => _makeCall(user.phone),
+                        style: IconButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.1)),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
-                                const SizedBox(width: 2),
-                                Text(rating.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
-                              ],
-                            ),
-                          ),
-                          if (distance != null && distance > 0) ...[
-                            const SizedBox(width: 8),
-                            Text('• ${distance.toStringAsFixed(1)} কিমি দূরে', style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
-                          ],
-                        ],
+                      IconButton(
+                        icon: const Icon(Icons.chat_bubble_rounded, color: Colors.blue),
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${user.uid}', otherUserName: user.name)));
+                        },
+                        style: IconButton.styleFrom(backgroundColor: Colors.blue.withOpacity(0.1)),
                       ),
                     ],
                   ),
                 ),
-              ),
-              
-              // ডানপাশের কল ও চ্যাট বাটন
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.call_rounded, color: Colors.green),
-                      onPressed: () => _makeCall(user.phone),
-                      style: IconButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.1)),
-                    ),
-                    const SizedBox(height: 8),
-                    IconButton(
-                      icon: const Icon(Icons.chat_bubble_rounded, color: Colors.blue),
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${user.uid}', otherUserName: user.name)));
-                      },
-                      style: IconButton.styleFrom(backgroundColor: Colors.blue.withOpacity(0.1)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
