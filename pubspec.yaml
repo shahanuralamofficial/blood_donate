@@ -1,0 +1,75 @@
+name: blood_donate
+description: "A full-featured Blood Donation Mobile Application using Flutter and Firebase."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.10.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^4.4.0
+  cloud_firestore: ^6.1.2
+  firebase_auth: ^6.1.4
+  firebase_storage: ^13.0.6
+  firebase_messaging: ^16.1.1
+
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Location & Maps
+  google_maps_flutter: ^2.10.0
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+
+  # UI & UX
+  flutter_svg: ^2.0.10+1
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  cached_network_image: ^3.4.1
+  flutter_spinkit: ^5.2.1
+  font_awesome_flutter: ^10.7.0
+
+  # Logic & Data
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  uuid: ^4.5.1
+  dio: ^5.7.0
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  url_launcher: ^6.3.1
+
+  # PDF & Reporting
+  pdf: ^3.11.3
+  printing: ^5.13.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.14
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
+  riverpod_generator: ^2.6.3
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/unions.json

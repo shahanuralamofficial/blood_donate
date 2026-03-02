@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+    }
+
+    // Donors collection (publicly searchable for patients)
+    match /donors/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isOwner(userId);
+    }
+
+    // Blood Requests
+    match /blood_requests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.donorId == request.auth.uid ||
+        hasRole('admin')
+      );
+    }
+
+    // Wallets (Highly Sensitive)
+    match /wallets/{userId} {
+      allow read: if isSignedIn() && isOwner(userId);
+      allow write: if false; // Only Cloud Functions should update balances
+    }
+
+    // Transactions
+    match /transactions/{txId} {
+      allow read: if isSignedIn() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid ||
+        hasRole('admin')
+      );
+      allow write: if false; // Only Cloud Functions
+    }
+
+    // Clinics
+    match /clinics/{clinicId} {
+      allow read: if true;
+      allow write: if isSignedIn() && (isOwner(clinicId) || hasRole('admin'));
+    }
+  }
+}

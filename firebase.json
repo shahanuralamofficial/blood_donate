@@ -1,0 +1,38 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "My App",
+        "supportEmail": "support@undefined.firebaseapp.com"
+      }
+    }
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "blood-donate-5b844",
+          "appId": "1:301334429914:android:1dac091922a31bf8b125e3",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "blood-donate-5b844",
+          "configurations": {
+            "android": "1:301334429914:android:1dac091922a31bf8b125e3",
+            "ios": "1:301334429914:ios:279673857048ed03b125e3",
+            "web": "1:301334429914:web:4e8454491119860ab125e3"
+          }
+        }
+      }
+    }
+  }
+}
