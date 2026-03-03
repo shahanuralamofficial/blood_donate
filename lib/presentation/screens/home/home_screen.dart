@@ -116,31 +116,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildStatsSection(user),
-                      
-                      // Spacing only if eligibility card is shown
-                      if (user.lastDonationDate != null) ...[
-                        const SizedBox(height: 24),
-                        _buildEligibilityCard(user),
-                      ],
-
                       const SizedBox(height: 24),
                       _buildActiveActivitySection(myRequests, myDonations, showThankYouInMiddle: false),
-
                       _buildFactCard(),
-                      
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       _buildNeedBloodBanner(),
-                      
                       const SizedBox(height: 32),
                       _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestListScreen()));
                       }),
                       const SizedBox(height: 16),
                       _buildRequestList(emergencyRequests),
-                      
                       const SizedBox(height: 32),
                       _buildThankYouSectionFromAsync(myDonations),
-                      
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -186,7 +174,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Icon(Icons.location_on_rounded, color: Colors.white70, size: 14), const SizedBox(width: 4), Text(location, style: const TextStyle(color: Colors.white70, fontSize: 13))]), const SizedBox(height: 8), _buildRankBadge(user.rank)]),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [const Icon(Icons.location_on_rounded, color: Colors.white70, size: 14), const SizedBox(width: 4), Text(location, style: const TextStyle(color: Colors.white70, fontSize: 13))]),
+                      const SizedBox(height: 8),
+                      _buildRankBadge(user.rank),
+                    ],
+                  ),
                   GestureDetector(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen())),
                     child: Hero(
@@ -255,17 +251,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
     return isFullWidth ? GestureDetector(onTap: onTap, child: SizedBox(width: double.infinity, child: content)) : Expanded(child: GestureDetector(onTap: onTap, child: content));
-  }
-
-  Widget _buildEligibilityCard(UserModel user) {
-    if (user.lastDonationDate == null) return const SizedBox.shrink();
-    final nextDate = user.lastDonationDate!.add(const Duration(days: 90));
-    final remainingDays = nextDate.difference(DateTime.now()).inDays;
-    final isEligible = remainingDays <= 0;
-    return Container(
-      padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: isEligible ? Colors.green.shade50 : Colors.orange.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: isEligible ? Colors.green.shade200 : Colors.orange.shade200, width: 0.5)),
-      child: Row(children: [Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isEligible ? Colors.green : Colors.orange, shape: BoxShape.circle), child: Icon(isEligible ? Icons.check_rounded : Icons.timer_rounded, color: Colors.white, size: 20)), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(isEligible ? 'আপনি এখন রক্ত দান করতে পারবেন' : 'পরবর্তী রক্তদানের জন্য অপেক্ষা করুন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: isEligible ? Colors.green.shade900 : Colors.orange.shade900)), if (!isEligible) Text('আরও $remainingDays দিন বাকি আছে।', style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade700))]))]),
-    );
   }
 
   Widget _buildFactCard() {

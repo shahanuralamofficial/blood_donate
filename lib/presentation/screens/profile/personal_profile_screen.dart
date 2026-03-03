@@ -46,6 +46,13 @@ class PersonalProfileScreen extends ConsumerWidget {
                     children: [
                       _buildRankCard(context, user),
                       const SizedBox(height: 24),
+                      
+                      // Donation Eligibility Card (MOVED HERE)
+                      if (user.lastDonationDate != null) ...[
+                        _buildEligibilityCard(user),
+                        const SizedBox(height: 24),
+                      ],
+
                       _buildStatsGrid(user),
                       const SizedBox(height: 24),
                       _buildInfoSection(user),
@@ -76,28 +83,53 @@ class PersonalProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.red.shade50,
-                backgroundImage: user.profileImageUrl != null ? NetworkImage(user.profileImageUrl!) : null,
-                child: user.profileImageUrl == null ? const Icon(Icons.person_rounded, size: 60, color: Colors.red) : null,
-              ),
-              Positioned(
-                bottom: 0, right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
-                ),
-              ),
-            ],
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.red.shade50,
+            backgroundImage: user.profileImageUrl != null ? NetworkImage(user.profileImageUrl!) : null,
+            child: user.profileImageUrl == null ? const Icon(Icons.person_rounded, size: 60, color: Colors.red) : null,
           ),
           const SizedBox(height: 16),
           Text(user.name, style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(user.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 14, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEligibilityCard(UserModel user) {
+    final nextDate = user.lastDonationDate!.add(const Duration(days: 90));
+    final remainingDays = nextDate.difference(DateTime.now()).inDays;
+    final isEligible = remainingDays <= 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isEligible ? Colors.green.shade50 : Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isEligible ? Colors.green.shade200 : Colors.orange.shade200, width: 0.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: isEligible ? Colors.green : Colors.orange, shape: BoxShape.circle),
+            child: Icon(isEligible ? Icons.check_rounded : Icons.timer_rounded, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEligible ? 'আপনি এখন রক্ত দান করতে পারবেন' : 'পরবর্তী রক্তদানের জন্য অপেক্ষা করুন',
+                  style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: isEligible ? Colors.green.shade900 : Colors.orange.shade900),
+                ),
+                if (!isEligible) Text('আরও $remainingDays দিন বাকি আছে।', style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade700)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -179,7 +211,7 @@ class PersonalProfileScreen extends ConsumerWidget {
         children: [
           _buildInfoRow(Icons.bloodtype_outlined, 'রক্তের গ্রুপ', user.bloodGroup ?? 'অজানা', Colors.red),
           const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(Icons.person_outline_rounded, 'লিঙ্গ', user.gender ?? 'অজানা', Colors.blue), // Fixed Gender
+          _buildInfoRow(Icons.person_outline_rounded, 'লিঙ্গ', user.gender ?? 'অজানা', Colors.blue),
           const Divider(height: 32, thickness: 0.5),
           _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', location, Colors.green),
           const Divider(height: 32, thickness: 0.5),
