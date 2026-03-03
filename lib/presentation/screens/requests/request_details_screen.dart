@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/blood_request_model.dart';
 import '../../../data/models/user_model.dart';
-import '../../../core/services/notification_service.dart'; // Added
+import '../../../core/services/notification_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/blood_request_provider.dart';
 import '../chat/chat_screen.dart';
@@ -75,11 +75,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                   ElevatedButton(
                     onPressed: () async {
                       await ref.read(bloodRequestRepositoryProvider).updateRequestStatus(liveRequest.requestId, 'donated');
-                      NotificationService().sendNotificationToUser(
-                        receiverId: liveRequest.requesterId,
-                        title: 'রক্তদান আপডেট',
-                        body: '${user?.name} জানিয়েছেন তিনি রক্ত দিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।',
-                      );
+                      NotificationService().sendNotificationToUser(receiverId: liveRequest.requesterId, title: 'রক্তদান আপডেট', body: '${user?.name} জানিয়েছেন তিনি রক্ত দিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।');
                       if (context.mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('রক্ত দিয়েছেন নিশ্চিত করার জন্য ধন্যবাদ!'))); Navigator.pop(context); }
                     },
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, minimumSize: const Size(double.infinity, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
@@ -124,7 +120,6 @@ class RequestDetailsScreen extends ConsumerWidget {
   }
 
   void _showAcceptDonationDialog(BuildContext context, WidgetRef ref, BloodRequestModel req, String donorId, String donorName) {
-    int bagsToDonate = 1;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -136,11 +131,7 @@ class RequestDetailsScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               await ref.read(bloodRequestRepositoryProvider).acceptRequest(req.requestId, donorId);
-              NotificationService().sendNotificationToUser(
-                receiverId: req.requesterId,
-                title: 'রক্তদাতা পাওয়া গেছে!',
-                body: '$donorName আপনার আবেদনে সাড়া দিয়েছেন। এখনই যোগাযোগ করুন।',
-              );
+              NotificationService().sendNotificationToUser(receiverId: req.requesterId, title: 'রক্তদাতা পাওয়া গেছে!', body: '$donorName আপনার আবেদনে সাড়া দিয়েছেন। এখনই যোগাযোগ করুন।');
               if (context.mounted) { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('রক্তদানে রাজি হওয়ার জন্য ধন্যবাদ!'))); }
             },
             child: const Text('আমি রাজি'),
@@ -162,18 +153,20 @@ class RequestDetailsScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               WriteBatch batch = FirebaseFirestore.instance.batch();
-              batch.update(FirebaseFirestore.instance.collection('blood_requests').doc(req.requestId), {
-                'status': 'completed',
-                'thankYouNote': thankYouController.text.trim(),
-              });
+              DocumentReference reqRef = FirebaseFirestore.instance.collection('blood_requests').doc(req.requestId);
+              batch.update(reqRef, {'status': 'completed', 'thankYouNote': thankYouController.text.trim()});
+              
               if (req.donorId != null) {
                 batch.update(FirebaseFirestore.instance.collection('users').doc(req.donorId), {'totalDonations': FieldValue.increment(1), 'rankUpdatePending': true});
-                NotificationService().sendNotificationToUser(
-                  receiverId: req.donorId!,
-                  title: 'রক্তদান সম্পন্ন হয়েছে! ❤️',
-                  body: '$requesterName নিশ্চিত করেছেন যে তারা রক্ত পেয়েছেন। আপনাকে অসংখ্য ধন্যবাদ!',
-                );
+                NotificationService().sendNotificationToUser(receiverId: req.donorId!, title: 'রক্তদান সম্পন্ন হয়েছে! ❤️', body: '$requesterName নিশ্চিত করেছেন যে তারা রক্ত পেয়েছেন। আপনাকে অসংখ্য ধন্যবাদ!');
               }
+              
+              // Update requester's stats
+              batch.update(FirebaseFirestore.instance.collection('users').doc(req.requesterId), {
+                'totalReceived': FieldValue.increment(1),
+                'totalReceivedBags': FieldValue.increment(req.bloodBags - req.donatedBags),
+              });
+
               await batch.commit();
               if (context.mounted) { Navigator.pop(context); Navigator.pop(context); }
             },
@@ -196,11 +189,7 @@ class RequestDetailsScreen extends ConsumerWidget {
             onPressed: () async {
               await FirebaseFirestore.instance.collection('blood_requests').doc(req.requestId).update({'status': 'pending', 'donorId': null});
               if (req.donorId != null) {
-                NotificationService().sendNotificationToUser(
-                  receiverId: req.donorId!,
-                  title: 'আবেদন আপডেট',
-                  body: 'গ্রহীতা জানিয়েছেন তারা আপনার থেকে রক্ত পাননি।',
-                );
+                NotificationService().sendNotificationToUser(receiverId: req.donorId!, title: 'আবেদন আপডেট', body: 'গ্রহীতা জানিয়েছেন তারা আপনার থেকে রক্ত পাননি।');
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -219,10 +208,15 @@ class RequestDetailsScreen extends ConsumerWidget {
         content: const Text('আপনি কি আবেদনটি বাতিল করতে চান?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('না')),
-          TextButton(onPressed: () async {
-            await ref.read(bloodRequestRepositoryProvider).updateRequestStatus(requestId, 'cancelled');
-            if (context.mounted) { Navigator.pop(context); Navigator.pop(context); }
-          }, child: const Text('হ্যাঁ', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () async {
+              await ref.read(bloodRequestRepositoryProvider).updateRequestStatus(requestId, 'cancelled');
+              // Correctly update user's cancel count
+              await FirebaseFirestore.instance.collection('users').doc(requesterId).update({'totalCancelled': FieldValue.increment(1)});
+              if (context.mounted) { Navigator.pop(context); Navigator.pop(context); }
+            },
+            child: const Text('হ্যাঁ', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
