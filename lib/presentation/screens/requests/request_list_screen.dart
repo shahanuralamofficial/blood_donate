@@ -8,6 +8,7 @@ import '../../../data/models/blood_request_model.dart';
 import '../../../data/models/user_model.dart';
 import '../donors/donor_public_profile_screen.dart';
 import 'request_details_screen.dart';
+import 'create_request_screen.dart'; // Added
 import 'package:url_launcher/url_launcher.dart';
 
 class RequestListScreen extends ConsumerStatefulWidget {
@@ -62,6 +63,13 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFFE53935),
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text('রক্তের আবেদন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
+      ),
       body: requestsAsync.when(
         data: (requests) {
           final filtered = requests.where((r) => 
@@ -73,7 +81,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
           if (filtered.isEmpty) return _buildEmptyState();
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80), // Extra padding for FAB
             itemCount: filtered.length,
             itemBuilder: (context, index) => _buildRequestCard(filtered[index]),
           );
@@ -96,37 +104,25 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
       ),
       child: Column(
         children: [
-          // Header: Requester Info
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
               children: [
                 GestureDetector(
                   onTap: () => _navigateToRequesterProfile(context, req.requesterId),
-                  child: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.grey.shade200,
-                    child: const Icon(Icons.person, size: 16, color: Colors.grey),
-                  ),
+                  child: CircleAvatar(radius: 14, backgroundColor: Colors.grey.shade200, child: const Icon(Icons.person, size: 16, color: Colors.grey)),
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => _navigateToRequesterProfile(context, req.requesterId),
-                  child: Text(
-                    'আবেদনকারী দেখুন',
-                    style: TextStyle(color: Colors.blue.shade700, fontSize: 11, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
-                  ),
+                  child: Text('আবেদনকারী দেখুন', style: TextStyle(color: Colors.blue.shade700, fontSize: 11, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
                 ),
                 const Spacer(),
-                Text(
-                  DateFormat('dd MMM').format(req.createdAt ?? DateTime.now()),
-                  style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
-                ),
+                Text(DateFormat('dd MMM').format(req.createdAt ?? DateTime.now()), style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
               ],
             ),
           ),
           const Divider(height: 20, thickness: 0.5),
-          // Body: Request Info
           InkWell(
             borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
@@ -137,9 +133,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                   Container(
                     width: 56, height: 56,
                     decoration: BoxDecoration(
-                      gradient: isUrgent 
-                        ? LinearGradient(colors: [Colors.red, Colors.red.shade800], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                        : LinearGradient(colors: [Colors.red.shade50, Colors.red.shade100]),
+                      gradient: isUrgent ? LinearGradient(colors: [Colors.red, Colors.red.shade800]) : LinearGradient(colors: [Colors.red.shade50, Colors.red.shade100]),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Center(child: Text(req.bloodGroup, style: TextStyle(color: isUrgent ? Colors.white : Colors.red, fontWeight: FontWeight.bold, fontSize: 20))),
@@ -149,15 +143,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(child: Text(req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                            if (isUrgent) ...[
-                              const SizedBox(width: 8),
-                              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)), child: const Text('জরুরি', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))),
-                            ]
-                          ],
-                        ),
+                        Row(children: [Flexible(child: Text(req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))), if (isUrgent) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)), child: const Text('জরুরি', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)))]]),
                         const SizedBox(height: 4),
                         Text(req.hospitalName, style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 2),
