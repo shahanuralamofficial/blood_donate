@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../history/history_screen.dart';
 import '../donors/donor_list_screen.dart';
-import '../requests/request_list_screen.dart'; // Added import
+import '../requests/request_list_screen.dart';
 import 'home_screen.dart';
 
 class RootScreen extends StatefulWidget {
@@ -16,7 +16,7 @@ class _RootScreenState extends State<RootScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const RequestListScreen(), // Added Patients/Requests screen
+    const RequestListScreen(),
     const DonorListScreen(),
     const HistoryScreen(),
   ];
@@ -53,7 +53,7 @@ class _RootScreenState extends State<RootScreen> {
               elevation: 0,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'হোম'),
-                BottomNavigationBarItem(icon: Icon(Icons.bloodtype_rounded), label: 'আবেদনকারি'),
+                BottomNavigationBarItem(icon: Icon(Icons.bloodtype_rounded), label: 'আবেদনকারী'),
                 BottomNavigationBarItem(icon: Icon(Icons.search_rounded), label: 'দাতা'),
                 BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: 'ইতিহাস'),
               ],
