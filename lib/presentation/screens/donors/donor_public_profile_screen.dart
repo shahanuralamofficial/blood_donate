@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; // Added missing import
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
+import '../profile/reviews_list_screen.dart'; // Added import
 
 class DonorPublicProfileScreen extends StatelessWidget {
   final UserModel donor;
@@ -12,11 +13,7 @@ class DonorPublicProfileScreen extends StatelessWidget {
 
   Future<void> _makeCall(String phone) async {
     final Uri url = Uri(scheme: 'tel', path: phone);
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint("Call Error: $e");
-    }
+    try { await launchUrl(url, mode: LaunchMode.externalApplication); } catch (e) { debugPrint("Call Error: $e"); }
   }
 
   @override
@@ -41,8 +38,11 @@ class DonorPublicProfileScreen extends StatelessWidget {
                   _buildStatsRow(),
                   const SizedBox(height: 24),
                   _buildInfoSection(),
+                  const SizedBox(height: 24),
+                  _buildReviewCard(context), // Added Review Card
                   const SizedBox(height: 32),
                   _buildActionButtons(context),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -131,7 +131,7 @@ class DonorPublicProfileScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -158,6 +158,40 @@ class DonorPublicProfileScreen extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildReviewCard(BuildContext context) {
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: donor.uid, userName: donor.name))),
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey.shade100)),
+        child: Row(
+          children: [
+            const Icon(Icons.rate_review_outlined, color: Colors.blue, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('ইউজার রিভিউ', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
+                      const SizedBox(width: 4),
+                      Text(donor.averageRating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(' (${donor.totalReviews} টি রিভিউ)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 14),
+          ],
+        ),
+      ),
     );
   }
 
