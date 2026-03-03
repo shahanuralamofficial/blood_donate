@@ -198,7 +198,6 @@ class RequestDetailsScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               await ref.read(bloodRequestRepositoryProvider).acceptRequest(req.requestId, donorId);
-              // Store commitment if needed, here we just notify
               NotificationService().sendNotificationToUser(
                 receiverId: req.requesterId,
                 title: 'রক্তদাতা পাওয়া গেছে!',
@@ -273,7 +272,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 'donatedBags': totalDonated,
                 'status': newStatus,
                 'thankYouNote': thankYouController.text.trim(),
-                'donorId': isFullyCompleted ? req.donorId : null, // Clear donor if not full so others can accept
+                'donorId': isFullyCompleted ? req.donorId : null,
               });
 
               if (req.donorId != null) {
@@ -380,23 +379,48 @@ class RequestDetailsScreen extends ConsumerWidget {
   }
 
   void _showCancelDialog(BuildContext context, WidgetRef ref, String requestId, String requesterId) {
+    String? selectedReason;
+    final reasons = ['রক্ত পেয়েছি', 'রোগী মারা গেছেন', 'অন্যান্য'];
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('আবেদন বাতিল'),
-        content: const Text('আপনি কি আবেদনটি বাতিল করতে চান?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('আবেদন বাতিলের কারণ'),
+        content: StatefulBuilder(
+          builder: (context, setState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: reasons.map((r) => RadioListTile<String>(
+              title: Text(r),
+              value: r,
+              groupValue: selectedReason,
+              onChanged: (v) => setState(() => selectedReason = v),
+            )).toList(),
+          ),
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('না')),
           TextButton(
             onPressed: () async {
-              await ref.read(bloodRequestRepositoryProvider).updateRequestStatus(requestId, 'cancelled');
-              await FirebaseFirestore.instance.collection('users').doc(requesterId).update({'totalCancelled': FieldValue.increment(1)});
+              if (selectedReason == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('অনুগ্রহ করে একটি কারণ নির্বাচন করুন'))
+                );
+                return;
+              }
+              await FirebaseFirestore.instance.collection('blood_requests').doc(requestId).update({
+                'status': 'cancelled',
+                'cancelReason': selectedReason,
+              });
+              await FirebaseFirestore.instance.collection('users').doc(requesterId).update({
+                'totalCancelled': FieldValue.increment(1)
+              });
               if (context.mounted) {
                 Navigator.pop(context);
                 Navigator.pop(context);
               }
             },
-            child: const Text('হ্যাঁ', style: TextStyle(color: Colors.red)),
+            child: const Text('নিশ্চিত করুন', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
