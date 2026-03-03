@@ -45,7 +45,7 @@ class PersonalProfileScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       _buildRankCard(context, user),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       _buildStatsGrid(user),
                       const SizedBox(height: 24),
                       _buildInfoSection(user),
@@ -96,7 +96,8 @@ class PersonalProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(user.name, style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold)),
-          Text(user.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+          const SizedBox(height: 4),
+          Text(user.phone, style: TextStyle(color: Colors.grey.shade600, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -105,6 +106,7 @@ class PersonalProfileScreen extends ConsumerWidget {
   Widget _buildRankCard(BuildContext context, UserModel user) {
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RankProgressScreen(user: user))),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -146,7 +148,12 @@ class PersonalProfileScreen extends ConsumerWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade100)),
+        decoration: BoxDecoration(
+          color: Colors.white, 
+          borderRadius: BorderRadius.circular(20), 
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        ),
         child: Column(
           children: [
             Icon(icon, color: color, size: 24),
@@ -163,13 +170,19 @@ class PersonalProfileScreen extends ConsumerWidget {
     final location = "${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}";
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15)],
+      ),
       child: Column(
         children: [
           _buildInfoRow(Icons.bloodtype_outlined, 'রক্তের গ্রুপ', user.bloodGroup ?? 'অজানা', Colors.red),
-          const Divider(height: 32),
-          _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', location, Colors.blue),
-          const Divider(height: 32),
+          const Divider(height: 32, thickness: 0.5),
+          _buildInfoRow(Icons.person_outline_rounded, 'লিঙ্গ', user.gender ?? 'অজানা', Colors.blue), // Fixed Gender
+          const Divider(height: 32, thickness: 0.5),
+          _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', location, Colors.green),
+          const Divider(height: 32, thickness: 0.5),
           _buildInfoRow(Icons.email_outlined, 'ইমেইল', user.email ?? 'নেই', Colors.orange),
         ],
       ),
@@ -181,12 +194,14 @@ class PersonalProfileScreen extends ConsumerWidget {
       children: [
         Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ],
     );
@@ -195,6 +210,7 @@ class PersonalProfileScreen extends ConsumerWidget {
   Widget _buildReviewCard(BuildContext context, UserModel user) {
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: user.uid, userName: user.name))),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey.shade100)),

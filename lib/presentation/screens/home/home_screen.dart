@@ -8,7 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/blood_request_provider.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/blood_request_model.dart';
-import '../profile/donor_profile_screen.dart';
+import '../profile/personal_profile_screen.dart'; // Changed to PersonalProfileScreen
 import '../profile/appreciation_screen.dart';
 import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
@@ -182,9 +182,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 20),
                       _buildFactCard(),
-                      const SizedBox(height: 10),
-                      _buildNeedBloodBanner(),
                       const SizedBox(height: 24),
+                      _buildNeedBloodBanner(),
+                      const SizedBox(height: 32),
                       _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
                         Navigator.push(
                           context,
@@ -196,7 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 16),
                       _buildRequestList(emergencyRequests),
                       const SizedBox(height: 32),
-                      _buildThankYouSectionFromAsync(myDonations), // Moved here
+                      _buildThankYouSectionFromAsync(myDonations),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -306,28 +306,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const DonorProfileScreen(),
+                        builder: (_) => const PersonalProfileScreen(),
                       ),
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.white,
-                        backgroundImage: user.profileImageUrl != null
-                            ? NetworkImage(user.profileImageUrl!)
-                            : null,
-                        child: user.profileImageUrl == null
-                            ? const Icon(
-                                Icons.person_rounded,
-                                color: Colors.red,
-                                size: 30,
-                              )
-                            : null,
+                    child: Hero(
+                      tag: 'profile_pic',
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Colors.white,
+                          backgroundImage: user.profileImageUrl != null
+                              ? NetworkImage(user.profileImageUrl!)
+                              : null,
+                          child: user.profileImageUrl == null
+                              ? const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.red,
+                                  size: 30,
+                                )
+                              : null,
+                        ),
                       ),
                     ),
                   ),
