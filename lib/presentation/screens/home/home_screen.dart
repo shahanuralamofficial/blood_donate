@@ -124,7 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _buildFactCard(),
                       const SizedBox(height: 24),
                       _buildNeedBloodBanner(),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
                       _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestListScreen()));
                       }),
