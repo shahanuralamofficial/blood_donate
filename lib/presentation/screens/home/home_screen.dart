@@ -11,6 +11,7 @@ import '../../../data/models/blood_request_model.dart';
 import '../profile/donor_profile_screen.dart';
 import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
+import '../requests/request_list_screen.dart'; // Added import
 import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import '../donors/donor_list_screen.dart';
@@ -164,7 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         Text(title, style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DonorListScreen())),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestListScreen())),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
@@ -358,14 +359,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 8),
         myDon.when(
           data: (donations) {
-            // Updated to show COMPLETED donations with Thank You notes on Home Screen
             final active = donations.where((r) => r.status == 'accepted' || r.status == 'donated' || r.status == 'cancelled' || r.status == 'completed').toList();
             if (active.isEmpty) return const SizedBox.shrink();
             return Column(children: active.map<Widget>((req) {
               String title = 'আপনি রক্ত দিচ্ছেন'; Color color = Colors.green;
               if (req.status == 'cancelled') { title = 'রক্তদান বাতিল হয়েছে'; color = Colors.grey; }
               else if (req.status == 'completed') {
-                return _buildThankYouCard(req); // Special card for thank you note
+                return _buildThankYouCard(req);
               }
               return _buildActivityCard(req, title, color);
             }).toList());
