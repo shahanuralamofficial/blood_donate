@@ -6,6 +6,7 @@ import '../../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
 import 'reviews_list_screen.dart';
 import 'rank_progress_screen.dart';
+import 'appreciation_screen.dart';
 
 class PersonalProfileScreen extends ConsumerWidget {
   const PersonalProfileScreen({super.key});
@@ -46,16 +47,13 @@ class PersonalProfileScreen extends ConsumerWidget {
                     children: [
                       _buildRankCard(context, user),
                       const SizedBox(height: 24),
-                      
-                      // Donation Eligibility Card (MOVED HERE)
                       if (user.lastDonationDate != null) ...[
                         _buildEligibilityCard(user),
                         const SizedBox(height: 24),
                       ],
-
                       _buildStatsGrid(user),
                       const SizedBox(height: 24),
-                      _buildInfoSection(user),
+                      _buildInfoSection(context, user), // Added context for nav
                       const SizedBox(height: 24),
                       _buildReviewCard(context, user),
                       const SizedBox(height: 40),
@@ -83,11 +81,23 @@ class PersonalProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.red.shade50,
-            backgroundImage: user.profileImageUrl != null ? NetworkImage(user.profileImageUrl!) : null,
-            child: user.profileImageUrl == null ? const Icon(Icons.person_rounded, size: 60, color: Colors.red) : null,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.red.shade50,
+                backgroundImage: user.profileImageUrl != null ? NetworkImage(user.profileImageUrl!) : null,
+                child: user.profileImageUrl == null ? const Icon(Icons.person_rounded, size: 60, color: Colors.red) : null,
+              ),
+              Positioned(
+                bottom: 0, right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(user.name, style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold)),
@@ -198,7 +208,7 @@ class PersonalProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoSection(UserModel user) {
+  Widget _buildInfoSection(BuildContext context, UserModel user) {
     final location = "${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}";
     return Container(
       padding: const EdgeInsets.all(20),
@@ -215,27 +225,37 @@ class PersonalProfileScreen extends ConsumerWidget {
           const Divider(height: 32, thickness: 0.5),
           _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', location, Colors.green),
           const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(Icons.email_outlined, 'ইমেইল', user.email ?? 'নেই', Colors.orange),
+          _buildInfoRow(
+            Icons.favorite_border_rounded, 
+            'ধন্যবাদ বার্তা', 
+            'দেখুন (${user.totalDonations} টি)', 
+            Colors.pink, 
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppreciationScreen()))
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, Color color) {
-    return Row(
-      children: [
-        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-            ],
+  Widget _buildInfoRow(IconData icon, String label, String value, Color color, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
-        ),
-      ],
+          if (onTap != null) const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+        ],
+      ),
     );
   }
 
