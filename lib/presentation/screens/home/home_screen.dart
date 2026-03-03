@@ -9,9 +9,10 @@ import '../../providers/blood_request_provider.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/blood_request_model.dart';
 import '../profile/donor_profile_screen.dart';
+import '../profile/appreciation_screen.dart'; // Added import
 import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
-import '../requests/request_list_screen.dart'; // Added import
+import '../requests/request_list_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import '../donors/donor_list_screen.dart';
@@ -144,7 +145,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 24),
                       _buildNeedBloodBanner(),
                       const SizedBox(height: 32),
-                      _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ'),
+                      _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestListScreen()));
+                      }),
                       const SizedBox(height: 16),
                       _buildRequestList(emergencyRequests),
                       const SizedBox(height: 100),
@@ -159,13 +162,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, VoidCallback onTap) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestListScreen())),
+          onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
@@ -361,18 +364,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           data: (donations) {
             final active = donations.where((r) => r.status == 'accepted' || r.status == 'donated' || r.status == 'cancelled' || r.status == 'completed').toList();
             if (active.isEmpty) return const SizedBox.shrink();
-            return Column(children: active.map<Widget>((req) {
-              String title = 'আপনি রক্ত দিচ্ছেন'; Color color = Colors.green;
-              if (req.status == 'cancelled') { title = 'রক্তদান বাতিল হয়েছে'; color = Colors.grey; }
-              else if (req.status == 'completed') {
-                return _buildThankYouCard(req);
-              }
-              return _buildActivityCard(req, title, color);
-            }).toList());
+            
+            // Show only the most recent completed thank you note
+            final completed = active.where((d) => d.status == 'completed' && d.thankYouNote != null).toList();
+            final others = active.where((d) => d.status != 'completed').toList();
+
+            return Column(children: [
+              ...others.map<Widget>((req) => _buildActivityCard(req, 'আপনি রক্ত দিচ্ছেন', Colors.green)),
+              if (completed.isNotEmpty) _buildThankYouSection(completed.first),
+            ]);
           },
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
+      ],
+    );
+  }
+
+  Widget _buildThankYouSection(BloodRequestModel latestNote) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('প্রাপ্ত ধন্যবাদ বার্তা', () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AppreciationScreen()));
+        }),
+        const SizedBox(height: 12),
+        _buildThankYouCard(latestNote),
       ],
     );
   }
@@ -393,13 +410,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               const Icon(Icons.favorite_rounded, color: Colors.pink, size: 20),
               const SizedBox(width: 8),
-              Text('গ্রহীতার ধন্যবাদ বার্তা', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.pink.shade900)),
+              Text('সবশেষ ধন্যবাদ বার্তা', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.pink.shade900)),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             req.thankYouNote ?? 'রক্তদানের মাধ্যমে একটি প্রাণ বাঁচানোর জন্য আপনাকে অসংখ্য ধন্যবাদ!',
             style: GoogleFonts.notoSansBengali(fontStyle: FontStyle.italic, color: Colors.blueGrey.shade800, fontSize: 13),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 12),
           InkWell(
@@ -432,13 +451,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (requests) {
         if (requests.isEmpty) return Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 40), child: Text('কোন পেন্ডিং আবেদন নেই', style: TextStyle(color: Colors.grey.shade500))));
+        
+        // Show only Top 3 on Home Screen
         final sorted = List<BloodRequestModel>.from(requests)..sort((a, b) => (a.isEmergency && !b.isEmergency) ? -1 : 1);
-        return ListView.builder(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: sorted.length,
-          itemBuilder: (context, index) => _buildRequestCard(sorted[index]),
+        final top3 = sorted.take(3).toList();
+
+        return Column(
+          children: top3.map((req) => _buildRequestCard(req)).toList(),
         );
       },
     );
