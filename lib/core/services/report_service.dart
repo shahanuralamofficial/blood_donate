@@ -109,12 +109,11 @@ class ReportService {
       final bytes = await pdf.save();
       final fileName = 'Blood_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
       
-      // এই মেথডটি সরাসরি ফাইলে সেভ করবে এবং ইউজারকে ডাউনলোডের সুযোগ দেবে
-      await Printing.sharePdf(
-        bytes: bytes, 
-        filename: fileName,
+      // Printing.sharePdf allows users to save the file or share it
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => bytes,
+        name: fileName,
       );
-
     } catch (e) {
       debugPrint('PDF Generation Error: $e');
     }
