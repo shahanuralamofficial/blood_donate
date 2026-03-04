@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../chat/chat_screen.dart';
 
@@ -15,6 +16,20 @@ class SavedDonorsScreen extends ConsumerWidget {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint("Call Error: $e");
+    }
+  }
+
+  Future<void> _openWhatsApp(String? phone) async {
+    if (phone == null || phone.isEmpty) return;
+    String cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!cleanPhone.startsWith('88')) {
+      cleanPhone = '88$cleanPhone';
+    }
+    final Uri url = Uri.parse("https://wa.me/$cleanPhone");
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("WhatsApp Error: $e");
     }
   }
 
@@ -57,28 +72,86 @@ class SavedDonorsScreen extends ConsumerWidget {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
+                    final donorId = docs[index].id;
                     
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.red.shade50,
-                          child: Text(data['bloodGroup'] ?? '?', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                        ),
-                        title: Text(data['name'] ?? 'নাম নেই', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${data['address']?['thana'] ?? ''}, ${data['address']?['district'] ?? ''}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(icon: const Icon(Icons.call, color: Colors.green), onPressed: () => _makeCall(data['phone'])),
-                            IconButton(
-                              icon: const Icon(Icons.chat_bubble_outline, color: Colors.blue),
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${docs[index].id}', otherUserName: data['name'])));
-                              },
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          onTap: () {
+                            // Optionally navigate to public profile
+                          },
+                          leading: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
+                            child: Center(
+                              child: Text(
+                                data['bloodGroup'] ?? '?',
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            data['name'] ?? 'নাম নেই',
+                            style: GoogleFonts.notoSansBengali(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${data['address']?['thana'] ?? ''}, ${data['address']?['district'] ?? ''}',
+                            style: GoogleFonts.notoSansBengali(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildActionCircle(
+                                icon: Icons.call,
+                                color: Colors.green,
+                                onTap: () => _makeCall(data['phone']),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildActionCircle(
+                                icon: FontAwesomeIcons.whatsapp,
+                                color: const Color(0xFF25D366),
+                                isFontAwesome: true,
+                                onTap: () => _openWhatsApp(data['whatsappNumber'] ?? data['phone']),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildActionCircle(
+                                icon: Icons.chat_bubble_outline,
+                                color: Colors.blue,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChatScreen(
+                                        requestId: 'direct_$donorId',
+                                        otherUserName: data['name'],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -86,6 +159,28 @@ class SavedDonorsScreen extends ConsumerWidget {
                 );
               },
             ),
+    );
+  }
+
+  Widget _buildActionCircle({
+    required dynamic icon,
+    required Color color,
+    required VoidCallback onTap,
+    bool isFontAwesome = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: isFontAwesome
+            ? FaIcon(icon as IconData, color: color, size: 18)
+            : Icon(icon as IconData, color: color, size: 18),
+      ),
     );
   }
 }

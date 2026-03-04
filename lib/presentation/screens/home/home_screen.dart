@@ -242,21 +242,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildQuickStats(UserModel user) {
-    return Row(
+    return Column(
       children: [
-        _buildStatBox('মোট দান', '${user.totalDonations}', Colors.red, Icons.bloodtype),
-        const SizedBox(width: 12),
-        _buildStatBox('আবেদন', '${user.totalRequests}', Colors.blue, Icons.campaign),
-        const SizedBox(width: 12),
-        _buildStatBox('সেভ করা', '${user.savedDonors.length}', Colors.orange, Icons.favorite),
+        Row(
+          children: [
+            _buildStatBox('মোট দান', '${user.totalDonations}', Colors.red, Icons.bloodtype),
+            const SizedBox(width: 12),
+            _buildStatBox('আবেদন', '${user.totalRequests}', Colors.blue, Icons.campaign),
+            const SizedBox(width: 12),
+            _buildStatBox(
+              'সেভ করা',
+              '${user.savedDonors.length}',
+              Colors.orange,
+              Icons.favorite,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SavedDonorsScreen()),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildStatBox('ব্যাগ পেয়েছেন', '${user.totalReceivedBags}', Colors.green, Icons.opacity),
+            const SizedBox(width: 12),
+            _buildStatBox('বাতিল আবেদন', '${user.totalCancelled}', Colors.blueGrey, Icons.cancel_outlined),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox.shrink()),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildStatBox(String title, String value, Color color, IconData icon) {
+  Widget _buildStatBox(String title, String value, Color color, IconData icon, {VoidCallback? onTap}) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -268,26 +290,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
         ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black87,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  const SizedBox(height: 8),
+                  Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    title,
+                    style: GoogleFonts.notoSansBengali(
+                      fontSize: 11,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              title,
-              style: GoogleFonts.notoSansBengali(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
