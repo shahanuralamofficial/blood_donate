@@ -11,7 +11,6 @@
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Flutter-3.x-blue.svg" alt="Flutter">
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green.svg" alt="Platform">
-  <img src="https://img.shields.io/github/stars/shahanuralamofficial/blood_donate?style=social" alt="GitHub Stars">
 </p>
 
 ---
@@ -19,7 +18,6 @@
 ## 📜 Table of Contents
 - [About The Project](#about-the-project)
 - [✨ Key Features](#-key-features)
-- [📸 Screenshots](#-screenshots)
 - [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
 - [🚀 Getting Started](#-getting-started)
 - [🤝 Contributing](#-contributing)
@@ -37,21 +35,10 @@
 | **Smart Donor/Patient Search**| Find donors or active requests using filters for blood group and location.                                                                |
 | **In-App Messaging**          | Secure real-time chat between donors and patients with real user names and profile pictures.                                               |
 | **Push Notifications**        | A professional notification center with alerts for nearby requests, messages, and donation status updates.                                 |
-| **PDF Report Generation**     | Download a professional donation history report directly to the phone's Download folder.                                                   |
+| **PDF Report Generation**     | Download a professional donation history report with **100% correct Bengali typography** support.                                        |
 | **Gamification & Ranks**      | A dynamic user ranking system (Newbie, Bronze, Silver, etc.) to motivate and reward active donors.                                         |
 | **Public Profiles & Reviews** | Donors have public profiles with their rank, donation stats, and ratings from patients to build trust.                                   |
-| **Accountability System**     | Patients can review donors and report no-shows, ensuring a reliable community.                                                           |
 | **Modern & Professional UI**  | A "Premium" feel with clean cards, smooth animations, and a user-friendly design.                                                        |
-
-## 📸 Screenshots
-
-<!-- Replace with your actual screenshots -->
-<p align="center">
-  <img src="" alt="Home Screen" width="200"/>
-  <img src="" alt="Donor Profile" width="200"/>
-  <img src="" alt="Chat List" width="200"/>
-  <img src="" alt="Notifications" width="200"/>
-</p>
 
 ## 🛠️ Tech Stack & Architecture
 
@@ -63,19 +50,17 @@ This project is built with a modern and scalable tech stack to ensure a high-qua
 | **Backend**          | [Firebase](https://firebase.google.com/) (Auth, Firestore, Cloud Messaging, Storage)                         |
 | **State Management** | [Riverpod](https://riverpod.dev/)                                                                           |
 | **Services**         | Geolocator, Geocoding, Permission Handler, Path Provider                                                    |
-| **UI & Other**       | Google Fonts, Intl, URL Launcher, PDF                                                                       |
+| **Reporting**        | [Printing](https://pub.dev/packages/printing) (HTML-to-PDF engine for perfect Bengali rendering)            |
 
 ### Project Structure
 ```text
 lib/
 ├── core/
-│   ├── services/         # Notification, Location, Report services
+│   ├── services/         # Notification, Location, Report (PDF) services
 │   └── theme/            # Professional App Theme
 ├── data/
 │   ├── models/           # User, Donor, Request, Message models
 │   └── repositories/     # Firebase implementation logic
-├── domain/
-│   └── repositories/     # Repository interfaces
 └── presentation/
     ├── providers/        # Riverpod state providers
     └── screens/          # All UI screens for each feature
@@ -83,7 +68,7 @@ lib/
 
 ## 🚀 Getting Started
 
-Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
+Follow these instructions to get a copy of the project up and running on your local machine.
 
 ### Prerequisites
 - Flutter SDK (latest version)
@@ -94,7 +79,6 @@ Follow these instructions to get a copy of the project up and running on your lo
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/shahanuralamofficial/blood_donate.git
-   cd blood_donate
    ```
 
 2. **Install dependencies:**
@@ -107,7 +91,6 @@ Follow these instructions to get a copy of the project up and running on your lo
    - Add Android/iOS apps in Firebase Console.
    - Download and place `google-services.json` in `android/app/`.
    - Enable **Email/Phone Auth**, **Firestore**, and **Storage**.
-   - For Push Notifications, you will need to upload your APNs certificate (for iOS) and configure FCM.
 
 4. **Run the app:**
    ```bash
@@ -116,7 +99,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/shahanuralamofficial/blood_donate/issues).
+Contributions, issues, and feature requests are welcome! 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
@@ -125,7 +108,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License.
 
 ---
 <p align="center">
