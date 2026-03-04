@@ -136,6 +136,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final myRequests = ref.watch(myRequestsProvider);
     final myDonations = ref.watch(myDonationsProvider);
 
+    // রক্তদাতাকে অভিনন্দন জানানোর লজিক
+    userAsync.whenData((user) {
+      if (user != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _handleCelebration(user);
+        });
+      }
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       floatingActionButton: FloatingActionButton.extended(
