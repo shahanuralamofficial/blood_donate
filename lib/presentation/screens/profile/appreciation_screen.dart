@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/blood_request_provider.dart';
-import '../../../data/models/blood_request_model.dart';
 import '../requests/request_details_screen.dart';
 
 class AppreciationScreen extends ConsumerWidget {
