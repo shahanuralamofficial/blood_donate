@@ -15,6 +15,7 @@ class UserModel {
   final Map<String, dynamic>? address;
   final List<String> savedDonors;
   final String? fcmToken;
+  final String? whatsappNumber;
   final double averageRating;
   final int totalReviews;
   
@@ -44,6 +45,7 @@ class UserModel {
     this.address,
     this.savedDonors = const [],
     this.fcmToken,
+    this.whatsappNumber,
     this.averageRating = 5.0,
     this.totalReviews = 0,
     this.lastDonationDate,
@@ -58,6 +60,25 @@ class UserModel {
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
+    int donations = map['totalDonations'] ?? 0;
+    String calculatedRank = 'Newbie';
+    if (donations >= 50) {
+      calculatedRank = 'Diamond';
+    } else if (donations >= 30) {
+      calculatedRank = 'Platinum';
+    } else if (donations >= 15) {
+      calculatedRank = 'Gold';
+    } else if (donations >= 5) {
+      calculatedRank = 'Silver';
+    } else if (donations >= 1) {
+      calculatedRank = 'Bronze';
+    }
+
+    // Use stored rank if it exists and isn't 'Newbie', otherwise use calculated
+    String finalRank = map['rank'] != null && map['rank'] != 'Newbie' 
+        ? map['rank'] 
+        : calculatedRank;
+
     return UserModel(
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
@@ -73,15 +94,16 @@ class UserModel {
       address: map['address'] != null ? Map<String, dynamic>.from(map['address']) : null,
       savedDonors: List<String>.from(map['savedDonors'] ?? []),
       fcmToken: map['fcmToken'],
+      whatsappNumber: map['whatsappNumber'],
       averageRating: (map['averageRating'] ?? 5.0).toDouble(),
       totalReviews: map['totalReviews'] ?? 0,
       lastDonationDate: (map['lastDonationDate'] as Timestamp?)?.toDate(),
-      totalDonations: map['totalDonations'] ?? 0,
+      totalDonations: donations,
       totalRequests: map['totalRequests'] ?? 0,
       totalReceived: map['totalReceived'] ?? 0,
       totalReceivedBags: map['totalReceivedBags'] ?? 0,
       totalCancelled: map['totalCancelled'] ?? 0,
-      rank: map['rank'] ?? 'Newbie',
+      rank: finalRank,
       badges: List<String>.from(map['badges'] ?? []),
       rankUpdatePending: map['rankUpdatePending'] ?? false,
     );
@@ -103,6 +125,7 @@ class UserModel {
       'address': address,
       'savedDonors': savedDonors,
       'fcmToken': fcmToken,
+      'whatsappNumber': whatsappNumber,
       'averageRating': averageRating,
       'totalReviews': totalReviews,
       'lastDonationDate': lastDonationDate != null ? Timestamp.fromDate(lastDonationDate!) : null,

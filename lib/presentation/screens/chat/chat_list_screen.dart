@@ -46,36 +46,47 @@ class _ChatListScreenState extends State<ChatListScreen> {
             return _buildEmptyState();
           }
 
-          var chatRequests = snapshot.data!.docs.where((doc) {
+          // ১. ইউজারের সাথে সম্পর্কিত সকল এক্সেপ্টেড রিকোয়েস্ট খুঁজে বের করা
+          var allRequests = snapshot.data!.docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final isRelated = data['requesterId'] == currentUser.uid || data['donorId'] == currentUser.uid;
             final isAccepted = ['accepted', 'donated', 'completed'].contains(data['status']);
             return isRelated && isAccepted;
           }).toList();
 
-          chatRequests.sort((a, b) {
-            final dataA = a.data() as Map<String, dynamic>;
-            final dataB = b.data() as Map<String, dynamic>;
-            final timeA = dataA['lastMessageTime'] ?? dataA['createdAt'] ?? Timestamp.now();
-            final timeB = dataB['lastMessageTime'] ?? dataB['createdAt'] ?? Timestamp.now();
-            return (timeB as Timestamp).compareTo(timeA as Timestamp);
-          });
+          // ২. ইউজার আইডি অনুযায়ী চ্যাটগুলো মার্জ করা (যাতে একই ইউজারের সাথে একাধিক চ্যাট না দেখায়)
+          Map<String, dynamic> uniqueChats = {};
+          for (var doc in allRequests) {
+            final data = doc.data() as Map<String, dynamic>;
+            final otherUserId = data['requesterId'] == currentUser.uid ? data['donorId'] : data['requesterId'];
+            
+            if (otherUserId != null) {
+              // যদি আগে থেকেই এই ইউজারের সাথে চ্যাট থাকে, তবে লেটেস্টটা রাখা
+              if (!uniqueChats.containsKey(otherUserId)) {
+                uniqueChats[otherUserId] = {
+                  'requestId': doc.id,
+                  'otherUserId': otherUserId,
+                  'hospitalName': data['hospitalName'],
+                  'status': data['status'],
+                  'time': data['lastMessageTime'] ?? data['createdAt'] ?? Timestamp.now(),
+                };
+              }
+            }
+          }
 
-          if (chatRequests.isEmpty) return _buildEmptyState();
+          var chatList = uniqueChats.values.toList();
+          chatList.sort((a, b) => (b['time'] as Timestamp).compareTo(a['time'] as Timestamp));
+
+          if (chatList.isEmpty) return _buildEmptyState();
 
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            itemCount: chatRequests.length,
+            itemCount: chatList.length,
             itemBuilder: (context, index) {
-              final req = chatRequests[index];
-              final data = req.data() as Map<String, dynamic>;
-              final isCurrentUserRequester = data['requesterId'] == currentUser.uid;
+              final chat = chatList[index];
               
-              // চ্যাটের অন্য প্রান্তের ইউজারের আইডি
-              final otherUserId = isCurrentUserRequester ? data['donorId'] : data['requesterId'];
-
               return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(otherUserId).get(),
+                future: FirebaseFirestore.instance.collection('users').doc(chat['otherUserId']).get(),
                 builder: (context, userSnap) {
                   if (!userSnap.hasData) return const SizedBox.shrink();
                   
@@ -83,16 +94,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   if (otherUserData == null) return const SizedBox.shrink();
                   
                   final otherUser = UserModel.fromMap(otherUserData);
-                  final hospitalName = (data['hospitalName'] ?? '').toString();
-                  final status = data['status'] ?? '';
 
                   if (_searchQuery.isNotEmpty && 
-                      !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase()) && 
-                      !hospitalName.toLowerCase().contains(_searchQuery.toLowerCase())) {
+                      !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase())) {
                     return const SizedBox.shrink();
                   }
 
-                  return _buildChatCard(context, req.id, otherUser, hospitalName, status, isCurrentUserRequester);
+                  return _buildChatCard(context, chat['requestId'], otherUser, chat['hospitalName'], chat['status']);
                 },
               );
             },
@@ -107,7 +115,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: TextField(
         decoration: InputDecoration(
-          hintText: 'নাম বা হাসপাতালের নাম দিয়ে খুঁজুন...',
+          hintText: 'নাম দিয়ে চ্যাট খুঁজুন...',
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
           prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
           filled: true,
@@ -120,7 +128,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  Widget _buildChatCard(BuildContext context, String requestId, UserModel otherUser, String hospital, String status, bool isRequester) {
+  Widget _buildChatCard(BuildContext context, String requestId, UserModel otherUser, String hospital, String status) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -132,40 +140,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
         contentPadding: const EdgeInsets.all(12),
         leading: GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))),
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Colors.red.shade50,
-                backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
-                child: otherUser.profileImageUrl == null ? const Icon(Icons.person_rounded, color: Colors.red) : null,
-              ),
-              Positioned(
-                right: 0, bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  child: Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 16),
-                ),
-              ),
-            ],
+          child: CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.red.shade50,
+            backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
+            child: otherUser.profileImageUrl == null ? const Icon(Icons.person_rounded, color: Colors.red) : null,
           ),
         ),
-        title: GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))),
-          child: Row(
-            children: [
-              Expanded(child: Text(otherUser.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-              _buildStatusChip(status),
-            ],
-          ),
-        ),
+        title: Text(otherUser.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
             Text(hospital, style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(isRequester ? 'আপনার রক্তদাতা' : 'রক্তের আবেদনকারী', style: TextStyle(color: Colors.red.shade300, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text('র‍্যাঙ্ক: ${otherUser.rank}', style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
           ],
         ),
         trailing: IconButton(
@@ -176,19 +164,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  Widget _buildStatusChip(String status) {
-    Color color = Colors.orange;
-    if (status == 'accepted') color = Colors.blue;
-    if (status == 'donated') color = Colors.purple;
-    if (status == 'completed') color = Colors.green;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
-    );
-  }
-
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -196,7 +171,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         children: [
           Icon(Icons.chat_bubble_outline_rounded, size: 80, color: Colors.grey.shade200),
           const SizedBox(height: 16),
-          Text('এখনো কোন চ্যাট শুরু হয়নি', style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
+          Text('এখনো কোনো চ্যাট শুরু হয়নি', style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

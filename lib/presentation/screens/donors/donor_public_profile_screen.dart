@@ -1,10 +1,11 @@
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
-import '../profile/reviews_list_screen.dart'; // Added import
+import '../profile/reviews_list_screen.dart';
 
 class DonorPublicProfileScreen extends StatelessWidget {
   final UserModel donor;
@@ -14,6 +15,21 @@ class DonorPublicProfileScreen extends StatelessWidget {
   Future<void> _makeCall(String phone) async {
     final Uri url = Uri(scheme: 'tel', path: phone);
     try { await launchUrl(url, mode: LaunchMode.externalApplication); } catch (e) { debugPrint("Call Error: $e"); }
+  }
+
+  Future<void> _openWhatsApp(String? phone) async {
+    if (phone == null || phone.isEmpty) return;
+    // Clean phone number
+    String cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!cleanPhone.startsWith('88')) {
+      cleanPhone = '88$cleanPhone';
+    }
+    final Uri url = Uri.parse("https://wa.me/$cleanPhone");
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("WhatsApp Error: $e");
+    }
   }
 
   @override
@@ -196,23 +212,40 @@ class DonorPublicProfileScreen extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => _makeCall(donor.phone),
-            icon: const Icon(Icons.call_rounded),
-            label: const Text('কল করুন'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _makeCall(donor.phone),
+                icon: const Icon(Icons.call_rounded),
+                label: const Text('কল করুন'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${donor.uid}', otherUserName: donor.name))),
+                icon: const Icon(Icons.chat_bubble_rounded),
+                label: const Text('মেসেজ দিন'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${donor.uid}', otherUserName: donor.name))),
-            icon: const Icon(Icons.chat_bubble_rounded),
-            label: const Text('মেসেজ দিন'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () => _openWhatsApp(donor.whatsappNumber ?? donor.phone),
+          icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.white),
+          label: const Text('হোয়াটসঅ্যাপে মেসেজ দিন'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF25D366),
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
           ),
         ),
       ],

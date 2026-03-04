@@ -13,6 +13,7 @@ class BloodRequestModel {
   final String patientProblem;
   final String description; 
   final String phoneNumber;
+  final String? whatsappNumber;
   final String division;
   final String district;
   final String thana;
@@ -38,6 +39,7 @@ class BloodRequestModel {
     required this.patientProblem,
     required this.description,
     required this.phoneNumber,
+    this.whatsappNumber,
     required this.division,
     required this.district,
     required this.thana,
@@ -65,6 +67,7 @@ class BloodRequestModel {
       patientProblem: map['patientProblem'] ?? '',
       description: map['description'] ?? '',
       phoneNumber: map['phoneNumber'] ?? '',
+      whatsappNumber: map['whatsappNumber'],
       division: map['division'] ?? '',
       district: map['district'] ?? '',
       thana: map['thana'] ?? '',
@@ -92,6 +95,7 @@ class BloodRequestModel {
       'patientProblem': patientProblem,
       'description': description,
       'phoneNumber': phoneNumber,
+      'whatsappNumber': whatsappNumber,
       'division': division,
       'district': district,
       'thana': thana,

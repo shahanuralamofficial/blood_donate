@@ -18,6 +18,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _whatsappController;
   late TextEditingController _emailController;
   
   String? _selectedBloodGroup;
@@ -35,6 +36,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.user.name);
     _phoneController = TextEditingController(text: widget.user.phone);
+    _whatsappController = TextEditingController(text: widget.user.whatsappNumber ?? widget.user.phone);
     _emailController = TextEditingController(text: widget.user.email);
     _selectedBloodGroup = widget.user.bloodGroup;
     _selectedGender = widget.user.gender;
@@ -49,6 +51,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _whatsappController.dispose();
     _emailController.dispose();
     super.dispose();
   }
@@ -62,6 +65,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).update({
         'name': _nameController.text.trim(),
         'phone': _phoneController.text.trim(),
+        'whatsappNumber': _whatsappController.text.trim().isEmpty ? _phoneController.text.trim() : _whatsappController.text.trim(),
         'email': _emailController.text.trim(),
         'bloodGroup': _selectedBloodGroup,
         'gender': _selectedGender,
@@ -106,6 +110,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               _buildTextField('পুরো নাম', _nameController, Icons.person_outline),
               const SizedBox(height: 20),
               _buildTextField('মোবাইল নম্বর', _phoneController, Icons.phone_outlined, isPhone: true),
+              const SizedBox(height: 20),
+              _buildTextField('হোয়াটসঅ্যাপ নম্বর', _whatsappController, Icons.chat_bubble_outline, isPhone: true),
               const SizedBox(height: 20),
               _buildTextField('ইমেইল', _emailController, Icons.email_outlined),
               const SizedBox(height: 24),

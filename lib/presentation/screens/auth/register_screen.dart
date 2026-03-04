@@ -16,6 +16,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _whatsappController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _selectedBloodGroup;
   bool _isLoading = false;
@@ -37,6 +38,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
+        whatsappNumber: _whatsappController.text.trim().isEmpty ? _phoneController.text.trim() : _whatsappController.text.trim(),
         role: 'user', 
         bloodGroup: _selectedBloodGroup, // ব্লাড গ্রুপ এখানে পাস করা হয়েছে
       );
@@ -106,6 +108,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'ফোন নম্বর', prefixIcon: Icon(Icons.phone_outlined)),
                 validator: (v) => v!.isEmpty ? 'ফোন নম্বর লিখুন' : null,
+              ),
+              const SizedBox(height: 20),
+              
+              TextFormField(
+                controller: _whatsappController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'হোয়াটসঅ্যাপ নম্বর (ঐচ্ছিক)', 
+                  prefixIcon: Icon(Icons.chat_bubble_outline),
+                  hintText: 'খালি রাখলে ফোন নম্বরটিই ব্যবহৃত হবে',
+                ),
               ),
               const SizedBox(height: 20),
               
