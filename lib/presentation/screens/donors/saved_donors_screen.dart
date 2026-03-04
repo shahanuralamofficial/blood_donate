@@ -65,7 +65,20 @@ class SavedDonorsScreen extends ConsumerWidget {
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-                final docs = snapshot.data!.docs;
+                final docs = snapshot.data!.docs.where((doc) => doc.id != userData?.uid).toList();
+
+                if (docs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        Text('এখনো কাউকে সেভ করেননি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                      ],
+                    ),
+                  );
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
