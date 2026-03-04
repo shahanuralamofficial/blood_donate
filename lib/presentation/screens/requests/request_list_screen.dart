@@ -263,19 +263,32 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.location_on_rounded, size: 12, color: Colors.grey.shade400),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${req.thana}, ${req.district}',
-                                style: GoogleFonts.notoSansBengali(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 11,
+                            Row(
+                              children: [
+                                Icon(Icons.location_on_rounded, size: 14, color: Colors.grey.shade400),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${req.thana}, ${req.district}',
+                                  style: GoogleFonts.notoSansBengali(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                                overflow: TextOverflow.ellipsis,
+                              ],
+                            ),
+                            GestureDetector(
+                              onTap: () => _launchMapUrl(req.mapUrl ?? req.hospitalName),
+                              child: Text(
+                                'ম্যাপ দেখুন',
+                                style: GoogleFonts.notoSansBengali(
+                                  color: Colors.blue.shade700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -283,6 +296,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
