@@ -108,7 +108,7 @@ class ReportService {
   pw.Widget _buildTable(List<BloodRequestModel> items, {required bool isDonation, required pw.Font font}) {
     if (items.isEmpty) return pw.Text('কোন তথ্য পাওয়া যায়নি (No records found).');
 
-    return pw.Table.fromTextArray(
+    return pw.TableHelper.fromTextArray(
       headers: ['তারিখ (Date)', 'গ্রুপ (Group)', 'হাসপাতাল (Hospital)', 'ব্যাগ (Bags)'],
       data: items.map((item) => [
         DateFormat('dd/MM/yyyy').format(item.requiredDate ?? item.createdAt ?? DateTime.now()),
