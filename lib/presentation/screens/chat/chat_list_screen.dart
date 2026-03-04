@@ -134,31 +134,149 @@ class _ChatListScreenState extends State<ChatListScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade100),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))),
-          child: CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.red.shade50,
-            backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
-            child: otherUser.profileImageUrl == null ? const Icon(Icons.person_rounded, color: Colors.red) : null,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                requestId: requestId,
+                otherUserName: otherUser.name,
+              ),
+            ),
+          ),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DonorPublicProfileScreen(donor: otherUser),
+                    ),
+                  ),
+                  child: Hero(
+                    tag: 'chat_avatar_${otherUser.uid}',
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.red.shade100, width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.red.shade50,
+                        backgroundImage: otherUser.profileImageUrl != null
+                            ? NetworkImage(otherUser.profileImageUrl!)
+                            : null,
+                        child: otherUser.profileImageUrl == null
+                            ? const Icon(Icons.person_rounded, color: Colors.red)
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              otherUser.name,
+                              style: GoogleFonts.notoSansBengali(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          _buildStatusBadge(status),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hospital,
+                        style: GoogleFonts.notoSansBengali(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            otherUser.rank,
+                            style: GoogleFonts.poppins(
+                              color: Colors.amber.shade800,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Colors.grey.shade300,
+                ),
+              ],
+            ),
           ),
         ),
-        title: Text(otherUser.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(hospital, style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text('র‍্যাঙ্ক: ${otherUser.rank}', style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.chat_bubble_rounded, color: Colors.blue, size: 24),
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: requestId, otherUserName: otherUser.name))),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color = Colors.blue;
+    String text = status.toUpperCase();
+
+    if (status == 'completed') {
+      color = Colors.green;
+      text = 'সফল';
+    } else if (status == 'donated') {
+      color = Colors.orange;
+      text = 'রক্তদান';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.notoSansBengali(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

@@ -104,45 +104,105 @@ class NotificationScreen extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: Colors.red.shade100, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: isRead ? Colors.white : Colors.red.withOpacity(0.03),
+          color: isRead ? Colors.white : const Color(0xFFFFEBEE).withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(20),
-          border: isRead ? Border.all(color: Colors.grey.shade100) : Border.all(color: Colors.red.shade100, width: 1),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          border: Border.all(
+            color: isRead ? Colors.grey.shade100 : Colors.red.shade100,
+            width: isRead ? 1 : 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: ListTile(
-          onTap: () {
-            FirebaseFirestore.instance.collection('users').doc(userId).collection('notifications').doc(docId).update({'isRead': true});
-            // এখানে আপনি চাইলে নির্দিষ্ট পেজে নেভিগেট করার লজিক দিতে পারেন
-          },
-          contentPadding: const EdgeInsets.all(12),
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-          title: Text(
-            data['title'] ?? 'নতুন নোটিফিকেশন',
-            style: TextStyle(fontWeight: isRead ? FontWeight.normal : FontWeight.bold, fontSize: 15, color: Colors.black87),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(data['body'] ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
-              const SizedBox(height: 8),
-              Text(
-                time != null ? DateFormat('hh:mm a, dd MMM').format(time) : '',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              FirebaseFirestore.instance.collection('users').doc(userId).collection('notifications').doc(docId).update({'isRead': true});
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: iconColor, size: 22),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                data['title'] ?? 'নতুন নোটিফিকেশন',
+                                style: GoogleFonts.notoSansBengali(
+                                  fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            if (!isRead)
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          data['body'] ?? '',
+                          style: GoogleFonts.notoSansBengali(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade400),
+                            const SizedBox(width: 4),
+                            Text(
+                              time != null ? DateFormat('hh:mm a, dd MMM').format(time) : '',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey.shade400,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          trailing: !isRead ? Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)) : null,
         ),
       ),
     );
