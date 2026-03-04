@@ -1,5 +1,4 @@
 <p align="center">
-  <!-- <img src="assets/logo.png" alt="Blood Donate Logo" width="120"/> -->
   <h1 align="center">Blood Donate 🩸</h1>
 </p>
 
@@ -18,9 +17,9 @@
 ## 📜 Table of Contents
 - [About The Project](#about-the-project)
 - [✨ Key Features](#-key-features)
+- [🏅 Gamification & Ranks](#-gamification--ranks)
 - [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
 - [🚀 Getting Started](#-getting-started)
-- [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
 ## About The Project
@@ -35,10 +34,21 @@
 | **Smart Donor/Patient Search**| Find donors or active requests using filters for blood group and location.                                                                |
 | **In-App Messaging**          | Secure real-time chat between donors and patients with real user names and profile pictures.                                               |
 | **Push Notifications**        | A professional notification center with alerts for nearby requests, messages, and donation status updates.                                 |
-| **PDF Report Generation**     | Download a professional donation history report with **100% correct Bengali typography** support.                                        |
-| **Gamification & Ranks**      | A dynamic user ranking system (Newbie, Bronze, Silver, etc.) to motivate and reward active donors.                                         |
+| **PDF Report Generation**     | Download a professional donation history report with **100% correct Bengali typography** (Jukto-borno) support using HTML rendering.      |
 | **Public Profiles & Reviews** | Donors have public profiles with their rank, donation stats, and ratings from patients to build trust.                                   |
-| **Modern & Professional UI**  | A "Premium" feel with clean cards, smooth animations, and a user-friendly design.                                                        |
+| **Donor Appreciation**        | A special celebration system that triggers a dialog and badges when a donor completes a donation and level up.                          |
+| **Privacy & Security**        | Only owners can see their "Thank You Notes," while "Reviews" are public to maintain a transparent and respectful community.               |
+
+## 🏅 Gamification & Ranks
+
+The app motivates donors through a dynamic ranking system based on their self-donation count:
+
+- 🌱 **Newbie**: Starting point (0 donations)
+- 🥉 **Bronze**: 1+ Donations
+- 🥈 **Silver**: 5+ Donations
+- 🥇 **Gold**: 15+ Donations
+- 💎 **Platinum**: 30+ Donations
+- 👑 **Diamond**: 50+ Donations
 
 ## 🛠️ Tech Stack & Architecture
 
@@ -49,7 +59,7 @@ This project is built with a modern and scalable tech stack to ensure a high-qua
 | **Framework**        | [Flutter](https://flutter.dev/)                                                                             |
 | **Backend**          | [Firebase](https://firebase.google.com/) (Auth, Firestore, Cloud Messaging, Storage)                         |
 | **State Management** | [Riverpod](https://riverpod.dev/)                                                                           |
-| **Services**         | Geolocator, Geocoding, Permission Handler, Path Provider                                                    |
+| **Typography**       | Google Fonts (Noto Sans Bengali) for professional report aesthetics.                                        |
 | **Reporting**        | [Printing](https://pub.dev/packages/printing) (HTML-to-PDF engine for perfect Bengali rendering)            |
 
 ### Project Structure
@@ -59,11 +69,11 @@ lib/
 │   ├── services/         # Notification, Location, Report (PDF) services
 │   └── theme/            # Professional App Theme
 ├── data/
-│   ├── models/           # User, Donor, Request, Message models
+│   ├── models/           # User, Request, Message models
 │   └── repositories/     # Firebase implementation logic
 └── presentation/
     ├── providers/        # Riverpod state providers
-    └── screens/          # All UI screens for each feature
+    └── screens/          # All UI screens (Home, Profile, Requests, etc.)
 ```
 
 ## 🚀 Getting Started
@@ -89,22 +99,13 @@ Follow these instructions to get a copy of the project up and running on your lo
 3. **Firebase Setup:**
    - Create a new Firebase project.
    - Add Android/iOS apps in Firebase Console.
-   - Download and place `google-services.json` in `android/app/`.
+   - Place `google-services.json` in `android/app/`.
    - Enable **Email/Phone Auth**, **Firestore**, and **Storage**.
 
 4. **Run the app:**
    ```bash
    flutter run
    ```
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## 📄 License
 
