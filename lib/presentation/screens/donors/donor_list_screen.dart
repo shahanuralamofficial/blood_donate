@@ -107,7 +107,13 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
 
                     final name = (item['user'].name ?? '').toString().toLowerCase();
                     final bg = (item['user'].bloodGroup ?? '').toString().toLowerCase();
-                    return name.contains(_searchQuery) || bg.contains(_searchQuery);
+                    final district = (item['user'].address?['district'] ?? '').toString().toLowerCase();
+                    final thana = (item['user'].address?['thana'] ?? '').toString().toLowerCase();
+
+                    return name.contains(_searchQuery) ||
+                        bg.contains(_searchQuery) ||
+                        district.contains(_searchQuery) ||
+                        thana.contains(_searchQuery);
                   }).toList();
 
                   if (filteredDonors.isEmpty) {

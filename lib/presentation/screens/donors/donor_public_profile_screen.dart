@@ -1,20 +1,47 @@
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/user_model.dart';
+import '../../providers/auth_provider.dart';
 import '../chat/chat_screen.dart';
 import '../profile/reviews_list_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class DonorPublicProfileScreen extends StatelessWidget {
+class DonorPublicProfileScreen extends ConsumerWidget {
   final UserModel donor;
 
   const DonorPublicProfileScreen({super.key, required this.donor});
 
   Future<void> _makeCall(String phone) async {
     final Uri url = Uri(scheme: 'tel', path: phone);
-    try { await launchUrl(url, mode: LaunchMode.externalApplication); } catch (e) { debugPrint("Call Error: $e"); }
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("Call Error: $e");
+    }
+  }
+
+  Future<void> _toggleSaveDonor(
+    WidgetRef ref,
+    String donorId,
+    String currentUserId,
+    List<String> currentlySaved,
+  ) async {
+    List<String> newList = List.from(currentlySaved);
+    if (newList.contains(donorId)) {
+      newList.remove(donorId);
+    } else {
+      newList.add(donorId);
+    }
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .update({'savedDonors': newList});
+    ref.invalidate(currentUserDataProvider);
   }
 
   Future<void> _openWhatsApp(String? phone) async {
@@ -33,7 +60,12 @@ class DonorPublicProfileScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserDataProvider).value;
+    final isMe = currentUser?.uid == donor.uid;
+    final savedDonors = currentUser?.savedDonors ?? [];
+    final isSaved = savedDonors.contains(donor.uid);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
@@ -41,6 +73,21 @@ class DonorPublicProfileScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        actions: [
+          if (!isMe)
+            IconButton(
+              icon: Icon(
+                isSaved ? Icons.favorite : Icons.favorite_border,
+                color: Colors.orange,
+              ),
+              onPressed: () => _toggleSaveDonor(
+                ref,
+                donor.uid,
+                currentUser!.uid,
+                savedDonors,
+              ),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -57,7 +104,7 @@ class DonorPublicProfileScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildReviewCard(context), // Added Review Card
                   const SizedBox(height: 32),
-                  _buildActionButtons(context),
+                  _buildActionButtons(context, isMe: isMe),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -263,7 +310,8 @@ class DonorPublicProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, {bool isMe = false}) {
+    if (isMe) return const SizedBox.shrink();
     return Column(
       children: [
         Row(
