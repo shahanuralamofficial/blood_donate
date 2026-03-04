@@ -115,7 +115,13 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
         border: isUrgent ? Border.all(color: Colors.red.shade100, width: 1.5) : null,
       ),
       child: Column(
@@ -126,48 +132,169 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
               children: [
                 GestureDetector(
                   onTap: () => _navigateToRequesterProfile(context, req.requesterId),
-                  child: CircleAvatar(radius: 14, backgroundColor: Colors.grey.shade200, child: const Icon(Icons.person, size: 16, color: Colors.grey)),
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person, size: 14, color: Colors.blue.shade700),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => _navigateToRequesterProfile(context, req.requesterId),
-                  child: Text('আবেদনকারী দেখুন', style: TextStyle(color: Colors.blue.shade700, fontSize: 11, fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                  child: Text(
+                    'আবেদনকারী প্রোফাইল',
+                    style: GoogleFonts.notoSansBengali(
+                      color: Colors.blue.shade700,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 const Spacer(),
-                Text(DateFormat('dd MMM').format(req.createdAt ?? DateTime.now()), style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
+                Text(
+                  DateFormat('dd MMM, hh:mm a').format(req.createdAt ?? DateTime.now()),
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey.shade400,
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
           ),
-          const Divider(height: 20, thickness: 0.5),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(height: 20, thickness: 0.5),
+          ),
           InkWell(
-            borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
+            ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
                 children: [
                   Container(
-                    width: 56, height: 56,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
-                      gradient: isUrgent ? LinearGradient(colors: [Colors.red, Colors.red.shade800]) : LinearGradient(colors: [Colors.red.shade50, Colors.red.shade100]),
-                      borderRadius: BorderRadius.circular(18),
+                      gradient: isUrgent
+                          ? LinearGradient(colors: [Colors.red.shade400, Colors.red.shade700])
+                          : LinearGradient(colors: [Colors.red.shade50, Colors.red.shade100]),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: isUrgent
+                          ? [
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ]
+                          : null,
                     ),
-                    child: Center(child: Text(req.bloodGroup, style: TextStyle(color: isUrgent ? Colors.white : Colors.red, fontWeight: FontWeight.bold, fontSize: 20))),
+                    child: Center(
+                      child: Text(
+                        req.bloodGroup,
+                        style: TextStyle(
+                          color: isUrgent ? Colors.white : Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(children: [Flexible(child: Text(req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))), if (isUrgent) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)), child: const Text('জরুরি', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)))]]),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName,
+                                style: GoogleFonts.notoSansBengali(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isUrgent) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade600,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'জরুরি',
+                                  style: GoogleFonts.notoSansBengali(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                         const SizedBox(height: 4),
-                        Text(req.hospitalName, style: TextStyle(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 2),
-                        Row(children: [const Icon(Icons.location_on_outlined, size: 12, color: Colors.grey), const SizedBox(width: 4), Text('${req.district}, ${req.thana}', style: TextStyle(color: Colors.grey.shade500, fontSize: 11))]),
+                        Text(
+                          req.hospitalName,
+                          style: GoogleFonts.notoSansBengali(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_rounded, size: 12, color: Colors.grey.shade400),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${req.thana}, ${req.district}',
+                                style: GoogleFonts.notoSansBengali(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  IconButton(icon: const Icon(Icons.map_rounded, color: Colors.blue, size: 22), onPressed: () => _launchMapUrl(req.mapUrl ?? req.hospitalName)),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.blue.shade700,
+                      size: 14,
+                    ),
+                  ),
                 ],
               ),
             ),
