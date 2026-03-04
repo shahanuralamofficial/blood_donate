@@ -116,7 +116,7 @@ class ReportService {
     }
   }
 
-  pw.Widget _buildTable(List<BloodRequestModel> items, bool isDonation, pw.Font font) {
+  pw.Widget _buildTable(List<BloodRequestModel> items, {required bool isDonation, required pw.Font font}) {
     if (items.isEmpty) return pw.Text('কোন তথ্য পাওয়া যায়নি (No records found).'.fix());
 
     return pw.TableHelper.fromTextArray(
