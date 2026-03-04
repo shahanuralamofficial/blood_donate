@@ -1113,18 +1113,22 @@ class RequestDetailsScreen extends ConsumerWidget {
     Color? color,
   }) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
-            color: color ?? Colors.black87,
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              fontSize: 14,
+              color: color ?? Colors.black87,
+            ),
           ),
         ),
       ],
