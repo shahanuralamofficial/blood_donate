@@ -21,9 +21,11 @@ class HistoryScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        backgroundColor: const Color(0xFFFAFAFB),
+        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text('ইতিহাস', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
+          title: Text('ইতিহাস',
+              style: GoogleFonts.notoSansBengali(
+                  fontWeight: FontWeight.bold, color: Colors.white)),
           backgroundColor: const Color(0xFFE53935),
           elevation: 0,
           actions: [
@@ -33,7 +35,7 @@ class HistoryScreen extends ConsumerWidget {
                 onPressed: () async {
                   final myRequests = myRequestsAsync.value ?? [];
                   final myDonations = myDonationsAsync.value ?? [];
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('রিপোর্ট তৈরি হচ্ছে...')),
                   );
@@ -47,7 +49,8 @@ class HistoryScreen extends ConsumerWidget {
                 },
                 tooltip: 'রিপোর্ট ডাউনলোড',
               ),
-            )
+            ),
+            const SizedBox(width: 8),
           ],
           bottom: TabBar(
             isScrollable: true,
@@ -57,8 +60,10 @@ class HistoryScreen extends ConsumerWidget {
             indicatorWeight: 3,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
-            labelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15),
-            unselectedLabelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.normal, fontSize: 14),
+            labelStyle: GoogleFonts.notoSansBengali(
+                fontWeight: FontWeight.bold, fontSize: 15),
+            unselectedLabelStyle: GoogleFonts.notoSansBengali(
+                fontWeight: FontWeight.normal, fontSize: 14),
             tabs: const [
               Tab(text: 'রক্তের আবেদন'),
               Tab(text: 'রক্ত পেয়েছি'),
@@ -69,24 +74,25 @@ class HistoryScreen extends ConsumerWidget {
         ),
         body: TabBarView(
           children: [
-            // ১. আমার আবেদন (Pending/Accepted)
-            _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'pending' || req.status == 'accepted' || req.status == 'donated'),
-            
-            // ২. রক্ত পেয়েছি (Completed)
-            _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'completed'),
-            
-            // ৩. আমার রক্তদান (Where you will find the Thank You Note)
+            _buildFilteredRequestList(
+                myRequestsAsync,
+                (req) =>
+                    req.status == 'pending' ||
+                    req.status == 'accepted' ||
+                    req.status == 'donated'),
+            _buildFilteredRequestList(
+                myRequestsAsync, (req) => req.status == 'completed'),
             _buildRequestList(myDonationsAsync),
-
-            // ৪. বাতিল করা আবেদন
-            _buildFilteredRequestList(myRequestsAsync, (req) => req.status == 'cancelled'),
+            _buildFilteredRequestList(
+                myRequestsAsync, (req) => req.status == 'cancelled'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilteredRequestList(AsyncValue myRequests, bool Function(dynamic) filter) {
+  Widget _buildFilteredRequestList(
+      AsyncValue myRequests, bool Function(dynamic) filter) {
     return myRequests.when(
       data: (requests) {
         final filteredList = requests.where(filter).toList();
@@ -94,12 +100,14 @@ class HistoryScreen extends ConsumerWidget {
           return _buildEmptyState(Icons.history_rounded, 'কোন তথ্য পাওয়া যায়নি');
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           itemCount: filteredList.length,
-          itemBuilder: (context, index) => _buildRequestCard(context, filteredList[index]),
+          itemBuilder: (context, index) =>
+              _buildRequestCard(context, filteredList[index]),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: Colors.red)),
       error: (e, s) => Center(child: Text('এরর: $e')),
     );
   }
@@ -108,15 +116,18 @@ class HistoryScreen extends ConsumerWidget {
     return myRequests.when(
       data: (requests) {
         if (requests.isEmpty) {
-          return _buildEmptyState(Icons.volunteer_activism_outlined, 'আপনি এখনো কোন রক্তদান করেননি');
+          return _buildEmptyState(
+              Icons.volunteer_activism_outlined, 'আপনি এখনো কোন রক্তদান করেননি');
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           itemCount: requests.length,
-          itemBuilder: (context, index) => _buildRequestCard(context, requests[index]),
+          itemBuilder: (context, index) =>
+              _buildRequestCard(context, requests[index]),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(color: Colors.red)),
       error: (e, s) => Center(child: Text('এরর: $e')),
     );
   }
@@ -126,9 +137,20 @@ class HistoryScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 80, color: Colors.grey.shade200),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 64, color: Colors.grey.shade300),
+          ),
           const SizedBox(height: 16),
-          Text(message, style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
+          Text(message,
+              style: GoogleFonts.notoSansBengali(
+                  color: Colors.grey.shade500,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -137,96 +159,214 @@ class HistoryScreen extends ConsumerWidget {
   Widget _buildRequestCard(BuildContext context, dynamic req) {
     bool isCompleted = req.status == 'completed';
     bool isCancelled = req.status == 'cancelled';
-    
+    bool isUrgent = req.isEmergency ?? false;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
         ],
-        border: isCompleted ? Border.all(color: Colors.green.withValues(alpha: 0.3), width: 1) : null,
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: isCancelled ? Colors.grey.shade100 : (isCompleted ? Colors.green.shade50 : const Color(0xFFFDECEA)), 
-            borderRadius: BorderRadius.circular(15)
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => RequestDetailsScreen(request: req)),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: isUrgent
+                            ? Colors.red
+                            : (isCancelled
+                                ? Colors.grey.shade100
+                                : (isCompleted
+                                    ? Colors.green.shade50
+                                    : const Color(0xFFFDECEA))),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          req.bloodGroup,
+                          style: TextStyle(
+                            color: isUrgent
+                                ? Colors.white
+                                : (isCancelled
+                                    ? Colors.grey
+                                    : (isCompleted
+                                        ? Colors.green
+                                        : const Color(0xFFE53935))),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  req.patientName.isEmpty
+                                      ? req.hospitalName
+                                      : req.patientName,
+                                  style: GoogleFonts.notoSansBengali(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: isCancelled
+                                        ? Colors.grey
+                                        : Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (isUrgent) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade600,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'জরুরি',
+                                    style: GoogleFonts.notoSansBengali(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            req.hospitalName,
+                            style: GoogleFonts.notoSansBengali(
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildStatusBadge(req.status),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, thickness: 0.5),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today_rounded,
+                            size: 14, color: Colors.grey.shade400),
+                        const SizedBox(width: 6),
+                        Text(
+                          DateFormat('dd MMM yyyy')
+                              .format(req.requiredDate ?? DateTime.now()),
+                          style: GoogleFonts.notoSansBengali(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded,
+                            size: 14, color: Colors.grey.shade400),
+                        const SizedBox(width: 4),
+                        Text(
+                          req.district ?? '',
+                          style: GoogleFonts.notoSansBengali(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          child: Center(
-            child: Text(
-              req.bloodGroup, 
-              style: TextStyle(
-                color: isCancelled ? Colors.grey : (isCompleted ? Colors.green : const Color(0xFFE53935)), 
-                fontWeight: FontWeight.bold, 
-                fontSize: 18
-              )
-            )
-          ),
         ),
-        title: Text(
-          req.patientName.isEmpty ? req.hospitalName : req.patientName, 
-          style: GoogleFonts.notoSansBengali(
-            fontWeight: FontWeight.bold, 
-            fontSize: 16, 
-            color: isCancelled ? Colors.grey : Colors.black87
-          )
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(req.hospitalName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 2),
-            Text('তারিখ: ${DateFormat('dd MMM yyyy').format(req.requiredDate ?? DateTime.now())}', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
-          ],
-        ),
-        trailing: _buildStatusChip(req.status),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
-          );
-        },
       ),
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusBadge(String status) {
     Color color = Colors.orange;
     String text = status;
-    IconData icon = Icons.timer_rounded;
 
     switch (status) {
-      case 'completed': 
-        color = Colors.green; text = 'সম্পন্ন'; icon = Icons.check_circle_rounded; break;
-      case 'accepted': 
-        color = Colors.blue; text = 'গৃহীত'; icon = Icons.handshake_rounded; break;
-      case 'donated': 
-        color = Colors.purple; text = 'দান করেছেন'; icon = Icons.volunteer_activism_rounded; break;
-      case 'pending': 
-        color = Colors.orange; text = 'অপেক্ষমান'; icon = Icons.hourglass_empty_rounded; break;
-      case 'cancelled': 
-        color = Colors.red; text = 'বাতিল'; icon = Icons.cancel_rounded; break;
+      case 'completed':
+        color = Colors.green;
+        text = 'সম্পন্ন';
+        break;
+      case 'accepted':
+        color = Colors.blue;
+        text = 'গৃহীত';
+        break;
+      case 'donated':
+        color = Colors.purple;
+        text = 'দান করেছেন';
+        break;
+      case 'pending':
+        color = Colors.orange;
+        text = 'অপেক্ষমান';
+        break;
+      case 'cancelled':
+        color = Colors.red;
+        text = 'বাতিল';
+        break;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 12),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: GoogleFonts.notoSansBengali(color: color, fontSize: 11, fontWeight: FontWeight.bold),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.notoSansBengali(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
