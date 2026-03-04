@@ -20,6 +20,7 @@ class BloodRequestModel {
   final String union;
   final int bloodBags;
   final int donatedBags;
+  final String? donationType; // 'self' or 'arranged'
   final String? donatedBy; 
   final String? mapUrl;
   final String? thankYouNote; // নতুন: রক্তদাতার জন্য ধন্যবাদ বার্তা
@@ -102,6 +103,7 @@ class BloodRequestModel {
       'union': union,
       'bloodBags': bloodBags,
       'donatedBags': donatedBags,
+      'donationType': donationType,
       'donatedBy': donatedBy,
       'mapUrl': mapUrl,
       'thankYouNote': thankYouNote,

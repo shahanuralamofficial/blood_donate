@@ -283,6 +283,7 @@ class RequestDetailsScreen extends ConsumerWidget {
     String donorName,
   ) {
     int bagsToDonate = 1;
+    String donationType = 'self'; // 'self' or 'arranged'
     int remainingBags = req.bloodBags - req.donatedBags;
     if (remainingBags <= 0) remainingBags = 1;
 
@@ -294,9 +295,10 @@ class RequestDetailsScreen extends ConsumerWidget {
         content: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('আপনি ${req.patientName}-কে কয় ব্যাগ রক্ত দিতে পারবেন?'),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               DropdownButton<int>(
                 value: bagsToDonate,
                 isExpanded: true,
@@ -308,6 +310,25 @@ class RequestDetailsScreen extends ConsumerWidget {
                     .toList(),
                 onChanged: (v) => setState(() => bagsToDonate = v!),
               ),
+              const SizedBox(height: 20),
+              const Text(
+                'রক্তদানের ধরণ:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              RadioListTile<String>(
+                title: const Text('আমি নিজে দেব'),
+                value: 'self',
+                groupValue: donationType,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) => setState(() => donationType = v!),
+              ),
+              RadioListTile<String>(
+                title: const Text('আমি ম্যানেজ করে দেব'),
+                value: 'arranged',
+                groupValue: donationType,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) => setState(() => donationType = v!),
+              ),
             ],
           ),
         ),
@@ -318,13 +339,21 @@ class RequestDetailsScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              await ref
-                  .read(bloodRequestRepositoryProvider)
-                  .acceptRequest(req.requestId, donorId);
+              await FirebaseFirestore.instance
+                  .collection('blood_requests')
+                  .doc(req.requestId)
+                  .update({
+                'donorId': donorId,
+                'status': 'accepted',
+                'donationType': donationType,
+              });
+
               NotificationService().sendNotificationToUser(
                 receiverId: req.requesterId,
                 title: 'রক্তদাতা পাওয়া গেছে!',
-                body: '$donorName $bagsToDonate ব্যাগ রক্ত দিতে রাজি হয়েছেন।',
+                body: donationType == 'self'
+                    ? '$donorName নিজে $bagsToDonate ব্যাগ রক্ত দিতে রাজি হয়েছেন।'
+                    : '$donorName $bagsToDonate ব্যাগ রক্ত ম্যানেজ করে দিতে রাজি হয়েছেন।',
               );
               if (context.mounted) {
                 Navigator.pop(context);
@@ -349,6 +378,7 @@ class RequestDetailsScreen extends ConsumerWidget {
     String requesterName,
   ) {
     int receivedBags = 1;
+    String donationType = req.donationType ?? 'self';
     final thankYouController = TextEditingController();
     int maxCanReceive = req.bloodBags - req.donatedBags;
     if (maxCanReceive <= 0) maxCanReceive = 1;
@@ -381,6 +411,25 @@ class RequestDetailsScreen extends ConsumerWidget {
                       )
                       .toList(),
                   onChanged: (v) => setState(() => receivedBags = v!),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'রক্তদাতা কি নিজে রক্ত দিয়েছেন?',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                RadioListTile<String>(
+                  title: const Text('নিজে দিয়েছেন'),
+                  value: 'self',
+                  groupValue: donationType,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (v) => setState(() => donationType = v!),
+                ),
+                RadioListTile<String>(
+                  title: const Text('ম্যানেজ করে দিয়েছেন'),
+                  value: 'arranged',
+                  groupValue: donationType,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (v) => setState(() => donationType = v!),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -421,6 +470,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 'status': newStatus,
                 'thankYouNote': thankYouController.text.trim(),
                 'donorId': isFullyCompleted ? req.donorId : null,
+                'donationType': donationType,
               });
 
               if (req.donorId != null) {
@@ -433,39 +483,45 @@ class RequestDetailsScreen extends ConsumerWidget {
                 if (donorDoc.exists) {
                   final donorData = donorDoc.data()!;
                   int currentDonations = donorData['totalDonations'] ?? 0;
-                  int newTotalDonations = currentDonations + receivedBags;
-
-                  String newRank = 'Newbie';
-                  List<String> newBadges = List<String>.from(donorData['badges'] ?? []);
                   
-                  if (newTotalDonations >= 50) {
-                    newRank = 'Diamond';
-                  } else if (newTotalDonations >= 30) {
-                    newRank = 'Platinum';
-                  } else if (newTotalDonations >= 15) {
-                    newRank = 'Gold';
-                  } else if (newTotalDonations >= 5) {
-                    newRank = 'Silver';
-                  } else if (newTotalDonations >= 1) {
-                    newRank = 'Bronze';
-                  }
+                  // Only increment donation count and update rank if it was 'self' donation
+                  if (donationType == 'self') {
+                    int newTotalDonations = currentDonations + receivedBags;
+                    String newRank = 'Newbie';
+                    List<String> newBadges = List<String>.from(donorData['badges'] ?? []);
+                    
+                    if (newTotalDonations >= 50) {
+                      newRank = 'Diamond';
+                    } else if (newTotalDonations >= 30) {
+                      newRank = 'Platinum';
+                    } else if (newTotalDonations >= 15) {
+                      newRank = 'Gold';
+                    } else if (newTotalDonations >= 5) {
+                      newRank = 'Silver';
+                    } else if (newTotalDonations >= 1) {
+                      newRank = 'Bronze';
+                    }
 
-                  if (newRank != 'Newbie' && !newBadges.contains(newRank)) {
-                    newBadges.add(newRank);
-                  }
+                    if (newRank != 'Newbie' && !newBadges.contains(newRank)) {
+                      newBadges.add(newRank);
+                    }
 
-                  batch.update(
-                    FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(req.donorId),
-                    {
-                      'totalDonations': newTotalDonations,
-                      'rank': newRank,
-                      'badges': newBadges,
-                      'rankUpdatePending': true,
-                      'lastDonationDate': FieldValue.serverTimestamp(),
-                    },
-                  );
+                    batch.update(
+                      FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(req.donorId),
+                      {
+                        'totalDonations': newTotalDonations,
+                        'rank': newRank,
+                        'badges': newBadges,
+                        'rankUpdatePending': true,
+                        'lastDonationDate': FieldValue.serverTimestamp(),
+                      },
+                    );
+                  } else {
+                    // If arranged, maybe just increment a different stat or do nothing to 'totalDonations'
+                    // For now, we update nothing for 'arranged' regarding donation counts to keep logic clean
+                  }
                 }
 
                 NotificationService().sendNotificationToUser(
