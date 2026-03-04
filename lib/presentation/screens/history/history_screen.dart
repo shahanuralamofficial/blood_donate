@@ -27,18 +27,25 @@ class HistoryScreen extends ConsumerWidget {
           backgroundColor: const Color(0xFFE53935),
           elevation: 0,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-              onPressed: () {
-                final myRequests = myRequestsAsync.value ?? [];
-                final myDonations = myDonationsAsync.value ?? [];
-                ReportService().generateDonationReport(
-                  userName: user.name,
-                  myRequests: myRequests,
-                  myDonations: myDonations,
-                );
-              },
-              tooltip: 'রিপোর্ট ডাউনলোড',
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
+                onPressed: () async {
+                  final myRequests = myRequestsAsync.value ?? [];
+                  final myDonations = myDonationsAsync.value ?? [];
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('রিপোর্ট তৈরি হচ্ছে...')),
+                  );
+
+                  await ReportService().generateDonationReport(
+                    userName: user.name,
+                    myRequests: myRequests,
+                    myDonations: myDonations,
+                  );
+                },
+                tooltip: 'রিপোর্ট ডাউনলোড',
+              ),
             )
           ],
           bottom: TabBar(
