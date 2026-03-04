@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  bangla_pdf_fixer:
+    dependency: "direct main"
+    description:
+      name: bangla_pdf_fixer
+      sha256: cf6d636a4662d7481f17a59ba6759a279ba2733b2eb78c1008e5d4059058096e
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   barcode:
     dependency: transitive
     description:
