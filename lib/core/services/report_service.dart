@@ -1,7 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
@@ -9,48 +8,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../data/models/blood_request_model.dart';
 
 class ReportService {
-  /// নিরাপদ ইউনিকোড শেপার যা পিডিএফে বাংলা কার-চিহ্নের অবস্থান ঠিক করবে।
-  /// এটি RangeError মুক্ত এবং যুক্তাক্ষর সাপোর্ট করে।
-  String _shapeBengali(String? text) {
-    if (text == null || text.isEmpty) return '';
-    
-    final hasBengali = RegExp(r'[\u0980-\u09FF]').hasMatch(text);
-    if (!hasBengali) return text;
-
-    try {
-      List<int> codeUnits = text.codeUnits;
-      List<int> result = [];
-
-      for (int i = 0; i < codeUnits.length; i++) {
-        int char = codeUnits[i];
-        
-        // 'ি' (09BF), 'ে' (09C7), 'ৈ' (09C8) চেক করা
-        if (char == 0x09BF || char == 0x09C7 || char == 0x09C8) {
-          if (result.isNotEmpty) {
-            int last = result.removeLast();
-            
-            // হসন্ত (09CD) থাকলে এটি যুক্তাক্ষর, আরও এক ধাপ পেছনে যেতে হবে
-            if (last == 0x09CD && result.isNotEmpty) {
-              int prevChar = result.removeLast();
-              result.add(char); // কার আগে আসবে
-              result.add(prevChar);
-              result.add(last);
-            } else {
-              result.add(char); // কার আগে আসবে
-              result.add(last);
-            }
-            continue;
-          }
-        }
-        result.add(char);
-      }
-      return String.fromCharCodes(result);
-    } catch (e) {
-      debugPrint('Shaping error: $e');
-      return text; // ভুল হলে মূল টেক্সট ফেরত দেবে
-    }
-  }
-
   Future<void> generateDonationReport({
     required BuildContext context,
     required String userName,
@@ -58,109 +15,194 @@ class ReportService {
     required List<BloodRequestModel> myDonations,
   }) async {
     try {
-      // অ্যান্ড্রয়েড ১৩+ এর জন্য পারমিশন চেক প্রয়োজন নেই, তবে নিচে এর জন্য হ্যান্ডেল করা আছে
+      // অ্যান্ড্রয়েড স্টোরেজ পারমিশন চেক
       if (Platform.isAndroid && (await Permission.storage.isDenied)) {
         await Permission.storage.request();
       }
 
-      final pdf = pw.Document();
-
-      // লোগো লোড
-      pw.MemoryImage? logoImage;
+      // অ্যাপ লোগোকে Base64 এ রূপান্তর (পিডিএফে দেখানোর জন্য)
+      String logoBase64 = "";
       try {
         final logoData = await rootBundle.load('assets/images/app_icon.png');
-        logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+        logoBase64 = base64Encode(logoData.buffer.asUint8List());
       } catch (e) {
-        debugPrint('Logo loading failed: $e');
+        debugPrint('Logo loading error: $e');
       }
 
-      // ফন্ট লোড (ইন্টারনেট কানেকশন প্রয়োজন)
-      final fontData = await PdfGoogleFonts.notoSansBengaliRegular();
-      final boldFontData = await PdfGoogleFonts.notoSansBengaliBold();
-
       final completedRequests = myRequests.where((r) => r.status == 'completed').toList();
+      final dateToday = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          theme: pw.ThemeData.withFont(
-            base: fontData,
-            bold: boldFontData,
-          ),
-          build: (pw.Context context) {
-            return [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(_shapeBengali('রক্তদান রিপোর্ট'), 
-                        style: pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)),
-                      pw.Text('Blood Donation Summary Report', 
-                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
-                    ],
-                  ),
-                  if (logoImage != null) pw.Image(logoImage, width: 50, height: 50),
-                ],
-              ),
-              pw.SizedBox(height: 10),
-              pw.Divider(thickness: 2, color: PdfColors.red800),
-              pw.SizedBox(height: 20),
-              
-              pw.Container(
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-                ),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Expanded(
-                      child: pw.Text('${_shapeBengali('দাতা')}: ${_shapeBengali(userName)}', 
-                        style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                    ),
-                    pw.Text('${_shapeBengali('তারিখ')}: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}', 
-                      style: const pw.TextStyle(fontSize: 12)),
-                  ],
-                ),
-              ),
-              
-              pw.SizedBox(height: 30),
-              
-              _buildSectionTitle('১. রক্ত গ্রহণ (Received Blood)'),
-              pw.SizedBox(height: 10),
-              _buildTable(completedRequests, isDonation: false, font: fontData),
+      // ১. রক্ত গ্রহণ টেবিলের ডাটা তৈরি
+      final receivedRows = completedRequests.isEmpty 
+        ? '<tr><td colspan="4" class="empty-msg">কোন রেকর্ড পাওয়া যায়নি</td></tr>'
+        : completedRequests.map((item) => """
+            <tr>
+                <td>${DateFormat('dd/MM/yyyy').format(item.requiredDate ?? item.createdAt ?? DateTime.now())}</td>
+                <td style="text-align: center">${item.bloodGroup}</td>
+                <td>${item.hospitalName}</td>
+                <td style="text-align: center">${item.donatedBags}/${item.bloodBags}</td>
+            </tr>
+          """).join();
 
-              pw.SizedBox(height: 30),
+      // ২. রক্ত দান টেবিলের ডাটা তৈরি
+      final donationRows = myDonations.isEmpty 
+        ? '<tr><td colspan="4" class="empty-msg">কোন রেকর্ড পাওয়া যায়নি</td></tr>'
+        : myDonations.map((item) => """
+            <tr>
+                <td>${DateFormat('dd/MM/yyyy').format(item.requiredDate ?? item.createdAt ?? DateTime.now())}</td>
+                <td style="text-align: center">${item.bloodGroup}</td>
+                <td>${item.hospitalName}</td>
+                <td style="text-align: center">১</td>
+            </tr>
+          """).join();
 
-              _buildSectionTitle('২. রক্ত প্রদান (Blood Donated)'),
-              pw.SizedBox(height: 10),
-              _buildTable(myDonations, isDonation: true, font: fontData),
+      // প্রফেশনাল HTML টেম্পলেট (যা বাংলা যুক্তাক্ষর ১০০% সঠিক দেখাবে)
+      final htmlContent = """
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #b71c1c;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+        .header-text h1 {
+            color: #b71c1c;
+            margin: 0;
+            font-size: 28px;
+        }
+        .header-text p {
+            margin: 0;
+            color: #666;
+            font-size: 12px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            border: 1px solid #eee;
+        }
+        .section-title {
+            border-left: 5px solid #b71c1c;
+            padding-left: 10px;
+            margin: 25px 0 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th {
+            background-color: #b71c1c;
+            color: white;
+            text-align: left;
+            padding: 10px;
+            font-size: 14px;
+        }
+        td {
+            border: 1px solid #eee;
+            padding: 10px;
+            font-size: 13px;
+        }
+        tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+        .footer {
+            margin-top: 50px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #888;
+        }
+        .empty-msg {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <div class="header-text">
+            <h1>রক্তদান রিপোর্ট</h1>
+            <p>Blood Donation Summary Report</p>
+        </div>
+        ${logoBase64.isNotEmpty ? '<img src="data:image/png;base64,$logoBase64" class="logo">' : ''}
+    </div>
 
-              pw.Spacer(),
-              pw.Divider(thickness: 0.5, color: PdfColors.grey400),
-              pw.SizedBox(height: 10),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(_shapeBengali('জীবন বাঁচুক রক্তদানে'),
-                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.red700)),
-                  pw.Text(_shapeBengali('সিস্টেম জেনারেটেড রিপোর্ট'),
-                    style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-                ],
-              ),
-            ];
-          },
-        ),
-      );
+    <div class="info-box">
+        <div><strong>দাতা:</strong> $userName</div>
+        <div><strong>তারিখ:</strong> $dateToday</div>
+    </div>
 
-      final bytes = await pdf.save();
-      
+    <div class="section-title">১. রক্ত গ্রহণ (Received Blood)</div>
+    <table>
+        <thead>
+            <tr>
+                <th>তারিখ</th>
+                <th style="text-align: center">গ্রুপ</th>
+                <th>হাসপাতাল</th>
+                <th style="text-align: center">ব্যাগ</th>
+            </tr>
+        </thead>
+        <tbody>
+            $receivedRows
+        </tbody>
+    </table>
+
+    <div class="section-title">২. রক্ত প্রদান (Blood Donated)</div>
+    <table>
+        <thead>
+            <tr>
+                <th>তারিখ</th>
+                <th style="text-align: center">গ্রুপ</th>
+                <th>হাসপাতাল</th>
+                <th style="text-align: center">ব্যাগ</th>
+            </tr>
+        </thead>
+        <tbody>
+            $donationRows
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div><em>"জীবন বাঁচুক রক্তদানে"</em></div>
+        <div>সিস্টেম জেনারেটেড রিপোর্ট - রক্তদান অ্যাপ</div>
+    </div>
+</body>
+</html>
+""";
+
+      // Printing প্যাকেজ ব্যবহার করে HTML-কে সরাসরি পিডিএফে রূপান্তর। 
+      // এটি ফোনের সিস্টেম ইঞ্জিন ব্যবহার করে, তাই বাংলা যুক্তাক্ষর ১০০% নিখুঁত হবে।
       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => bytes,
+        onLayout: (format) async => await Printing.convertHtml(
+          html: htmlContent,
+          format: format,
+        ),
         name: 'Blood_Report_${DateTime.now().millisecondsSinceEpoch}.pdf',
       );
 
@@ -168,60 +210,9 @@ class ReportService {
       debugPrint('PDF Generation Error: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'), 
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
-  }
-
-  pw.Widget _buildSectionTitle(String title) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.only(left: 5, bottom: 2),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(left: pw.BorderSide(color: PdfColors.red800, width: 4))
-      ),
-      child: pw.Text(_shapeBengali(title), 
-        style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
-    );
-  }
-
-  pw.Widget _buildTable(List<BloodRequestModel> items, {required bool isDonation, required pw.Font font}) {
-    if (items.isEmpty) {
-      return pw.Padding(
-        padding: const pw.EdgeInsets.symmetric(vertical: 10),
-        child: pw.Text(_shapeBengali('কোন রেকর্ড পাওয়া যায়নি'), 
-          style: const pw.TextStyle(color: PdfColors.grey500, fontSize: 12)),
-      );
-    }
-
-    return pw.TableHelper.fromTextArray(
-      headers: [
-        _shapeBengali('তারিখ'),
-        _shapeBengali('গ্রুপ'),
-        _shapeBengali('হাসপাতাল'),
-        _shapeBengali('ব্যাগ')
-      ],
-      data: items.map((item) => [
-        DateFormat('dd/MM/yyyy').format(item.requiredDate ?? item.createdAt ?? DateTime.now()),
-        item.bloodGroup, 
-        _shapeBengali(item.hospitalName),
-        isDonation ? '1' : '${item.donatedBags}/${item.bloodBags}',
-      ]).toList(),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: font, color: PdfColors.white, fontSize: 12),
-      cellStyle: pw.TextStyle(font: font, fontSize: 11),
-      headerDecoration: const pw.BoxDecoration(color: PdfColors.red800),
-      cellHeight: 35,
-      cellAlignments: {
-        0: pw.Alignment.centerLeft,
-        1: pw.Alignment.center,
-        2: pw.Alignment.centerLeft,
-        3: pw.Alignment.center,
-      },
-      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-    );
   }
 }
