@@ -28,6 +28,7 @@ class BloodRequestModel {
   final String? donorExperience; // দাতা থেকে রিকোয়েস্টারের জন্য রিভিউ
   final DateTime? requiredDate;
   final DateTime? createdAt;
+  final DateTime? completedAt; // রক্তদান সম্পন্ন হওয়ার তারিখ
 
   BloodRequestModel({
     required this.requestId,
@@ -56,7 +57,7 @@ class BloodRequestModel {
     this.donorExperience,
     this.requiredDate,
     this.createdAt,
-    this.donationType,
+    this.donationType, this.completedAt,
   });
 
   factory BloodRequestModel.fromMap(Map<String, dynamic> map, String id) {
@@ -88,6 +89,7 @@ class BloodRequestModel {
       donorExperience: map['donorExperience'],
       requiredDate: (map['requiredDate'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
+      completedAt: (map['completedAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -119,6 +121,7 @@ class BloodRequestModel {
       'donorExperience': donorExperience,
       'requiredDate': requiredDate != null ? Timestamp.fromDate(requiredDate!) : null,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
     };
   }
 }

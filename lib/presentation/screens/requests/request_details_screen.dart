@@ -473,8 +473,9 @@ class RequestDetailsScreen extends ConsumerWidget {
                 'donatedBags': totalDonated,
                 'status': newStatus,
                 'thankYouNote': thankYouController.text.trim(),
-                'donorId': req.donorId, // দাতা আইডি রেখে দিচ্ছি যাতে হিস্ট্রিতে পাওয়া যায়
+                'donorId': req.donorId,
                 'donationType': donationType,
+                'completedAt': FieldValue.serverTimestamp(), // সম্পন্ন হওয়ার সময় সেভ
               });
 
               if (req.donorId != null) {
