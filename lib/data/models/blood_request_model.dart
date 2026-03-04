@@ -20,6 +20,7 @@ class BloodRequestModel {
   final String union;
   final int bloodBags;
   final int donatedBags;
+  final int? acceptedBags; // দাতা যত ব্যাগ দিতে চেয়েছে
   final String? donationType; // 'self' or 'arranged'
   final String? donatedBy; 
   final String? mapUrl;
@@ -47,11 +48,13 @@ class BloodRequestModel {
     required this.union,
     required this.bloodBags,
     this.donatedBags = 0,
+    this.acceptedBags,
     this.donatedBy,
     this.mapUrl,
     this.thankYouNote,
     this.requiredDate,
-    this.createdAt, this.donationType,
+    this.createdAt,
+    this.donationType,
   });
 
   factory BloodRequestModel.fromMap(Map<String, dynamic> map, String id) {
@@ -75,6 +78,7 @@ class BloodRequestModel {
       union: map['union'] ?? '',
       bloodBags: map['bloodBags'] ?? 1,
       donatedBags: map['donatedBags'] ?? 0,
+      acceptedBags: map['acceptedBags'],
       donationType: map['donationType'],
       donatedBy: map['donatedBy'],
       mapUrl: map['mapUrl'],
@@ -104,6 +108,7 @@ class BloodRequestModel {
       'union': union,
       'bloodBags': bloodBags,
       'donatedBags': donatedBags,
+      'acceptedBags': acceptedBags,
       'donationType': donationType,
       'donatedBy': donatedBy,
       'mapUrl': mapUrl,
