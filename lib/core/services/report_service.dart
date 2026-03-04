@@ -32,14 +32,17 @@ class ReportService {
       final completedRequests = myRequests.where((r) => r.status == 'completed').toList();
       final dateToday = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
+      // HTML স্পেশাল ক্যারেক্টার এস্কেপ করা
+      String escape(String text) => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
       // ১. রক্ত গ্রহণ টেবিলের ডাটা তৈরি
       final receivedRows = completedRequests.isEmpty 
         ? '<tr><td colspan="4" class="empty-msg">কোন রেকর্ড পাওয়া যায়নি</td></tr>'
         : completedRequests.map((item) => """
             <tr>
                 <td>${DateFormat('dd/MM/yyyy').format(item.requiredDate ?? item.createdAt ?? DateTime.now())}</td>
-                <td style="text-align: center">${item.bloodGroup}</td>
-                <td>${item.hospitalName}</td>
+                <td style="text-align: center; font-weight: bold;">${item.bloodGroup}</td>
+                <td>${escape(item.hospitalName)}</td>
                 <td style="text-align: center">${item.donatedBags}/${item.bloodBags}</td>
             </tr>
           """).join();
@@ -50,8 +53,8 @@ class ReportService {
         : myDonations.map((item) => """
             <tr>
                 <td>${DateFormat('dd/MM/yyyy').format(item.requiredDate ?? item.createdAt ?? DateTime.now())}</td>
-                <td style="text-align: center">${item.bloodGroup}</td>
-                <td>${item.hospitalName}</td>
+                <td style="text-align: center; font-weight: bold;">${item.bloodGroup}</td>
+                <td>${escape(item.hospitalName)}</td>
                 <td style="text-align: center">১</td>
             </tr>
           """).join();
@@ -62,99 +65,118 @@ class ReportService {
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Noto Sans Bengali', 'Arial', sans-serif;
             margin: 0;
-            padding: 30px;
+            padding: 40px;
             color: #333;
+            background: white;
+            line-height: 1.5;
         }
-        .header-container {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #b71c1c;
-            padding-bottom: 10px;
-            margin-bottom: 25px;
+            border-bottom: 4px solid #D32F2F;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
         }
-        .header-text h1 {
-            color: #b71c1c;
+        .header-info h1 {
+            color: #D32F2F;
             margin: 0;
-            font-size: 28px;
+            font-size: 32px;
+            font-weight: 700;
         }
-        .header-text p {
-            margin: 0;
-            color: #666;
-            font-size: 12px;
+        .header-info p {
+            margin: 5px 0 0 0;
+            color: #757575;
+            font-size: 14px;
+            letter-spacing: 1px;
         }
-        .logo {
-            width: 60px;
-            height: 60px;
-        }
-        .info-box {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
+        .logo { width: 70px; height: 70px; object-fit: contain; }
+        .user-card {
+            background-color: #F5F5F5;
+            padding: 20px;
+            border-radius: 12px;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
-            border: 1px solid #eee;
+            margin-bottom: 40px;
+            border: 1px solid #E0E0E0;
         }
+        .user-card div { font-size: 16px; }
+        .user-card strong { color: #D32F2F; }
         .section-title {
-            border-left: 5px solid #b71c1c;
-            padding-left: 10px;
-            margin: 25px 0 15px 0;
-            font-size: 18px;
-            font-weight: bold;
-            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            margin: 30px 0 15px 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1A237E;
+        }
+        .section-title::before {
+            content: "";
+            display: inline-block;
+            width: 6px;
+            height: 24px;
+            background: #D32F2F;
+            margin-right: 12px;
+            border-radius: 3px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         th {
-            background-color: #b71c1c;
+            background-color: #D32F2F;
             color: white;
             text-align: left;
-            padding: 10px;
-            font-size: 14px;
+            padding: 14px;
+            font-size: 15px;
         }
         td {
-            border: 1px solid #eee;
-            padding: 10px;
-            font-size: 13px;
+            border-bottom: 1px solid #EEEEEE;
+            padding: 12px 14px;
+            font-size: 14px;
+            color: #424242;
         }
-        tr:nth-child(even) {
-            background-color: #fcfcfc;
-        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) { background-color: #FAFAFA; }
         .footer {
-            margin-top: 50px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
+            margin-top: 60px;
+            border-top: 2px solid #EEEEEE;
+            padding-top: 20px;
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            color: #888;
+            font-size: 12px;
+            color: #9E9E9E;
         }
         .empty-msg {
             text-align: center;
-            color: #999;
-            padding: 20px;
+            color: #9E9E9E;
+            padding: 30px;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
-    <div class="header-container">
-        <div class="header-text">
+    <div class="header">
+        <div class="header-info">
             <h1>রক্তদান রিপোর্ট</h1>
-            <p>Blood Donation Summary Report</p>
+            <p>BLOOD DONATION SUMMARY REPORT</p>
         </div>
         ${logoBase64.isNotEmpty ? '<img src="data:image/png;base64,$logoBase64" class="logo">' : ''}
     </div>
 
-    <div class="info-box">
-        <div><strong>দাতা:</strong> $userName</div>
+    <div class="user-card">
+        <div><strong>দাতা:</strong> ${escape(userName)}</div>
         <div><strong>তারিখ:</strong> $dateToday</div>
     </div>
 
@@ -162,10 +184,10 @@ class ReportService {
     <table>
         <thead>
             <tr>
-                <th>তারিখ</th>
-                <th style="text-align: center">গ্রুপ</th>
-                <th>হাসপাতাল</th>
-                <th style="text-align: center">ব্যাগ</th>
+                <th style="width: 20%">তারিখ</th>
+                <th style="width: 15%; text-align: center">গ্রুপ</th>
+                <th style="width: 45%">হাসপাতাল</th>
+                <th style="width: 20%; text-align: center">ব্যাগ</th>
             </tr>
         </thead>
         <tbody>
@@ -177,10 +199,10 @@ class ReportService {
     <table>
         <thead>
             <tr>
-                <th>তারিখ</th>
-                <th style="text-align: center">গ্রুপ</th>
-                <th>হাসপাতাল</th>
-                <th style="text-align: center">ব্যাগ</th>
+                <th style="width: 20%">তারিখ</th>
+                <th style="width: 15%; text-align: center">গ্রুপ</th>
+                <th style="width: 45%">হাসপাতাল</th>
+                <th style="width: 20%; text-align: center">ব্যাগ</th>
             </tr>
         </thead>
         <tbody>
@@ -196,8 +218,7 @@ class ReportService {
 </html>
 """;
 
-      // Printing প্যাকেজ ব্যবহার করে HTML-কে সরাসরি পিডিএফে রূপান্তর। 
-      // এটি ফোনের সিস্টেম ইঞ্জিন ব্যবহার করে, তাই বাংলা যুক্তাক্ষর ১০০% নিখুঁত হবে।
+      // HTML কে সরাসরি পিডিএফে রূপান্তর (সবচেয়ে নির্ভরযোগ্য পদ্ধতি)
       await Printing.layoutPdf(
         onLayout: (format) async => await Printing.convertHtml(
           html: htmlContent,
