@@ -51,7 +51,7 @@ class BloodRequestModel {
     this.mapUrl,
     this.thankYouNote,
     this.requiredDate,
-    this.createdAt,
+    this.createdAt, this.donationType,
   });
 
   factory BloodRequestModel.fromMap(Map<String, dynamic> map, String id) {
@@ -75,6 +75,7 @@ class BloodRequestModel {
       union: map['union'] ?? '',
       bloodBags: map['bloodBags'] ?? 1,
       donatedBags: map['donatedBags'] ?? 0,
+      donationType: map['donationType'],
       donatedBy: map['donatedBy'],
       mapUrl: map['mapUrl'],
       thankYouNote: map['thankYouNote'],
