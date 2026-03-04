@@ -27,13 +27,27 @@ class ReportService {
 
       final pdf = pw.Document();
       
-      // Load Logo
-      final logoData = await rootBundle.load('assets/images/app_icon.png');
-      final logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+      // Load Logo with error handling
+      pw.MemoryImage? logoImage;
+      try {
+        final logoData = await rootBundle.load('assets/images/app_icon.png');
+        logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+      } catch (e) {
+        debugPrint('Logo loading failed: $e');
+      }
       
-      // Load Bengali Font (Using Google Fonts Noto Sans Bengali as fallback)
-      final fontData = await PdfGoogleFonts.notoSansBengaliRegular();
-      final boldFontData = await PdfGoogleFonts.notoSansBengaliBold();
+      // Load Bengali Font
+      pw.Font? fontData;
+      pw.Font? boldFontData;
+      try {
+        fontData = await PdfGoogleFonts.notoSansBengaliRegular();
+        boldFontData = await PdfGoogleFonts.notoSansBengaliBold();
+      } catch (e) {
+        debugPrint('Font loading failed: $e');
+        // Fallback to standard font if Google Fonts fails
+        fontData = pw.Font.helvetica();
+        boldFontData = pw.Font.helveticaBold();
+      }
 
       final completedRequests = myRequests.where((r) => r.status == 'completed').toList();
 
@@ -53,38 +67,38 @@ class ReportService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text('রক্তদান রিপোর্ট'.fix(), 
-                        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, font: boldFontData)),
                       pw.Text('(Blood Donation Report)', 
                         style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
                     ],
                   ),
-                  pw.Image(logoImage, width: 60, height: 60),
+                  if (logoImage != null) pw.Image(logoImage, width: 60, height: 60),
                 ],
               ),
               pw.SizedBox(height: 20),
-              pw.Text('${'ব্যবহারকারীর নাম'.fix()}: ${userName.fix()}'),
-              pw.Text('${'রিপোর্ট তৈরির তারিখ'.fix()}: ${DateFormat('dd MMM yyyy').format(DateTime.now()).fix()}'),
+              pw.Text('${'ব্যবহারকারীর নাম'.fix()}: ${userName.fix()}', style: pw.TextStyle(font: fontData)),
+              pw.Text('${'রিপোর্ট তৈরির তারিখ'.fix()}: ${DateFormat('dd MMM yyyy').format(DateTime.now()).fix()}', style: pw.TextStyle(font: fontData)),
               pw.Divider(),
               
               pw.Padding(
                 padding: const pw.EdgeInsets.symmetric(vertical: 10),
                 child: pw.Text('১. রক্ত গ্রহণ করেছেন (Received Blood)'.fix(), 
-                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, font: boldFontData)),
               ),
-              _buildTable(completedRequests, isDonation: false, font: fontData),
+              _buildTable(completedRequests, isDonation: false, font: fontData ?? pw.Font.helvetica()),
 
               pw.Padding(
                 padding: const pw.EdgeInsets.symmetric(vertical: 10),
                 child: pw.Text('২. রক্ত প্রদান করেছেন (Blood Donated)'.fix(), 
-                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, font: boldFontData)),
               ),
-              _buildTable(myDonations, isDonation: true, font: fontData),
+              _buildTable(myDonations, isDonation: true, font: fontData ?? pw.Font.helvetica()),
 
               pw.SizedBox(height: 40),
               pw.Align(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text('সিস্টেম জেনারেটেড রিপোর্ট - রক্তদান অ্যাপ'.fix(),
-                  style: const pw.TextStyle(color: PdfColors.grey)),
+                  style: pw.TextStyle(color: PdfColors.grey, font: fontData)),
               ),
             ];
           },
