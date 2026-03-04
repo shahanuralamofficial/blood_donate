@@ -148,11 +148,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _handleCelebration(user);
           });
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildAppBar(user),
-              SliverPadding(
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(currentUserDataProvider);
+              ref.invalidate(emergencyRequestsProvider);
+              ref.invalidate(myRequestsProvider);
+              ref.invalidate(myDonationsProvider);
+              await Future.delayed(const Duration(seconds: 1));
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
+                _buildAppBar(user),
+                SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                 sliver: SliverToBoxAdapter(
                   child: Column(
@@ -179,14 +187,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       }),
                       const SizedBox(height: 16),
                       _buildRequestList(emergencyRequests),
-                      const SizedBox(height: 32),
-                      _buildThankYouSectionFromAsync(myDonations),
                       const SizedBox(height: 100),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -612,9 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 .where((d) => d.status != 'completed')
                 .toList();
 
-            if (reqActive.isEmpty &&
-                others.isEmpty &&
-                (!showThankYouInMiddle || completed.isEmpty)) {
+            if (reqActive.isEmpty && others.isEmpty) {
               return const SizedBox.shrink();
             }
 
@@ -636,8 +640,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Colors.green,
                   ),
                 ),
-                if (showThankYouInMiddle && completed.isNotEmpty)
-                  _buildThankYouSection(completed.first),
               ],
             );
           },

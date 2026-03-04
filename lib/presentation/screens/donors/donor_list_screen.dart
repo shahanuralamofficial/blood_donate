@@ -92,52 +92,66 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
         children: [
           _buildSearchBar(),
           Expanded(
-            child: donorsAsync.when(
-              data: (donors) {
-                final filteredDonors = donors.where((item) {
-                  final name = (item['user'].name ?? '').toString().toLowerCase();
-                  final bg = (item['user'].bloodGroup ?? '').toString().toLowerCase();
-                  return name.contains(_searchQuery) || bg.contains(_searchQuery);
-                }).toList();
-
-                if (filteredDonors.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
-                        const SizedBox(height: 16),
-                        Text('কোন দাতা পাওয়া যায়নি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
-                      ],
-                    ),
-                  );
-                }
-
-                if (_currentPosition != null) {
-                  filteredDonors.sort((a, b) {
-                    final distA = _calculateDistance(a['donor'].location?.latitude ?? 0, a['donor'].location?.longitude ?? 0);
-                    final distB = _calculateDistance(b['donor'].location?.latitude ?? 0, b['donor'].location?.longitude ?? 0);
-                    return distA.compareTo(distB);
-                  });
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  itemCount: filteredDonors.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredDonors[index];
-                    final user = item['user'];
-                    final donor = item['donor'];
-                    final distance = donor.location != null ? _calculateDistance(donor.location!.latitude, donor.location!.longitude) : null;
-                    final isSaved = savedDonors.contains(user.uid);
-                    final rating = user.averageRating;
-
-                    return _buildDonorCard(user, donor, distance, isSaved, rating);
-                  },
-                );
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(availableDonorsProvider);
+                ref.invalidate(currentUserDataProvider);
+                await _determinePosition();
+                await Future.delayed(const Duration(seconds: 1));
               },
-              loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-              error: (e, s) => Center(child: Text('ত্রুটি: $e')),
+              child: donorsAsync.when(
+                data: (donors) {
+                  final filteredDonors = donors.where((item) {
+                    final name = (item['user'].name ?? '').toString().toLowerCase();
+                    final bg = (item['user'].bloodGroup ?? '').toString().toLowerCase();
+                    return name.contains(_searchQuery) || bg.contains(_searchQuery);
+                  }).toList();
+
+                  if (filteredDonors.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            Text('কোন দাতা পাওয়া যায়নি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (_currentPosition != null) {
+                    filteredDonors.sort((a, b) {
+                      final distA = _calculateDistance(a['donor'].location?.latitude ?? 0, a['donor'].location?.longitude ?? 0);
+                      final distB = _calculateDistance(b['donor'].location?.latitude ?? 0, b['donor'].location?.longitude ?? 0);
+                      return distA.compareTo(distB);
+                    });
+                  }
+
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    itemCount: filteredDonors.length,
+                    itemBuilder: (context, index) {
+                      final item = filteredDonors[index];
+                      final user = item['user'];
+                      final donor = item['donor'];
+                      final distance = donor.location != null ? _calculateDistance(donor.location!.latitude, donor.location!.longitude) : null;
+                      final isSaved = savedDonors.contains(user.uid);
+                      final rating = user.averageRating;
+
+                      return _buildDonorCard(user, donor, distance, isSaved, rating);
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
+                error: (e, s) => Center(child: Text('ত্রুটি: $e')),
+              ),
             ),
           ),
         ],

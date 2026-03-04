@@ -11,6 +11,7 @@ class UserModel {
   final String? gender;
   final bool isVerified;
   final bool isActive;
+  final bool isAvailable; // রক্তদানের জন্য এভেইলএবল কি না
   final DateTime? createdAt;
   final Map<String, dynamic>? address;
   final List<String> savedDonors;
@@ -41,6 +42,7 @@ class UserModel {
     this.gender,
     this.isVerified = false,
     this.isActive = true,
+    this.isAvailable = true,
     this.createdAt,
     this.address,
     this.savedDonors = const [],
@@ -90,6 +92,7 @@ class UserModel {
       gender: map['gender'],
       isVerified: map['isVerified'] ?? false,
       isActive: map['isActive'] ?? true,
+      isAvailable: map['isAvailable'] ?? true,
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
       address: map['address'] != null ? Map<String, dynamic>.from(map['address']) : null,
       savedDonors: List<String>.from(map['savedDonors'] ?? []),
@@ -121,6 +124,7 @@ class UserModel {
       'gender': gender,
       'isVerified': isVerified,
       'isActive': isActive,
+      'isAvailable': isAvailable,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'address': address,
       'savedDonors': savedDonors,

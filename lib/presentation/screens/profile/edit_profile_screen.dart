@@ -26,6 +26,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedDivision;
   String? _selectedDistrict;
   String? _selectedThana;
+  bool _isAvailable = true;
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
   final List<String> _genders = ['পুরুষ', 'মহিলা', 'অন্যান্য'];
@@ -40,6 +41,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _emailController = TextEditingController(text: widget.user.email);
     _selectedBloodGroup = widget.user.bloodGroup;
     _selectedGender = widget.user.gender;
+    _isAvailable = widget.user.isAvailable;
     if (widget.user.address != null) {
       _selectedDivision = widget.user.address!['division'];
       _selectedDistrict = widget.user.address!['district'];
@@ -69,6 +71,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'email': _emailController.text.trim(),
         'bloodGroup': _selectedBloodGroup,
         'gender': _selectedGender,
+        'isAvailable': _isAvailable,
         'address': {
           'division': _selectedDivision,
           'district': _selectedDistrict,
@@ -132,6 +135,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               _buildTextField('জেলা', TextEditingController(text: _selectedDistrict), Icons.location_city, onChanged: (v) => _selectedDistrict = v),
               const SizedBox(height: 16),
               _buildTextField('থানা', TextEditingController(text: _selectedThana), Icons.map_outlined, onChanged: (v) => _selectedThana = v),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _isAvailable ? Colors.green.shade50 : Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _isAvailable ? Colors.green.shade100 : Colors.red.shade100),
+                ),
+                child: SwitchListTile(
+                  title: Text('আমি রক্ত দিতে ইচ্ছুক', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Text(_isAvailable ? 'আপনার প্রোফাইল রক্তদাতা হিসেবে প্রদর্শিত হবে' : 'আপনার প্রোফাইল বর্তমানে রক্তদাতা হিসেবে প্রদর্শিত হবে না', style: const TextStyle(fontSize: 12)),
+                  value: _isAvailable,
+                  activeColor: Colors.green,
+                  onChanged: (v) => setState(() => _isAvailable = v),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _updateProfile,

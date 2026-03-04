@@ -70,24 +70,40 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
         label: const Text('রক্তের আবেদন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
       ),
-      body: requestsAsync.when(
-        data: (requests) {
-          final filtered = requests.where((r) => 
-            r.hospitalName.toLowerCase().contains(_searchQuery) || 
-            r.district.toLowerCase().contains(_searchQuery) ||
-            r.bloodGroup.toLowerCase().contains(_searchQuery)
-          ).toList();
-
-          if (filtered.isEmpty) return _buildEmptyState();
-
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80), // Extra padding for FAB
-            itemCount: filtered.length,
-            itemBuilder: (context, index) => _buildRequestCard(filtered[index]),
-          );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(emergencyRequestsProvider);
+          await Future.delayed(const Duration(seconds: 1));
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-        error: (e, s) => Center(child: Text('এরর: $e')),
+        child: requestsAsync.when(
+          data: (requests) {
+            final filtered = requests.where((r) => 
+              r.hospitalName.toLowerCase().contains(_searchQuery) || 
+              r.district.toLowerCase().contains(_searchQuery) ||
+              r.bloodGroup.toLowerCase().contains(_searchQuery)
+            ).toList();
+
+            if (filtered.isEmpty) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  alignment: Alignment.center,
+                  child: _buildEmptyState(),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 80), // Extra padding for FAB
+              itemCount: filtered.length,
+              itemBuilder: (context, index) => _buildRequestCard(filtered[index]),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
+          error: (e, s) => Center(child: Text('এরর: $e')),
+        ),
       ),
     );
   }

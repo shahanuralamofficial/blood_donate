@@ -69,6 +69,8 @@ class DonorPublicProfileScreen extends StatelessWidget {
   }
 
   Widget _buildHeader() {
+    final bool canDonate = donor.isAvailable && (donor.lastDonationDate == null || DateTime.now().difference(donor.lastDonationDate!).inDays >= 90);
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
@@ -79,15 +81,42 @@ class DonorPublicProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.red.shade50,
-            backgroundImage: donor.profileImageUrl != null ? NetworkImage(donor.profileImageUrl!) : null,
-            child: donor.profileImageUrl == null ? const Icon(Icons.person_rounded, size: 60, color: Colors.red) : null,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.red.shade50,
+                backgroundImage: donor.profileImageUrl != null ? NetworkImage(donor.profileImageUrl!) : null,
+                child: donor.profileImageUrl == null ? const Icon(Icons.person_rounded, size: 60, color: Colors.red) : null,
+              ),
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: canDonate ? Colors.green : Colors.grey,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(donor.name, style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
+          if (!canDonate)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+              child: Text(
+                donor.isAvailable ? 'এখন রক্ত দিতে পারবেন না' : 'বর্তমানে রক্ত দিতে ইচ্ছুক নন',
+                style: TextStyle(color: Colors.red.shade700, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
           _buildRankBadge(donor.rank),
           const SizedBox(height: 12),
           Row(
@@ -144,6 +173,10 @@ class DonorPublicProfileScreen extends StatelessWidget {
 
   Widget _buildInfoSection() {
     final location = "${donor.address?['thana'] ?? 'অজানা'}, ${donor.address?['district'] ?? ''}";
+    final lastDonation = donor.lastDonationDate;
+    final daysSinceLastDonation = lastDonation != null ? DateTime.now().difference(lastDonation).inDays : 999;
+    final daysRemaining = 90 - daysSinceLastDonation;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -155,24 +188,43 @@ class DonorPublicProfileScreen extends StatelessWidget {
           const Divider(height: 32),
           _buildInfoRow(Icons.location_on_outlined, 'বর্তমান ঠিকানা', location, Colors.blue),
           const Divider(height: 32),
-          _buildInfoRow(Icons.calendar_month_outlined, 'সর্বশেষ রক্তদান', donor.lastDonationDate != null ? DateFormat('dd MMM yyyy').format(donor.lastDonationDate!) : 'এখনো রক্ত দেননি', Colors.orange),
+          _buildInfoRow(
+            Icons.calendar_month_outlined,
+            'সর্বশেষ রক্তদান',
+            lastDonation != null ? DateFormat('dd MMM yyyy').format(lastDonation) : 'এখনো রক্ত দেননি',
+            Colors.orange,
+            trailing: lastDonation != null && daysRemaining > 0
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                    child: Text('$daysRemaining দিন বাকি', style: TextStyle(color: Colors.red.shade700, fontSize: 10, fontWeight: FontWeight.bold)),
+                  )
+                : null,
+          ),
+          if (donor.isAvailable == false) ...[
+            const Divider(height: 32),
+            _buildInfoRow(Icons.do_not_disturb_on_outlined, 'স্ট্যাটাস', 'বর্তমানে রক্ত দিতে ইচ্ছুক নন', Colors.red.shade400),
+          ]
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, Color color) {
+  Widget _buildInfoRow(IconData icon, String label, String value, Color color, {Widget? trailing}) {
     return Row(
       children: [
         Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
+        if (trailing != null) trailing,
       ],
     );
   }
