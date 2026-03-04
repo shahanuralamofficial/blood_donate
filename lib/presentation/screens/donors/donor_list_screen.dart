@@ -195,129 +195,277 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
         ],
+        border: Border.all(color: Colors.grey.shade100),
       ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: user)));
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 70,
-                  color: const Color(0xFFE53935).withValues(alpha: 0.05),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(user.bloodGroup ?? '?', style: const TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.bold, fontSize: 24)),
-                      const Text('গ্রুপ', style: TextStyle(color: Color(0xFFE53935), fontSize: 10)),
-                    ],
-                  ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DonorPublicProfileScreen(donor: user),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBloodGroupBadge(user.bloodGroup ?? '?'),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                user.name,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    user.name,
+                                    style: GoogleFonts.notoSansBengali(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                      color: Colors.black87,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (user.uid != userData?.uid) {
+                                      _toggleSaveDonor(
+                                        user.uid,
+                                        (ref.read(currentUserDataProvider).value?.savedDonors ?? []),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('আপনি নিজেকে সেভ করতে পারবেন না')),
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      user.uid == userData?.uid
+                                          ? Icons.favorite_border
+                                          : (isSaved ? Icons.favorite : Icons.favorite_border),
+                                      color: user.uid == userData?.uid
+                                          ? Colors.grey.shade300
+                                          : Colors.orange,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                if (user.uid != userData?.uid) {
-                                  _toggleSaveDonor(user.uid, (ref.read(currentUserDataProvider).value?.savedDonors ?? []));
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('আপনি নিজেকে সেভ করতে পারবেন না')),
-                                  );
-                                }
-                              },
-                              child: Icon(
-                                user.uid == userData?.uid ? Icons.favorite_border : (isSaved ? Icons.favorite : Icons.favorite_border),
-                                color: user.uid == userData?.uid ? Colors.grey.shade300 : Colors.orange,
-                                size: 22,
-                              ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.location_on_rounded, size: 14, color: Colors.grey.shade400),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}',
+                                    style: GoogleFonts.notoSansBengali(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_rounded, size: 14, color: Colors.blueGrey),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}',
-                                style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 12),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
-                                  const SizedBox(width: 2),
-                                  Text(rating.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _buildInfoChip(
+                                  icon: Icons.star_rounded,
+                                  label: rating.toStringAsFixed(1),
+                                  color: Colors.orange,
+                                ),
+                                const SizedBox(width: 8),
+                                _buildInfoChip(
+                                  icon: Icons.workspace_premium_rounded,
+                                  label: user.rank,
+                                  color: Colors.amber.shade800,
+                                ),
+                                if (distance != null && distance > 0) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '• ${distance.toStringAsFixed(1)} কিমি',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.red.shade400,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
-                              ),
+                              ],
                             ),
-                            if (distance != null && distance > 0) ...[
-                              const SizedBox(width: 8),
-                              Text('• ${distance.toStringAsFixed(1)} কিমি দূরে', style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
-                            ],
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.call_rounded, color: Colors.green),
-                        onPressed: () => _makeCall(user.phone),
-                        style: IconButton.styleFrom(backgroundColor: Colors.green.withValues(alpha: 0.1)),
-                      ),
-                      const SizedBox(height: 8),
-                      IconButton(
-                        icon: const Icon(Icons.chat_bubble_rounded, color: Colors.blue),
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${user.uid}', otherUserName: user.name)));
-                        },
-                        style: IconButton.styleFrom(backgroundColor: Colors.blue.withValues(alpha: 0.1)),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, thickness: 0.5),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionBtn(
+                          icon: Icons.call_rounded,
+                          label: 'কল করুন',
+                          color: Colors.green,
+                          onTap: () => _makeCall(user.phone),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildActionBtn(
+                          icon: Icons.chat_bubble_rounded,
+                          label: 'মেসেজ',
+                          color: Colors.blue,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(
+                                  requestId: 'direct_${user.uid}',
+                                  otherUserName: user.name,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBloodGroupBadge(String bg) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.red.shade400, Colors.red.shade700],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              bg,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            const Text(
+              'গ্রুপ',
+              style: TextStyle(color: Colors.white70, fontSize: 10),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({required IconData icon, required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionBtn({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.notoSansBengali(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
