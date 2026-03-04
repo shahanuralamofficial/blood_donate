@@ -102,6 +102,9 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
               child: donorsAsync.when(
                 data: (donors) {
                   final filteredDonors = donors.where((item) {
+                    final isCurrentUser = item['user'].uid == userData?.uid;
+                    if (isCurrentUser) return false;
+
                     final name = (item['user'].name ?? '').toString().toLowerCase();
                     final bg = (item['user'].bloodGroup ?? '').toString().toLowerCase();
                     return name.contains(_searchQuery) || bg.contains(_searchQuery);

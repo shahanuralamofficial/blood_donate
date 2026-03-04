@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../../data/models/blood_request_model.dart';
 
 class ReviewsListScreen extends StatelessWidget {
   final String userId;
@@ -20,19 +21,23 @@ class ReviewsListScreen extends StatelessWidget {
         foregroundColor: Colors.black,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // In a real app, reviews would be stored in a separate collection or subcollection
-        // For this demo, we'll try to find them or show a placeholder if not found
         stream: FirebaseFirestore.instance
-            .collection('reviews')
+            .collection('blood_requests')
             .where('donorId', isEqualTo: userId)
-            .orderBy('createdAt', descending: true)
+            .where('status', isEqualTo: 'completed')
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Colors.red));
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          final docs = snapshot.data?.docs ?? [];
+          final reviews = docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['thankYouNote'] != null && (data['thankYouNote'] as String).isNotEmpty;
+          }).toList();
+
+          if (reviews.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -45,15 +50,13 @@ class ReviewsListScreen extends StatelessWidget {
             );
           }
 
-          final reviews = snapshot.data!.docs;
-
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: reviews.length,
             itemBuilder: (context, index) {
               final data = reviews[index].data() as Map<String, dynamic>;
-              final double rating = (data['rating'] ?? 5.0).toDouble();
-              final DateTime date = (data['createdAt'] as Timestamp).toDate();
+              final req = BloodRequestModel.fromMap(data, reviews[index].id);
+              final DateTime date = req.createdAt ?? DateTime.now();
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -70,9 +73,9 @@ class ReviewsListScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
-                          children: List.generate(5, (i) => Icon(
+                          children: List.generate(5, (i) => const Icon(
                             Icons.star_rounded, 
-                            color: i < rating ? Colors.orange : Colors.grey.shade200, 
+                            color: Colors.orange, 
                             size: 18,
                           )),
                         ),
@@ -81,11 +84,12 @@ class ReviewsListScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      data['comment'] ?? 'কোনো মন্তব্য নেই।',
+                      req.thankYouNote ?? 'কোনো মন্তব্য নেই।',
                       style: GoogleFonts.notoSansBengali(color: Colors.blueGrey.shade800, fontSize: 14, height: 1.4),
                     ),
                     const SizedBox(height: 8),
-                    Text('— গ্রহীতা', style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('— ${req.relationWithPatient} (${req.patientName}-র জন্য)', 
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
               );

@@ -104,6 +104,8 @@ class RequestDetailsScreen extends ConsumerWidget {
               children: [
                 _buildStatusSection(liveRequest.status),
                 const SizedBox(height: 24),
+                if (liveRequest.status == 'accepted' && liveRequest.donorId != null)
+                  _buildAcceptedDonorInfo(liveRequest),
                 _buildProgressCard(liveRequest),
                 const SizedBox(height: 20),
                 _buildInfoCard(liveRequest),
@@ -346,6 +348,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 'donorId': donorId,
                 'status': 'accepted',
                 'donationType': donationType,
+                'acceptedBags': bagsToDonate,
               });
 
               NotificationService().sendNotificationToUser(
@@ -549,7 +552,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 Navigator.pop(context);
                 Navigator.pop(context);
                 if (req.donorId != null)
-                  _showReviewDialog(context, req.donorId!);
+                  _showReviewDialog(context, req.donorId!, req.requestId);
               }
             },
             child: const Text('নিশ্চিত করুন'),
@@ -559,7 +562,7 @@ class RequestDetailsScreen extends ConsumerWidget {
     );
   }
 
-  void _showReviewDialog(BuildContext context, String donorId) {
+  void _showReviewDialog(BuildContext context, String donorId, String requestId) {
     double rating = 5.0;
     final commentController = TextEditingController();
     showDialog(
@@ -586,7 +589,10 @@ class RequestDetailsScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             TextField(
               controller: commentController,
-              decoration: const InputDecoration(hintText: 'মন্তব্য লিখুন'),
+              decoration: const InputDecoration(
+                labelText: 'অভিজ্ঞতা লিখুন',
+                hintText: 'কেমন ছিল রক্তদানের অভিজ্ঞতা?',
+              ),
             ),
           ],
         ),
@@ -614,6 +620,13 @@ class RequestDetailsScreen extends ConsumerWidget {
                       'totalReviews': totalReviews,
                     });
                   }
+                });
+                
+                await FirebaseFirestore.instance
+                    .collection('blood_requests')
+                    .doc(requestId)
+                    .update({
+                  'donorExperience': commentController.text.trim(),
                 });
               }
               if (context.mounted) Navigator.pop(context);
@@ -1037,6 +1050,43 @@ class RequestDetailsScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildAcceptedDonorInfo(BloodRequestModel req) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(req.donorId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final donorData = snapshot.data!.data() as Map<String, dynamic>;
+          final donorName = donorData['name'] ?? 'একজন রক্তদাতা';
+          final acceptedBags = req.acceptedBags ?? 1;
+          final type = req.donationType == 'arranged' ? 'ম্যানেজ করে' : 'নিজে';
+          
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.green.shade100),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '$donorName $acceptedBags ব্যাগ রক্ত $type দিতে রাজি হয়েছেন।',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
   Widget _buildSuccessMessage(BloodRequestModel req) {
     return Container(
       width: double.infinity,
@@ -1060,47 +1110,55 @@ class RequestDetailsScreen extends ConsumerWidget {
           ),
           if (req.thankYouNote != null && req.thankYouNote!.isNotEmpty) ...[
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.green.shade100),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.format_quote_rounded,
-                    color: Colors.green,
-                    size: 30,
-                  ),
-          const SizedBox(height: 8),
-                  Text(
-                    req.thankYouNote!,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.notoSansBengali(
-                      fontSize: 15,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.blueGrey.shade800,
-                      height: 1.5,
-                    ),
-                    maxLines: 5,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '— গ্রহীতার পক্ষ থেকে',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildNoteCard(req.thankYouNote!, 'গ্রহীতার পক্ষ থেকে (ধন্যবাদ বার্তা)'),
           ],
+          if (req.donorExperience != null && req.donorExperience!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildNoteCard(req.donorExperience!, 'রক্তদাতার পক্ষ থেকে (অভিজ্ঞতা)'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoteCard(String note, String author) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green.shade100),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.format_quote_rounded,
+            color: Colors.green,
+            size: 30,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.notoSansBengali(
+              fontSize: 15,
+              fontStyle: FontStyle.italic,
+              color: Colors.blueGrey.shade800,
+              height: 1.5,
+            ),
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '— $author',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
         ],
       ),
     );

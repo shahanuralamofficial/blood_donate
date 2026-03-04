@@ -24,7 +24,8 @@ class BloodRequestModel {
   final String? donationType; // 'self' or 'arranged'
   final String? donatedBy; 
   final String? mapUrl;
-  final String? thankYouNote; // নতুন: রক্তদাতার জন্য ধন্যবাদ বার্তা
+  final String? thankYouNote; // রিকোয়েস্টার থেকে দাতার জন্য নোট
+  final String? donorExperience; // দাতা থেকে রিকোয়েস্টারের জন্য রিভিউ
   final DateTime? requiredDate;
   final DateTime? createdAt;
 
@@ -52,6 +53,7 @@ class BloodRequestModel {
     this.donatedBy,
     this.mapUrl,
     this.thankYouNote,
+    this.donorExperience,
     this.requiredDate,
     this.createdAt,
     this.donationType,
@@ -83,6 +85,7 @@ class BloodRequestModel {
       donatedBy: map['donatedBy'],
       mapUrl: map['mapUrl'],
       thankYouNote: map['thankYouNote'],
+      donorExperience: map['donorExperience'],
       requiredDate: (map['requiredDate'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
     );
@@ -113,6 +116,7 @@ class BloodRequestModel {
       'donatedBy': donatedBy,
       'mapUrl': mapUrl,
       'thankYouNote': thankYouNote,
+      'donorExperience': donorExperience,
       'requiredDate': requiredDate != null ? Timestamp.fromDate(requiredDate!) : null,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
