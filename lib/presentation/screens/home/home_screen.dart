@@ -41,12 +41,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _setDailyFact() {
     final now = DateTime.now();
-    final dayIndex = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).difference(DateTime(2024, 1, 1)).inDays;
-    _dailyFact = _donationFacts[dayIndex % _donationFacts.length];
+    final epoch = DateTime(2024, 1, 1);
+    final diffInDays = now.difference(epoch).inDays;
+    
+    // Safety check for negative difference or empty list
+    if (_donationFacts.isEmpty) {
+      _dailyFact = 'রক্তদান করুন, জীবন বাঁচান। ❤️';
+      return;
+    }
+    
+    final index = diffInDays.abs() % _donationFacts.length;
+    _dailyFact = _donationFacts[index];
   }
 
   Future<void> _launchMapUrl(String address) async {
