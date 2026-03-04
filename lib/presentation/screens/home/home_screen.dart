@@ -269,7 +269,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(width: 12),
             _buildStatBox('বাতিল আবেদন', '${user.totalCancelled}', Colors.blueGrey, Icons.cancel_outlined),
             const SizedBox(width: 12),
-            const Expanded(child: SizedBox.shrink()),
+            _buildStatBox(
+              'গড় রেটিং',
+              user.averageRating.toStringAsFixed(1),
+              Colors.amber,
+              Icons.star_rounded,
+            ),
           ],
         ),
       ],
