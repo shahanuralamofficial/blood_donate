@@ -224,14 +224,6 @@ class PersonalProfileScreen extends ConsumerWidget {
           _buildInfoRow(Icons.person_outline_rounded, 'লিঙ্গ', user.gender ?? 'অজানা', Colors.blue),
           const Divider(height: 32, thickness: 0.5),
           _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', location, Colors.green),
-          const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(
-            Icons.favorite_border_rounded, 
-            'ধন্যবাদ বার্তা', 
-            'দেখুন (${user.totalDonations} টি)', 
-            Colors.pink, 
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppreciationScreen()))
-          ),
         ],
       ),
     );

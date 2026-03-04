@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -12,13 +13,16 @@ class ReviewsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // চেক করা হচ্ছে এটি কি বর্তমান ইউজারের নিজের প্রোফাইল কি না
+    final bool isOwnProfile = FirebaseAuth.instance.currentUser?.uid == userId;
+
     return DefaultTabController(
-      length: 2,
+      length: isOwnProfile ? 2 : 1, // নিজের হলে ২টি ট্যাব, অন্যের হলে ১টি
       child: Scaffold(
         backgroundColor: const Color(0xFFFAFAFB),
         appBar: AppBar(
           title: Text(
-            '$userName-র প্রোফাইল',
+            isOwnProfile ? 'আমার রিভিউ ও বার্তা' : '$userName-র রিভিউসমূহ',
             style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           elevation: 0,
@@ -29,9 +33,9 @@ class ReviewsListScreen extends StatelessWidget {
             unselectedLabelColor: Colors.grey,
             indicatorColor: Colors.red,
             labelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14),
-            tabs: const [
-              Tab(text: 'রিভিউ ও রেটিং'),
-              Tab(text: 'ধন্যবাদ বার্তা'),
+            tabs: [
+              const Tab(text: 'রিভিউ ও রেটিং'),
+              if (isOwnProfile) const Tab(text: 'ধন্যবাদ বার্তা'),
             ],
           ),
         ),
@@ -50,7 +54,7 @@ class ReviewsListScreen extends StatelessWidget {
             return TabBarView(
               children: [
                 _buildReviewsTab(docs),
-                _buildThanksTab(docs),
+                if (isOwnProfile) _buildThanksTab(docs),
               ],
             );
           },
