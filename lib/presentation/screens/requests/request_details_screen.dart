@@ -468,16 +468,16 @@ class RequestDetailsScreen extends ConsumerWidget {
                   .collection('blood_requests')
                   .doc(req.requestId);
 
+              // ১. ব্লাড রিকোয়েস্ট আপডেট
               batch.update(reqRef, {
                 'donatedBags': totalDonated,
                 'status': newStatus,
                 'thankYouNote': thankYouController.text.trim(),
-                'donorId': isFullyCompleted ? req.donorId : null,
+                'donorId': req.donorId, // দাতা আইডি রেখে দিচ্ছি যাতে হিস্ট্রিতে পাওয়া যায়
                 'donationType': donationType,
               });
 
               if (req.donorId != null) {
-                // Fetch donor data to calculate new rank
                 final donorDoc = await FirebaseFirestore.instance
                     .collection('users')
                     .doc(req.donorId)
@@ -487,32 +487,23 @@ class RequestDetailsScreen extends ConsumerWidget {
                   final donorData = donorDoc.data()!;
                   int currentDonations = donorData['totalDonations'] ?? 0;
                   
-                  // Only increment donation count and update rank if it was 'self' donation
                   if (donationType == 'self') {
                     int newTotalDonations = currentDonations + receivedBags;
                     String newRank = 'Newbie';
                     List<String> newBadges = List<String>.from(donorData['badges'] ?? []);
                     
-                    if (newTotalDonations >= 50) {
-                      newRank = 'Diamond';
-                    } else if (newTotalDonations >= 30) {
-                      newRank = 'Platinum';
-                    } else if (newTotalDonations >= 15) {
-                      newRank = 'Gold';
-                    } else if (newTotalDonations >= 5) {
-                      newRank = 'Silver';
-                    } else if (newTotalDonations >= 1) {
-                      newRank = 'Bronze';
-                    }
+                    if (newTotalDonations >= 50) newRank = 'Diamond';
+                    else if (newTotalDonations >= 30) newRank = 'Platinum';
+                    else if (newTotalDonations >= 15) newRank = 'Gold';
+                    else if (newTotalDonations >= 5) newRank = 'Silver';
+                    else if (newTotalDonations >= 1) newRank = 'Bronze';
 
                     if (newRank != 'Newbie' && !newBadges.contains(newRank)) {
                       newBadges.add(newRank);
                     }
 
                     batch.update(
-                      FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(req.donorId),
+                      FirebaseFirestore.instance.collection('users').doc(req.donorId),
                       {
                         'totalDonations': newTotalDonations,
                         'rank': newRank,
@@ -521,38 +512,36 @@ class RequestDetailsScreen extends ConsumerWidget {
                         'lastDonationDate': FieldValue.serverTimestamp(),
                       },
                     );
-                  } else {
-                    // If arranged, maybe just increment a different stat or do nothing to 'totalDonations'
-                    // For now, we update nothing for 'arranged' regarding donation counts to keep logic clean
                   }
                 }
 
                 NotificationService().sendNotificationToUser(
                   receiverId: req.donorId!,
                   title: 'রক্তদান সম্পন্ন হয়েছে! ❤️',
-                  body:
-                      '$requesterName নিশ্চিত করেছেন যে তারা $receivedBags ব্যাগ রক্ত পেয়েছেন।',
+                  body: '$requesterName নিশ্চিত করেছেন যে তারা $receivedBags ব্যাগ রক্ত পেয়েছেন।',
                 );
               }
 
               batch.update(
-                FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(req.requesterId),
+                FirebaseFirestore.instance.collection('users').doc(req.requesterId),
                 {
-                  'totalReceived': isFullyCompleted
-                      ? FieldValue.increment(1)
-                      : FieldValue.increment(0),
+                  'totalReceived': isFullyCompleted ? FieldValue.increment(1) : FieldValue.increment(0),
                   'totalReceivedBags': FieldValue.increment(receivedBags),
                 },
               );
 
               await batch.commit();
+              
               if (context.mounted) {
-                Navigator.pop(context);
-                Navigator.pop(context);
-                if (req.donorId != null)
+                Navigator.pop(context); // ক্লোজ কনফার্ম ডায়ালগ
+                // যদি দাতা থাকে, তবেই রিভিউ ডায়ালগ দেখাবে
+                if (req.donorId != null) {
                   _showReviewDialog(context, req.donorId!, req.requestId);
+                } else {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('রক্তদান সম্পন্ন হয়েছে! ধন্যবাদ।')),
+                  );
+                }
               }
             },
             child: const Text('নিশ্চিত করুন'),
@@ -565,56 +554,75 @@ class RequestDetailsScreen extends ConsumerWidget {
   void _showReviewDialog(BuildContext context, String donorId, String requestId) {
     double rating = 5.0;
     final commentController = TextEditingController();
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('রক্তদাতাকে রেটিং দিন'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            StatefulBuilder(
-              builder: (context, setState) => DropdownButton<double>(
-                value: rating,
-                isExpanded: true,
-                items: [5.0, 4.0, 3.0, 2.0, 1.0]
-                    .map(
-                      (e) =>
-                          DropdownMenuItem(value: e, child: Text('$e স্টার ⭐')),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => rating = v!),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'রক্তদাতাকে রেটিং দিন ⭐',
+          style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'আপনার অভিজ্ঞতা কেমন ছিল? এটি অন্য রোগীদের সাহায্য করবে।',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: commentController,
-              decoration: const InputDecoration(
-                labelText: 'অভিজ্ঞতা লিখুন',
-                hintText: 'কেমন ছিল রক্তদানের অভিজ্ঞতা?',
+              const SizedBox(height: 16),
+              StatefulBuilder(
+                builder: (context, setState) => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: Icon(
+                        index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: Colors.amber,
+                        size: 36,
+                      ),
+                      onPressed: () => setState(() => rating = index + 1.0),
+                    );
+                  }),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              TextField(
+                controller: commentController,
+                decoration: InputDecoration(
+                  labelText: 'অভিজ্ঞতা লিখুন',
+                  hintText: 'রক্তদাতা কেমন ছিল?',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('বাদ দিন'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (donorId.isNotEmpty) {
-                final donorRef = FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(donorId);
-                await FirebaseFirestore.instance.runTransaction((
-                  transaction,
-                ) async {
+                final donorRef = FirebaseFirestore.instance.collection('users').doc(donorId);
+                
+                await FirebaseFirestore.instance.runTransaction((transaction) async {
                   final snapshot = await transaction.get(donorRef);
                   if (snapshot.exists) {
-                    double currentRating =
-                        (snapshot.data()?['averageRating'] ?? 5.0).toDouble();
-                    int totalReviews =
-                        (snapshot.data()?['totalReviews'] ?? 0) + 1;
-                    double newRating =
-                        (currentRating * (totalReviews - 1) + rating) /
-                        totalReviews;
+                    double currentRating = (snapshot.data()?['averageRating'] ?? 5.0).toDouble();
+                    int totalReviews = (snapshot.data()?['totalReviews'] ?? 0) + 1;
+                    double newRating = ((currentRating * (totalReviews - 1)) + rating) / totalReviews;
+                    
                     transaction.update(donorRef, {
                       'averageRating': newRating,
                       'totalReviews': totalReviews,
@@ -622,16 +630,24 @@ class RequestDetailsScreen extends ConsumerWidget {
                   }
                 });
                 
-                await FirebaseFirestore.instance
-                    .collection('blood_requests')
-                    .doc(requestId)
-                    .update({
+                await FirebaseFirestore.instance.collection('blood_requests').doc(requestId).update({
                   'donorExperience': commentController.text.trim(),
+                  'donorRating': rating,
                 });
               }
-              if (context.mounted) Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('ধন্যবাদ! আপনার রিভিউটি সফলভাবে সেভ হয়েছে।')),
+                );
+              }
             },
-            child: const Text('সাবমিট'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('সাবমিট করুন'),
           ),
         ],
       ),
