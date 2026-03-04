@@ -12,147 +12,212 @@ class ReviewsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFB),
-      appBar: AppBar(
-        title: Text(
-          '$userName-র রিভিউসমূহ',
-          style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFB),
+        appBar: AppBar(
+          title: Text(
+            '$userName-র প্রোফাইল',
+            style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          bottom: TabBar(
+            labelColor: Colors.red,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Colors.red,
+            labelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14),
+            tabs: const [
+              Tab(text: 'রিভিউ ও রেটিং'),
+              Tab(text: 'ধন্যবাদ বার্তা'),
+            ],
+          ),
         ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('blood_requests')
+              .where('donorId', isEqualTo: userId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Colors.red));
+            }
+
+            final docs = snapshot.data?.docs ?? [];
+            
+            return TabBarView(
+              children: [
+                _buildReviewsTab(docs),
+                _buildThanksTab(docs),
+              ],
+            );
+          },
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('blood_requests')
-            .where('donorId', isEqualTo: userId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.red));
-          }
+    );
+  }
 
-          final docs = snapshot.data?.docs ?? [];
-          
-          // ফিল্টার: যেখানে থ্যাঙ্কস নোট অথবা রিভিউ অন্তত একটি আছে
-          final reviews = docs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final hasNote = data['thankYouNote'] != null && (data['thankYouNote'] as String).trim().isNotEmpty;
-            final hasExp = data['donorExperience'] != null && (data['donorExperience'] as String).trim().isNotEmpty;
-            return hasNote || hasExp;
-          }).toList();
+  Widget _buildReviewsTab(List<QueryDocumentSnapshot> docs) {
+    final reviews = docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['donorExperience'] != null && (data['donorExperience'] as String).trim().isNotEmpty;
+    }).toList();
 
-          if (reviews.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+    if (reviews.isEmpty) {
+      return _buildEmptyState(Icons.star_outline_rounded, 'কোনো রিভিউ পাওয়া যায়নি');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: reviews.length,
+      itemBuilder: (context, index) {
+        final data = reviews[index].data() as Map<String, dynamic>;
+        final req = BloodRequestModel.fromMap(data, reviews[index].id);
+        final double rating = (data['donorRating'] ?? 5.0).toDouble();
+
+        return _buildCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.rate_review_outlined, size: 80, color: Colors.grey.shade200),
-                  const SizedBox(height: 16),
-                  Text('এখনো কোনো রিভিউ নেই', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                  Row(
+                    children: List.generate(5, (i) => Icon(
+                      Icons.star_rounded, 
+                      color: i < rating ? Colors.orange : Colors.grey.shade200, 
+                      size: 18,
+                    )),
+                  ),
+                  Text(
+                    DateFormat('dd MMM yyyy').format(req.createdAt ?? DateTime.now()),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                  ),
                 ],
               ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: reviews.length,
-            itemBuilder: (context, index) {
-              final data = reviews[index].data() as Map<String, dynamic>;
-              final req = BloodRequestModel.fromMap(data, reviews[index].id);
-              final DateTime date = req.createdAt ?? DateTime.now();
-              final double rating = (data['donorRating'] ?? 5.0).toDouble();
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    )
-                  ],
+              const SizedBox(height: 12),
+              Text(
+                data['donorExperience'],
+                style: GoogleFonts.notoSansBengali(
+                  color: Colors.blueGrey.shade800,
+                  fontSize: 14,
+                  height: 1.5,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: List.generate(5, (i) => Icon(
-                            Icons.star_rounded, 
-                            color: i < rating ? Colors.orange : Colors.grey.shade200, 
-                            size: 20,
-                          )),
-                        ),
-                        Text(
-                          DateFormat('dd MMM yyyy').format(date),
-                          style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (req.thankYouNote != null && req.thankYouNote!.isNotEmpty) ...[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.favorite, color: Colors.red, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              req.thankYouNote!,
-                              style: GoogleFonts.notoSansBengali(
-                                color: Colors.black87,
-                                fontSize: 14,
-                                height: 1.5,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    if (data['donorExperience'] != null && (data['donorExperience'] as String).isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          data['donorExperience'],
-                          style: GoogleFonts.notoSansBengali(
-                            color: Colors.blueGrey.shade700,
-                            fontSize: 13,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                    Divider(color: Colors.grey.shade100),
-                    const SizedBox(height: 4),
-                    Text(
-                      '— ${req.relationWithPatient} (${req.patientName}-র জন্য)', 
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 12),
+              _buildFooter(req),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThanksTab(List<QueryDocumentSnapshot> docs) {
+    final thanks = docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['thankYouNote'] != null && (data['thankYouNote'] as String).trim().isNotEmpty;
+    }).toList();
+
+    if (thanks.isEmpty) {
+      return _buildEmptyState(Icons.favorite_border_rounded, 'কোনো ধন্যবাদ বার্তা নেই');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: thanks.length,
+      itemBuilder: (context, index) {
+        final data = thanks[index].data() as Map<String, dynamic>;
+        final req = BloodRequestModel.fromMap(data, thanks[index].id);
+
+        return _buildCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Icon(Icons.favorite, color: Colors.red, size: 20),
+                  Text(
+                    DateFormat('dd MMM yyyy').format(req.createdAt ?? DateTime.now()),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                req.thankYouNote!,
+                style: GoogleFonts.notoSansBengali(
+                  color: Colors.black87,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
                 ),
-              );
-            },
-          );
-        },
+              ),
+              const SizedBox(height: 12),
+              _buildFooter(req),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildFooter(BloodRequestModel req) {
+    return Column(
+      children: [
+        Divider(color: Colors.grey.shade100),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Icon(Icons.person_outline, size: 12, color: Colors.grey.shade500),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                '${req.relationWithPatient} (${req.patientName}-র জন্য)', 
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(IconData icon, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 60, color: Colors.grey.shade200),
+          const SizedBox(height: 16),
+          Text(message, style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+        ],
       ),
     );
   }
