@@ -1019,7 +1019,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                     color: Colors.green,
                     size: 30,
                   ),
-                  const SizedBox(height: 8),
+          const SizedBox(height: 8),
                   Text(
                     req.thankYouNote!,
                     textAlign: TextAlign.center,
@@ -1029,6 +1029,8 @@ class RequestDetailsScreen extends ConsumerWidget {
                       color: Colors.blueGrey.shade800,
                       height: 1.5,
                     ),
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12),
                   const Text(
