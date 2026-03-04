@@ -1,8 +1,8 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
@@ -26,6 +26,10 @@ class ReportService {
 
       final pdf = pw.Document();
       
+      // Load Logo
+      final logoData = await rootBundle.load('assets/images/app_icon.png');
+      final logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+      
       // Load Bengali Font (Using Google Fonts Noto Sans Bengali as fallback)
       final fontData = await PdfGoogleFonts.notoSansBengaliRegular();
       final boldFontData = await PdfGoogleFonts.notoSansBengaliBold();
@@ -41,12 +45,22 @@ class ReportService {
           ),
           build: (pw.Context context) {
             return [
-              pw.Header(
-                level: 0,
-                child: pw.Text('রক্তদান রিপোর্ট (Blood Donation Report)', 
-                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('রক্তদান রিপোর্ট', 
+                        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('(Blood Donation Report)', 
+                        style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
+                    ],
+                  ),
+                  pw.Image(logoImage, width: 60, height: 60),
+                ],
               ),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 20),
               pw.Text('ব্যবহারকারীর নাম: $userName'),
               pw.Text('রিপোর্ট তৈরির তারিখ: ${DateFormat('dd MMM yyyy').format(DateTime.now())}'),
               pw.Divider(),
