@@ -39,6 +39,7 @@ class HistoryScreen extends ConsumerWidget {
                   );
 
                   await ReportService().generateDonationReport(
+                    context: context,
                     userName: user.name,
                     myRequests: myRequests,
                     myDonations: myDonations,
