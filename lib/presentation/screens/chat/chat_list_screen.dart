@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
 import '../donors/donor_public_profile_screen.dart';
@@ -15,6 +16,17 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   String _searchQuery = '';
+
+  Future<void> _launchMapUrl(String address) async {
+    final Uri url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+    );
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("Map Error: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,14 +224,32 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        hospital,
-                        style: GoogleFonts.notoSansBengali(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              hospital,
+                              style: GoogleFonts.notoSansBengali(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _launchMapUrl(hospital),
+                            child: Text(
+                              'ম্যাপ দেখুন',
+                              style: GoogleFonts.notoSansBengali(
+                                color: Colors.blue.shade700,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Row(

@@ -966,17 +966,15 @@ class RequestDetailsScreen extends ConsumerWidget {
                   color: Colors.blue,
                 ),
               ),
-              if (req.mapUrl != null && req.mapUrl!.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildContactButton(
-                    onTap: () => _openMap(req.mapUrl),
-                    icon: Icons.map_rounded,
-                    label: 'ম্যাপ',
-                    color: Colors.orange,
-                  ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildContactButton(
+                  onTap: () => _openMap(req.mapUrl ?? req.hospitalName),
+                  icon: Icons.map_rounded,
+                  label: 'ম্যাপ',
+                  color: Colors.orange,
                 ),
-              ],
+              ),
             ],
           ),
         ],
