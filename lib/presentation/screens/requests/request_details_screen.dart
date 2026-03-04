@@ -559,52 +559,51 @@ class RequestDetailsScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        scrollable: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'রক্তদাতাকে রেটিং দিন ⭐',
           style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'আপনার অভিজ্ঞতা কেমন ছিল? এটি অন্য রোগীদের সাহায্য করবে।',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'আপনার অভিজ্ঞতা কেমন ছিল? এটি অন্য রোগীদের সাহায্য করবে।',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            StatefulBuilder(
+              builder: (context, setState) => Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 4,
+                children: List.generate(5, (index) {
+                  return GestureDetector(
+                    onTap: () => setState(() => rating = index + 1.0),
+                    child: Icon(
+                      index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: Colors.amber,
+                      size: 38,
+                    ),
+                  );
+                }),
               ),
-              const SizedBox(height: 16),
-              StatefulBuilder(
-                builder: (context, setState) => Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon: Icon(
-                        index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                        color: Colors.amber,
-                        size: 36,
-                      ),
-                      onPressed: () => setState(() => rating = index + 1.0),
-                    );
-                  }),
-                ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: commentController,
+              decoration: InputDecoration(
+                labelText: 'অভিজ্ঞতা লিখুন',
+                hintText: 'রক্তদাতা কেমন ছিল?',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey.shade50,
               ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: commentController,
-                decoration: InputDecoration(
-                  labelText: 'অভিজ্ঞতা লিখুন',
-                  hintText: 'রক্তদাতা কেমন ছিল?',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
+              maxLines: 2,
+            ),
+          ],
         ),
         actions: [
           TextButton(
