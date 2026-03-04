@@ -9,13 +9,13 @@ import '../../providers/blood_request_provider.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/blood_request_model.dart';
 import '../profile/personal_profile_screen.dart';
-import '../profile/appreciation_screen.dart';
 import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
 import '../requests/request_list_screen.dart';
 import '../requests/my_pending_requests_screen.dart';
 import '../requests/my_cancelled_requests_screen.dart';
 import '../chat/chat_list_screen.dart';
+import '../donors/donor_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import 'notification_screen.dart';
 
@@ -135,7 +135,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final myDonations = ref.watch(myDonationsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFB),
+      backgroundColor: const Color(0xFFF8F9FA),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateRequestScreen()),
+        ),
+        backgroundColor: const Color(0xFFE53935),
+        icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+        label: Text(
+          'রক্তের আবেদন',
+          style: GoogleFonts.notoSansBengali(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+            color: Colors.white,
+          ),
+        ),
+        elevation: 4,
+      ),
       body: userAsync.when(
         loading: () =>
             const Center(child: CircularProgressIndicator(color: Colors.red)),
@@ -161,42 +178,239 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               slivers: [
                 _buildAppBar(user),
                 SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                sliver: SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStatsSection(user),
-                      const SizedBox(height: 24),
-                      _buildActiveActivitySection(
-                        myRequests,
-                        myDonations,
-                        showThankYouInMiddle: false,
-                      ),
-                      _buildFactCard(),
-                      const SizedBox(height: 24),
-                      _buildNextDonationSection(user),
-                      _buildNeedBloodBanner(),
-                      const SizedBox(height: 32),
-                      _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RequestListScreen(),
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 16),
-                      _buildRequestList(emergencyRequests, user.uid),
-                      const SizedBox(height: 100),
-                    ],
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildWelcomeSection(user),
+                        const SizedBox(height: 24),
+                        _buildQuickStats(user),
+                        const SizedBox(height: 24),
+                        _buildActiveActivitySection(
+                          myRequests,
+                          myDonations,
+                        ),
+                        _buildNextDonationSection(user),
+                        _buildFactCard(),
+                        const SizedBox(height: 32),
+                        _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RequestListScreen(),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                        _buildRequestList(emergencyRequests, user.uid),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         );
         },
+      ),
+    );
+  }
+
+  Widget _buildWelcomeSection(UserModel user) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'আপনার ড্যাশবোর্ড',
+          style: GoogleFonts.notoSansBengali(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'আজকের রক্তদান একটি জীবন বাঁচাতে পারে',
+          style: GoogleFonts.notoSansBengali(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickStats(UserModel user) {
+    return Row(
+      children: [
+        _buildStatBox('মোট দান', '${user.totalDonations}', Colors.red, Icons.bloodtype),
+        const SizedBox(width: 12),
+        _buildStatBox('আবেদন', '${user.totalRequests}', Colors.blue, Icons.campaign),
+        const SizedBox(width: 12),
+        _buildStatBox('সেভ করা', '${user.savedDonors.length}', Colors.orange, Icons.favorite),
+      ],
+    );
+  }
+
+  Widget _buildStatBox(String title, String value, Color color, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.black87,
+              ),
+            ),
+            Text(
+              title,
+              style: GoogleFonts.notoSansBengali(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveActivitySection(
+    AsyncValue<List<BloodRequestModel>> myReq,
+    AsyncValue<List<BloodRequestModel>> myDon,
+  ) {
+    return myReq.when(
+      data: (requests) {
+        final reqActive = requests
+            .where((r) => r.status == 'accepted' || r.status == 'donated')
+            .toList();
+
+        return myDon.when(
+          data: (donations) {
+            final donActive = donations
+                .where(
+                  (r) =>
+                      r.status == 'accepted' ||
+                      r.status == 'donated' ||
+                      r.status == 'completed',
+                )
+                .toList();
+            final others = donActive
+                .where((d) => d.status != 'completed')
+                .toList();
+
+            if (reqActive.isEmpty && others.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Column(
+              children: [
+                ...reqActive.map<Widget>(
+                  (req) => _buildActivityCard(
+                    req,
+                    'আপনার রক্ত প্রয়োজন',
+                    Colors.blue,
+                  ),
+                ),
+                if (reqActive.isNotEmpty && others.isNotEmpty)
+                  const SizedBox(height: 8),
+                ...others.map<Widget>(
+                  (req) => _buildActivityCard(
+                    req,
+                    'আপনি রক্ত দিচ্ছেন',
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildActivityCard(BloodRequestModel req, String title, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            title.contains('নিচ্ছেন') ? Icons.volunteer_activism : Icons.history_edu,
+            color: color,
+            size: 22,
+          ),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.notoSansBengali(
+            fontWeight: FontWeight.bold,
+            color: color,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              req.hospitalName,
+              style: GoogleFonts.notoSansBengali(fontSize: 12, color: Colors.grey.shade700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'অবস্থা: ${req.status.toUpperCase()}',
+              style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+            ),
+          ],
+        ),
+        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color.withValues(alpha: 0.5)),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
+        ),
       ),
     );
   }
@@ -306,7 +520,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: CircleAvatar(
@@ -370,7 +584,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -395,144 +609,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildStatsSection(UserModel user) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            _buildStatCard(
-              'দান করেছেন',
-              '${user.totalDonations} ব্যাগ',
-              Icons.bloodtype_rounded,
-              Colors.red,
-            ),
-            const SizedBox(width: 12),
-            _buildStatCard(
-              'আবেদন করেছেন',
-              '${user.totalRequests} টি',
-              Icons.post_add_rounded,
-              Colors.blue,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const MyPendingRequestsScreen(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _buildStatCard(
-              'রক্ত পেয়েছেন',
-              '${user.totalReceivedBags} ব্যাগ',
-              Icons.volunteer_activism_rounded,
-              Colors.green,
-            ),
-            const SizedBox(width: 12),
-            _buildStatCard(
-              'বাতিল করেছেন',
-              '${user.totalCancelled} টি',
-              Icons.cancel_rounded,
-              Colors.blueGrey,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const MyCancelledRequestsScreen(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _buildStatCard(
-          'সেভ করা দাতা',
-          '${user.savedDonors.length} জন রক্তদাতা',
-          Icons.favorite_rounded,
-          Colors.orange.shade700,
-          isFullWidth: true,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SavedDonorsScreen()),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color, {
-    bool isFullWidth = false,
-    VoidCallback? onTap,
-  }) {
-    final content = Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              if (onTap != null)
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: color.withOpacity(0.3),
-                  size: 14,
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.notoSans(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          Text(
-            label,
-            style: GoogleFonts.notoSansBengali(
-              color: Colors.grey.shade600,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-    return isFullWidth
-        ? GestureDetector(
-            onTap: onTap,
-            child: SizedBox(width: double.infinity, child: content),
-          )
-        : Expanded(
-            child: GestureDetector(onTap: onTap, child: content),
-          );
-  }
-
   Widget _buildFactCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -541,7 +617,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -591,66 +667,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  Widget _buildActiveActivitySection(
-    AsyncValue<List<BloodRequestModel>> myReq,
-    AsyncValue<List<BloodRequestModel>> myDon, {
-    bool showThankYouInMiddle = true,
-  }) {
-    return myReq.when(
-      data: (requests) {
-        final reqActive = requests
-            .where((r) => r.status == 'accepted' || r.status == 'donated')
-            .toList();
-
-        return myDon.when(
-          data: (donations) {
-            final donActive = donations
-                .where(
-                  (r) =>
-                      r.status == 'accepted' ||
-                      r.status == 'donated' ||
-                      r.status == 'completed',
-                )
-                .toList();
-            final others = donActive
-                .where((d) => d.status != 'completed')
-                .toList();
-
-            if (reqActive.isEmpty && others.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            return Column(
-              children: [
-                ...reqActive.map<Widget>(
-                  (req) => _buildActivityCard(
-                    req,
-                    'আপনার রক্ত প্রয়োজন',
-                    Colors.blue,
-                  ),
-                ),
-                if (reqActive.isNotEmpty && others.isNotEmpty)
-                  const SizedBox(height: 8),
-                ...others.map<Widget>(
-                  (req) => _buildActivityCard(
-                    req,
-                    'আপনি রক্ত দিচ্ছেন',
-                    Colors.green,
-                  ),
-                ),
-              ],
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
 
   Widget _buildNextDonationSection(UserModel user) {
     if (user.lastDonationDate == null) return const SizedBox.shrink();
@@ -718,42 +734,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildActivityCard(BloodRequestModel req, String title, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.15)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.history_edu_rounded, color: color, size: 20),
-        ),
-        title: Text(
-          title,
-          style: GoogleFonts.notoSansBengali(
-            fontWeight: FontWeight.bold,
-            color: color,
-            fontSize: 14,
-          ),
-        ),
-        subtitle: Text(req.hospitalName, style: const TextStyle(fontSize: 12)),
-        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
-        ),
-      ),
-    );
-  }
-
   Widget _buildRequestList(AsyncValue<List<BloodRequestModel>> requestsAsync, String? currentUserId) {
     return requestsAsync.when(
       loading: () =>
@@ -792,14 +772,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 15,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
-        border: isUrgent
-            ? Border.all(color: Colors.red.shade100, width: 1.5)
-            : null,
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
@@ -809,175 +786,131 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: isUrgent
-                      ? LinearGradient(
-                          colors: [Colors.red, Colors.red.shade800],
-                        )
-                      : LinearGradient(
-                          colors: [Colors.red.shade50, Colors.red.shade100],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: isUrgent ? Colors.red : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: Text(
+                        req.bloodGroup,
+                        style: TextStyle(
+                          color: isUrgent ? Colors.white : Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
                         ),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Center(
-                  child: Text(
-                    req.bloodGroup,
-                    style: TextStyle(
-                      color: isUrgent ? Colors.white : Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: Text(
-                            req.patientName.isEmpty
-                                ? 'নামহীন রোগী'
-                                : req.patientName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        if (isUrgent) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'জরুরি',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                req.patientName.isEmpty
+                                    ? 'নামহীন রোগী'
+                                    : req.patientName,
+                                style: GoogleFonts.notoSansBengali(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      req.hospitalName,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: Colors.grey.shade500,
+                            if (isUrgent) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade600,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'জরুরি',
+                                  style: GoogleFonts.notoSansBengali(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          '${req.district}, ${req.thana}',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 12,
+                          req.hospitalName,
+                          style: GoogleFonts.notoSansBengali(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.map_rounded,
-                    color: Colors.blue,
-                    size: 22,
                   ),
-                  onPressed: () =>
-                      _launchMapUrl(req.mapUrl ?? req.hospitalName),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.keyboard_arrow_right_rounded,
+                      color: Colors.blue.shade400,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, thickness: 0.5),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_rounded, size: 16, color: Colors.grey.shade400),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${req.district}, ${req.thana}',
+                        style: GoogleFonts.notoSansBengali(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () => _launchMapUrl(req.mapUrl ?? req.hospitalName),
+                    child: Text(
+                      'ম্যাপ দেখুন',
+                      style: GoogleFonts.notoSansBengali(
+                        color: Colors.blue.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-
-  Widget _buildNeedBloodBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2B),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'আপনার কি রক্ত প্রয়োজন?',
-            style: GoogleFonts.notoSansBengali(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'সরাসরি রক্তদাতার সাথে যোগাযোগ করতে এখনই আবেদন করুন।',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CreateRequestScreen()),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-            ),
-            child: const Text(
-              'আবেদন করুন',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
       ),
     );
   }

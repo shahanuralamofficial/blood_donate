@@ -48,7 +48,7 @@ class HistoryScreen extends ConsumerWidget {
             indicatorColor: Colors.white,
             indicatorWeight: 3,
             labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withOpacity(0.7),
+            unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
             labelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15),
             unselectedLabelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.normal, fontSize: 14),
             tabs: const [
@@ -136,9 +136,9 @@ class HistoryScreen extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
-        border: isCompleted ? Border.all(color: Colors.green.withOpacity(0.3), width: 1) : null,
+        border: isCompleted ? Border.all(color: Colors.green.withValues(alpha: 0.3), width: 1) : null,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -208,7 +208,7 @@ class HistoryScreen extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

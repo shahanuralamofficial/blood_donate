@@ -755,9 +755,9 @@ class RequestDetailsScreen extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Center(
         child: Text(
@@ -781,7 +781,7 @@ class RequestDetailsScreen extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10),
         ],
       ),
       child: Column(
@@ -824,7 +824,7 @@ class RequestDetailsScreen extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10),
         ],
       ),
       child: Column(
@@ -866,7 +866,7 @@ class RequestDetailsScreen extends ConsumerWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -997,9 +997,9 @@ class RequestDetailsScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:blood_donate/data/models/user_model.dart';
 import '../../providers/donor_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/services/location_service.dart';
@@ -154,7 +155,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                       final isSaved = savedDonors.contains(user.uid);
                       final rating = user.averageRating;
 
-                      return _buildDonorCard(user, donor, distance, isSaved, rating);
+                      return _buildDonorCard(user, donor, distance, isSaved, rating, userData);
                     },
                   );
                 },
@@ -189,14 +190,14 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
     );
   }
 
-  Widget _buildDonorCard(user, donor, distance, isSaved, rating) {
+  Widget _buildDonorCard(user, donor, distance, isSaved, rating, UserModel? userData) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: InkWell(
@@ -212,7 +213,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
               children: [
                 Container(
                   width: 70,
-                  color: const Color(0xFFE53935).withOpacity(0.05),
+                  color: const Color(0xFFE53935).withValues(alpha: 0.05),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -237,8 +238,20 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () => _toggleSaveDonor(user.uid, (ref.read(currentUserDataProvider).value?.savedDonors ?? [])),
-                              child: Icon(isSaved ? Icons.favorite : Icons.favorite_border, color: Colors.orange, size: 22),
+                              onTap: () {
+                                if (user.uid != userData?.uid) {
+                                  _toggleSaveDonor(user.uid, (ref.read(currentUserDataProvider).value?.savedDonors ?? []));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('আপনি নিজেকে সেভ করতে পারবেন না')),
+                                  );
+                                }
+                              },
+                              child: Icon(
+                                user.uid == userData?.uid ? Icons.favorite_border : (isSaved ? Icons.favorite : Icons.favorite_border),
+                                color: user.uid == userData?.uid ? Colors.grey.shade300 : Colors.orange,
+                                size: 22,
+                              ),
                             ),
                           ],
                         ),
@@ -261,7 +274,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -289,7 +302,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                       IconButton(
                         icon: const Icon(Icons.call_rounded, color: Colors.green),
                         onPressed: () => _makeCall(user.phone),
-                        style: IconButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.1)),
+                        style: IconButton.styleFrom(backgroundColor: Colors.green.withValues(alpha: 0.1)),
                       ),
                       const SizedBox(height: 8),
                       IconButton(
@@ -297,7 +310,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                         onPressed: () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${user.uid}', otherUserName: user.name)));
                         },
-                        style: IconButton.styleFrom(backgroundColor: Colors.blue.withOpacity(0.1)),
+                        style: IconButton.styleFrom(backgroundColor: Colors.blue.withValues(alpha: 0.1)),
                       ),
                     ],
                   ),

@@ -124,7 +124,7 @@ class RequestDetailsScreen extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
       child: Center(
         child: Text(text, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
       ),

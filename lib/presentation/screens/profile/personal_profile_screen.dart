@@ -154,7 +154,7 @@ class PersonalProfileScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [Colors.amber.shade400, Colors.orange.shade800]),
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: Colors.orange.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))],
         ),
         child: Row(
           children: [
@@ -164,7 +164,7 @@ class PersonalProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('আপনার র‍্যাঙ্ক', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('আপনার র‍্যাঙ্ক', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.bold)),
                   Text(user.rank.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 ],
               ),
@@ -194,7 +194,7 @@ class PersonalProfileScreen extends ConsumerWidget {
           color: Colors.white, 
           borderRadius: BorderRadius.circular(20), 
           border: Border.all(color: Colors.grey.shade100),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
         ),
         child: Column(
           children: [
@@ -215,7 +215,7 @@ class PersonalProfileScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white, 
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15)],
       ),
       child: Column(
         children: [
@@ -242,7 +242,7 @@ class PersonalProfileScreen extends ConsumerWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
