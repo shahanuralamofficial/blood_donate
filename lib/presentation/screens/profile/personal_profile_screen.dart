@@ -109,7 +109,7 @@ class PersonalProfileScreen extends ConsumerWidget {
             'মতামত ও পরামর্শ',
             'আপনার মতামত জানান',
             Colors.teal,
-            onTap: () => _launchUrl('mailto:support@blooddonate.com?subject=Feedback for Blood Donate App'), // আপনার ইমেইল এখানে দিন
+            onTap: () => _launchUrl('mailto:blooddonate.help@gmail.com?subject=Feedback for Blood Donate App'),
           ),
         ],
       ),
