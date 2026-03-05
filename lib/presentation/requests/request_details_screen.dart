@@ -188,7 +188,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                       MaterialPageRoute(
                         builder: (_) => ChatScreen(
                           requestId: chatId,
-                          otherUserName: isRequester ? 'রক্তদাতা' : 'গ্রহীতা',
+                          otherUserName: isRequester ? (req.donorId != null ? 'রক্তদাতা' : 'ইউজার') : req.requesterName,
                           otherUserId: otherUserId,
                         ),
                       ),

@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../core/services/notification_service.dart';
+import '../../../data/models/user_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/message_provider.dart';
+import '../../../core/services/notification_service.dart';
+import '../donors/donor_public_profile_screen.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
-  final String requestId;
+  final String requestId; 
   final String otherUserName;
   final String? otherUserId;
 
@@ -28,35 +30,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isSending = false;
-  late String _finalChatId;
   String? _receiverId;
 
   @override
   void initState() {
     super.initState();
-    _calculateChatId();
     _receiverId = widget.otherUserId;
-  }
-
-  void _calculateChatId() {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
-
-    if (widget.requestId.startsWith('direct_')) {
-      _finalChatId = widget.requestId;
-      // আইডি থেকে রিসিভার আইডি বের করা যদি widget.otherUserId নাল হয়
-      if (_receiverId == null) {
-        final parts = widget.requestId.split('_');
-        if (parts.length >= 3) {
-          _receiverId = parts[1] == currentUser.uid ? parts[2] : parts[1];
-        }
+    if (_receiverId == null && widget.requestId.startsWith('direct_')) {
+      final parts = widget.requestId.split('_');
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      if (parts.length >= 3 && currentUid != null) {
+        _receiverId = parts[1] == currentUid ? parts[2] : parts[1];
       }
-    } else if (widget.otherUserId != null) {
-      List<String> ids = [currentUser.uid, widget.otherUserId!];
-      ids.sort();
-      _finalChatId = 'direct_${ids[0]}_${ids[1]}';
-    } else {
-      _finalChatId = widget.requestId;
     }
   }
 
@@ -76,17 +61,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
 
     try {
-      await ref.read(messageRepositoryProvider).sendMessage(_finalChatId, message);
+      await ref.read(messageRepositoryProvider).sendMessage(widget.requestId, message);
       
-      // নোটিফিকেশন পাঠানোর লজিক
-      if (_receiverId != null && _receiverId!.isNotEmpty) {
+      if (_receiverId != null) {
         NotificationService().sendNotificationToUser(
           receiverId: _receiverId!,
           title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
           body: text,
           data: {
             'type': 'chat',
-            'chatId': _finalChatId,
+            'chatId': widget.requestId,
             'senderName': user.name,
           },
         );
@@ -111,22 +95,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messagesAsync = ref.watch(messagesStreamProvider(_finalChatId));
+    final messagesAsync = ref.watch(messagesStreamProvider(widget.requestId));
     final user = ref.watch(currentUserDataProvider).value;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: Text(widget.otherUserName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        titleSpacing: 0,
+        title: _receiverId != null 
+          ? StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('users').doc(_receiverId).snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return Text(widget.otherUserName);
+                
+                final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                if (userData == null) return Text(widget.otherUserName);
+                
+                final otherUser = UserModel.fromMap(userData);
+                final bool isOnline = userData['isOnline'] ?? false;
+
+                return InkWell(
+                  onTap: () => Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
+                        child: otherUser.profileImageUrl == null ? const Icon(Icons.person, size: 20) : null,
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(otherUser.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(
+                            isOnline ? 'অনলাইন' : 'অফলাইন', 
+                            style: TextStyle(
+                              fontSize: 10, 
+                              color: isOnline ? Colors.greenAccent : Colors.white70,
+                              fontWeight: FontWeight.w500
+                            )
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
+          : Text(widget.otherUserName),
         backgroundColor: const Color(0xFFE53935),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
           Expanded(
             child: messagesAsync.when(
               data: (messages) {
-                if (messages.isEmpty) return const Center(child: Text('মেসেজ পাঠিয়ে চ্যাট শুরু করুন...'));
+                if (messages.isEmpty) return const Center(child: Text('কথোপকথন শুরু করুন...'));
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
