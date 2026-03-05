@@ -20,6 +20,7 @@ class HistoryScreen extends ConsumerWidget {
     final myDonationsAsync = ref.watch(myDonationsProvider);
 
     return DefaultTabController(
+      key: ValueKey(initialIndex), // Add a key to force rebuild when index changes
       length: 4,
       initialIndex: initialIndex,
       child: Scaffold(

@@ -307,7 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const HistoryScreen(),
+                  builder: (_) => const HistoryScreen(initialIndex: 1),
                 ),
               ),
             ),
@@ -336,7 +336,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const HistoryScreen(),
+                  builder: (_) => const HistoryScreen(initialIndex: 3),
                 ),
               ),
             ),
