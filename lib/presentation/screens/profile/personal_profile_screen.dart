@@ -6,7 +6,7 @@ import '../../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
 import 'reviews_list_screen.dart';
 import 'rank_progress_screen.dart';
-import 'appreciation_screen.dart';
+
 
 class PersonalProfileScreen extends ConsumerWidget {
   const PersonalProfileScreen({super.key});

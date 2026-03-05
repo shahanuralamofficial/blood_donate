@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../data/models/message_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/message_provider.dart';
@@ -48,6 +49,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }, SetOptions(merge: true));
 
       await ref.read(messageRepositoryProvider).sendMessage(widget.requestId, message);
+
+      // নোটিফিকেশন পাঠানোর লজিক
+      final request = ref.read(requestStreamByIdProvider(widget.requestId)).value;
+      if (request != null) {
+        final String receiverId = user.uid == request.requesterId 
+            ? (request.donorId ?? '') 
+            : request.requesterId;
+
+        if (receiverId.isNotEmpty) {
+          import '../../../core/services/notification_service.dart';
+          NotificationService().sendNotificationToUser(
+            receiverId: receiverId,
+            title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
+            body: text,
+            data: {
+              'type': 'chat',
+              'requestId': widget.requestId,
+              'senderName': user.name,
+            },
+          );
+        }
+      }
+
       _messageController.clear();
       _scrollToBottom();
     } catch (e) {
