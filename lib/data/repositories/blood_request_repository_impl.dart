@@ -9,8 +9,9 @@ class BloodRequestRepositoryImpl implements BloodRequestRepository {
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
-  Future<void> createRequest(BloodRequestModel request) async {
-    await _firestore.collection('blood_requests').add(request.toMap());
+  Future<String> createRequest(BloodRequestModel request) async {
+    final docRef = await _firestore.collection('blood_requests').add(request.toMap());
+    return docRef.id;
   }
 
   @override

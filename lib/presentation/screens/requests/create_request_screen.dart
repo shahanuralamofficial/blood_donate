@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/services/notification_service.dart'; // নোটিফিকেশন সার্ভিস ইমপোর্ট
+import '../../../data/models/blood_request_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/blood_request_provider.dart';
+import '../../../core/services/notification_service.dart';
 
 class CreateRequestScreen extends ConsumerStatefulWidget {
   const CreateRequestScreen({super.key});
@@ -38,14 +41,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   bool _isLoadingData = true;
 
   final List<String> _bloodGroups = [
-    'A+',
-    'A-',
-    'B+',
-    'B-',
-    'O+',
-    'O-',
-    'AB+',
-    'AB-',
+    'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-',
   ];
 
   @override
@@ -119,10 +115,8 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         requestId: requestId,
       );
 
-      // ইউজারের মোট আবেদনের সংখ্যা বাড়ানো (Transaction used for reliability)
-      final userRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+      // ইউজারের মোট আবেদনের সংখ্যা বাড়ানো
+      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userRef);
         if (snapshot.exists) {
@@ -141,10 +135,11 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         );
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('ত্রুটি: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ত্রুটি: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -276,7 +271,6 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     );
   }
 
-  // (বাকি উইজেট কোডগুলো আগের মতোই সঠিক আছে)
   Widget _buildTextField(
     TextEditingController controller,
     String label,
@@ -303,16 +297,13 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   Widget _buildLocationDropdowns() {
     List<String> divisions = _allLocationData.keys.toList();
     List<String> districts = [];
-    if (_selectedDivision != null &&
-        _allLocationData.containsKey(_selectedDivision)) {
-      var districtsList =
-          _allLocationData[_selectedDivision]['districts'] as List;
+    if (_selectedDivision != null && _allLocationData.containsKey(_selectedDivision)) {
+      var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
       districts = districtsList.map((e) => e['name'].toString()).toList();
     }
     List<String> thanas = [];
     if (_selectedDistrict != null) {
-      var districtsList =
-          _allLocationData[_selectedDivision]['districts'] as List;
+      var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
       var districtData = districtsList.firstWhere(
         (e) => e['name'] == _selectedDistrict,
         orElse: () => null,
@@ -324,8 +315,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     }
     List<String> unions = [];
     if (_selectedThana != null) {
-      var districtsList =
-          _allLocationData[_selectedDivision]['districts'] as List;
+      var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
       var districtData = districtsList.firstWhere(
         (e) => e['name'] == _selectedDistrict,
         orElse: () => null,
@@ -344,9 +334,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         DropdownButtonFormField<String>(
           value: _selectedDivision,
           hint: const Text('বিভাগ'),
-          items: divisions
-              .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-              .toList(),
+          items: divisions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
           onChanged: (v) => setState(() {
             _selectedDivision = v;
             _selectedDistrict = null;
@@ -358,9 +346,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         DropdownButtonFormField<String>(
           value: _selectedDistrict,
           hint: const Text('জেলা'),
-          items: districts
-              .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-              .toList(),
+          items: districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
           onChanged: (v) => setState(() {
             _selectedDistrict = v;
             _selectedThana = null;
@@ -371,9 +357,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         DropdownButtonFormField<String>(
           value: _selectedThana,
           hint: const Text('থানা'),
-          items: thanas
-              .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-              .toList(),
+          items: thanas.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
           onChanged: (v) => setState(() {
             _selectedThana = v;
             _selectedUnion = null;
@@ -383,9 +367,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         DropdownButtonFormField<String>(
           value: _selectedUnion,
           hint: const Text('ইউনিয়ন (ঐচ্ছিক)'),
-          items: unions
-              .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-              .toList(),
+          items: unions.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
           onChanged: (v) => setState(() => _selectedUnion = v),
         ),
       ],
@@ -418,9 +400,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                   ? 'রক্তদানের সম্ভাব্য তারিখ'
                   : DateFormat('dd MMMM yyyy').format(_selectedDate!),
               style: TextStyle(
-                color: _selectedDate == null
-                    ? Colors.grey.shade600
-                    : Colors.black87,
+                color: _selectedDate == null ? Colors.grey.shade600 : Colors.black87,
               ),
             ),
             const Icon(Icons.calendar_month_rounded, color: Color(0xFFE53935)),
@@ -466,9 +446,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
               color: isSelected ? const Color(0xFFE53935) : Colors.white,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: isSelected
-                    ? const Color(0xFFE53935)
-                    : Colors.grey.shade300,
+                color: isSelected ? const Color(0xFFE53935) : Colors.grey.shade300,
               ),
             ),
             child: Center(
