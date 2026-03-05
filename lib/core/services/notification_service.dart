@@ -223,14 +223,15 @@ class NotificationService {
         }
       }
 
-      if (notifiedUserIds.length < 3) {
+      // যদি থানায় ৫০ জনের কম হয়, তবে জেলায় পাঠানো হবে
+      if (notifiedUserIds.length < 50) {
         final districtDonors = await FirebaseFirestore.instance
             .collection('users')
             .where('address.division', isEqualTo: division)
             .where('address.district', isEqualTo: district)
             .where('bloodGroup', isEqualTo: bloodGroup)
             .where('isAvailable', isEqualTo: true)
-            .limit(15)
+            .limit(300) // জেলা পর্যায়ে ৩০০ জন পর্যন্ত চেক করবে
             .get();
 
         for (var doc in districtDonors.docs) {
@@ -244,6 +245,36 @@ class NotificationService {
                 'type': 'blood_request',
                 'thana': thana,
                 'district': district,
+                'division': division,
+              },
+            );
+            notifiedUserIds.add(doc.id);
+          }
+        }
+      }
+
+      // যদি এখনো ৫০ জনের কম হয়, তবে পুরো বিভাগ জুড়ে নোটিফিকেশন যাবে
+      if (notifiedUserIds.length < 50) {
+        final divisionDonors = await FirebaseFirestore.instance
+            .collection('users')
+            .where('address.division', isEqualTo: division)
+            .where('bloodGroup', isEqualTo: bloodGroup)
+            .where('isAvailable', isEqualTo: true)
+            .limit(500) // বিভাগ পর্যায়ে ৫০০ জন পর্যন্ত চেক করবে
+            .get();
+
+        for (var doc in divisionDonors.docs) {
+          if (doc.id != currentUserId && !notifiedUserIds.contains(doc.id)) {
+            await sendNotificationToUser(
+              receiverId: doc.id,
+              title: 'আপনার বিভাগে $bloodGroup রক্ত প্রয়োজন!',
+              body: '$division বিভাগে রক্তের জরুরি আবেদন করা হয়েছে।',
+              data: {
+                'requestId': requestId, 
+                'type': 'blood_request',
+                'thana': thana,
+                'district': district,
+                'division': division,
               },
             );
             notifiedUserIds.add(doc.id);

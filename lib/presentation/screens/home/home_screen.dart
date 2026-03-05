@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,33 +29,41 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _celebrationShown = false;
-  late String _dailyFact;
-
-  final List<String> _donationFacts = [
-    'এক ব্যাগ রক্ত দিয়ে সর্বোচ্চ তিনজনের প্রাণ বাঁচানো সম্ভব। ❤️',
-    'রক্তদানের পর শরীরের তরল অংশ ২৪-৪৮ ঘণ্টার মধ্যে পূরণ হয়ে যায়। 💧',
-    'নিয়মিত রক্তদান করলে হৃদরোগের ঝুঁকি অনেকাংশে কমে যায়। 🫀',
-  ];
+  String _dailyFact = 'রক্তদান করুন, জীবন বাঁচান। ❤️';
+  List<String> _donationFacts = [];
 
   @override
   void initState() {
     super.initState();
-    _setDailyFact();
+    _loadDonationFacts();
+  }
+
+  Future<void> _loadDonationFacts() async {
+    try {
+      final String response = await rootBundle.loadString('assets/donation_facts.json');
+      final List<dynamic> data = json.decode(response);
+      if (mounted) {
+        setState(() {
+          _donationFacts = data.cast<String>();
+          _setDailyFact();
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading donation facts: $e");
+    }
   }
 
   void _setDailyFact() {
+    if (_donationFacts.isEmpty) return;
+    
     final now = DateTime.now();
     final epoch = DateTime(2024, 1, 1);
     final diffInDays = now.difference(epoch).inDays;
 
-    // Safety check for negative difference or empty list
-    if (_donationFacts.isEmpty) {
-      _dailyFact = 'রক্তদান করুন, জীবন বাঁচান। ❤️';
-      return;
-    }
-
     final index = diffInDays.abs() % _donationFacts.length;
-    _dailyFact = _donationFacts[index];
+    setState(() {
+      _dailyFact = _donationFacts[index];
+    });
   }
 
   Future<void> _launchMapUrl(String address) async {
@@ -215,7 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           );
                         }),
                         const SizedBox(height: 16),
-                        _buildRequestList(emergencyRequests, user.uid),
+                        _buildRequestList(emergencyRequests, user),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -901,31 +911,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildRequestList(
     AsyncValue<List<BloodRequestModel>> requestsAsync,
-    String? currentUserId,
+    UserModel? user,
   ) {
     return requestsAsync.when(
       loading: () =>
           const Center(child: CircularProgressIndicator(color: Colors.red)),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (requests) {
-        final filteredRequests = requests
-            .where((r) => r.requesterId != currentUserId)
-            .toList();
+        if (user == null) return const SizedBox.shrink();
+        
+        final currentUserId = user.uid;
+        final userThana = user.address?['thana']?.toString().toLowerCase() ?? '';
+        final userDistrict = user.address?['district']?.toString().toLowerCase() ?? '';
+        final userDivision = user.address?['division']?.toString().toLowerCase() ?? '';
+
+        // ১. নিজের আবেদন বাদ দেওয়া
+        // ২. শুধুমাত্র নিজের বিভাগের আবেদন ডিফল্টভাবে দেখানো
+        final filteredRequests = requests.where((r) {
+          final isNotMine = r.requesterId != currentUserId;
+          final isSameDivision = r.division.toLowerCase() == userDivision;
+          return isNotMine && isSameDivision;
+        }).toList();
 
         if (filteredRequests.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Text(
-                'কোন পেন্ডিং আবেদন নেই',
+                'আপনার বিভাগে কোনো পেন্ডিং আবেদন নেই',
                 style: TextStyle(color: Colors.grey.shade500),
               ),
             ),
           );
         }
-        final sorted = List<BloodRequestModel>.from(filteredRequests)
-          ..sort((a, b) => (a.isEmergency && !b.isEmergency) ? -1 : 1);
-        final top3 = sorted.take(3).toList();
+
+        // ৩. সর্টিং: থানা > জেলা > বিভাগ
+        filteredRequests.sort((a, b) {
+          // জরুরি আবেদনকে সবার উপরে রাখা
+          if (a.isEmergency && !b.isEmergency) return -1;
+          if (!a.isEmergency && b.isEmergency) return 1;
+
+          final aThana = a.thana.toLowerCase();
+          final bThana = b.thana.toLowerCase();
+          final aDistrict = a.district.toLowerCase();
+          final bDistrict = b.district.toLowerCase();
+
+          // থানা অনুযায়ী চেক
+          if (aThana == userThana && bThana != userThana) return -1;
+          if (aThana != userThana && bThana == userThana) return 1;
+
+          // জেলা অনুযায়ী চেক
+          if (aDistrict == userDistrict && bDistrict != userDistrict) return -1;
+          if (aDistrict != userDistrict && bDistrict == userDistrict) return 1;
+
+          return 0;
+        });
+
+        final top3 = filteredRequests.take(3).toList();
         return Column(
           children: top3.map((req) => _buildRequestCard(req)).toList(),
         );
