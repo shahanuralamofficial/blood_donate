@@ -12,54 +12,56 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function hasRole(role) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
-    }
-
-    // Users collection
+    // --- Users Collection ---
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId);
+
+      // অন্য ইউজাররা র‍্যাঙ্ক বা স্ট্যাটাস আপডেট করার সময় (যেমন রিভিউ বা রক্ত পাওয়া নিশ্চিত করলে)
+      // কিছু নির্দিষ্ট ফিল্ড আপডেট করার প্রয়োজন হতে পারে। তাই আপডেট উন্মুক্ত রাখা হয়েছে।
+      allow update: if isSignedIn();
+
+      // Notifications Sub-collection
+      match /notifications/{notificationId} {
+        allow read: if isSignedIn() && isOwner(userId);
+        // যেকোনো ইউজার অন্য কাউকে নোটিফিকেশন পাঠাতে পারবে
+        allow create: if isSignedIn();
+        // নিজের নোটিফিকেশন নিজে রিড/আপডেট করতে পারবে
+        allow update: if isSignedIn() && isOwner(userId);
+        allow delete: if isSignedIn() && isOwner(userId);
+      }
     }
 
-    // Donors collection (publicly searchable for patients)
+    // --- Blood Requests Collection ---
+    match /blood_requests/{requestId} {
+      allow read: if isSignedIn();
+      // যেকোনো সাইন-ইন করা ইউজার রিকোয়েস্ট তৈরি করতে পারবে
+      allow create: if isSignedIn();
+      // রিকোয়েস্টার, একসেপ্ট করা ডোনার অথবা অন্য কেউ (স্ট্যাটাস আপডেট বা রিভিউর জন্য) আপডেট করতে পারবে
+      allow update: if isSignedIn();
+      // রিকোয়েস্ট ডিলিট করার ক্ষমতা শুধুমাত্র রিকোয়েস্টারের
+      allow delete: if isSignedIn() && resource.data.requesterId == request.auth.uid;
+    }
+
+    // --- Donors Collection ---
+    // (পাবলিকলি সার্চ করার জন্য)
     match /donors/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && isOwner(userId);
     }
 
-    // Blood Requests
-    match /blood_requests/{requestId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        resource.data.requesterId == request.auth.uid ||
-        resource.data.donorId == request.auth.uid ||
-        hasRole('admin')
-      );
+    // --- Chats/Messages (ভবিষ্যতের জন্য) ---
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn();
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
     }
 
-    // Wallets (Highly Sensitive)
-    match /wallets/{userId} {
-      allow read: if isSignedIn() && isOwner(userId);
-      allow write: if false; // Only Cloud Functions should update balances
-    }
-
-    // Transactions
-    match /transactions/{txId} {
-      allow read: if isSignedIn() && (
-        resource.data.senderId == request.auth.uid ||
-        resource.data.receiverId == request.auth.uid ||
-        hasRole('admin')
-      );
-      allow write: if false; // Only Cloud Functions
-    }
-
-    // Clinics
-    match /clinics/{clinicId} {
+    // --- App Metadata / Config (ঐচ্ছিক) ---
+    match /app_config/{configId} {
       allow read: if true;
-      allow write: if isSignedIn() && (isOwner(clinicId) || hasRole('admin'));
+      allow write: if false; // শুধুমাত্র অ্যাডমিন ড্যাশবোর্ড থেকে
     }
   }
 }
