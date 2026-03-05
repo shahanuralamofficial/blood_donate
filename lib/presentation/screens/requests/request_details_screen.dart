@@ -13,10 +13,17 @@ import '../../providers/blood_request_provider.dart';
 import '../chat/chat_screen.dart';
 import '../donors/donor_public_profile_screen.dart';
 
-class RequestDetailsScreen extends ConsumerWidget {
+class RequestDetailsScreen extends ConsumerStatefulWidget {
   final BloodRequestModel request;
 
   const RequestDetailsScreen({super.key, required this.request});
+
+  @override
+  ConsumerState<RequestDetailsScreen> createState() => _RequestDetailsScreenState();
+}
+
+class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
+  bool _celebrationShown = false;
 
   Future<void> _makePhoneCall(String phoneNumber) async {
     final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -71,11 +78,27 @@ class RequestDetailsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final liveRequestAsync = ref.watch(
-      requestStreamByIdProvider(request.requestId),
+      requestStreamByIdProvider(widget.request.requestId),
     );
-    final user = ref.watch(currentUserDataProvider).value;
+    final userAsync = ref.watch(currentUserDataProvider);
+    final user = userAsync.value;
+
+    // অভিনন্দন লজিক
+    userAsync.whenData((userData) {
+      if (userData != null && userData.rankUpdatePending && !_celebrationShown) {
+        _celebrationShown = true;
+        // আপডেট শেষ করে দিচ্ছি যাতে বারবার না আসে
+        FirebaseFirestore.instance.collection('users').doc(userData.uid).update({
+          'rankUpdatePending': false,
+        });
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showCelebrationDialog(userData.rank);
+        });
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
@@ -255,6 +278,56 @@ class RequestDetailsScreen extends ConsumerWidget {
         loading: () =>
             const Center(child: CircularProgressIndicator(color: Colors.red)),
         error: (e, s) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  void _showCelebrationDialog(String rank) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Icon(Icons.stars_rounded, color: Colors.amber, size: 60),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'অভিনন্দন!',
+              style: GoogleFonts.notoSansBengali(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'আপনার রক্তদান সফলভাবে সম্পন্ন হয়েছে ❤️',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'র‍্যাঙ্ক: $rank',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('ঠিক আছে'),
+          ),
+        ],
       ),
     );
   }
