@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
 import '../donors/donor_public_profile_screen.dart';
@@ -17,17 +16,6 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> {
   String _searchQuery = '';
 
-  Future<void> _launchMapUrl(String address) async {
-    final Uri url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
-    );
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint("Map Error: $e");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -41,13 +29,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
+          preferredSize: const Size.fromHeight(60),
           child: _buildSearchBar(),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('blood_requests')
+            .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -58,27 +47,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
             return _buildEmptyState();
           }
 
-          // ১. ইউজারের সাথে সম্পর্কিত সকল এক্সেপ্টেড রিকোয়েস্ট খুঁজে বের করা
+          // ইউজারের সাথে সম্পর্কিত সকল রিকোয়েস্ট (পেন্ডিং, এক্সেপ্টেড সব)
           var allRequests = snapshot.data!.docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            final isRelated = data['requesterId'] == currentUser.uid || data['donorId'] == currentUser.uid;
-            final isAccepted = ['accepted', 'donated', 'completed'].contains(data['status']);
-            return isRelated && isAccepted;
+            return data['requesterId'] == currentUser.uid || data['donorId'] == currentUser.uid;
           }).toList();
 
-          // ২. ইউজার আইডি অনুযায়ী চ্যাটগুলো মার্জ করা (যাতে একই ইউজারের সাথে একাধিক চ্যাট না দেখায়)
           Map<String, dynamic> uniqueChats = {};
           for (var doc in allRequests) {
             final data = doc.data() as Map<String, dynamic>;
             final otherUserId = data['requesterId'] == currentUser.uid ? data['donorId'] : data['requesterId'];
             
-            if (otherUserId != null) {
-              // যদি আগে থেকেই এই ইউজারের সাথে চ্যাট থাকে, তবে লেটেস্টটা রাখা
+            if (otherUserId != null && otherUserId.isNotEmpty) {
               if (!uniqueChats.containsKey(otherUserId)) {
                 uniqueChats[otherUserId] = {
                   'requestId': doc.id,
                   'otherUserId': otherUserId,
-                  'hospitalName': data['hospitalName'],
+                  'hospitalName': data['hospitalName'] ?? 'রক্তের আবেদন',
                   'status': data['status'],
                   'time': data['lastMessageTime'] ?? data['createdAt'] ?? Timestamp.now(),
                 };
@@ -124,7 +109,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: TextField(
         decoration: InputDecoration(
           hintText: 'নাম দিয়ে চ্যাট খুঁজুন...',
@@ -146,13 +131,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         border: Border.all(color: Colors.grey.shade100),
       ),
       child: Material(
@@ -173,37 +152,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DonorPublicProfileScreen(donor: otherUser),
-                    ),
-                  ),
-                  child: Hero(
-                    tag: 'chat_avatar_${otherUser.uid}',
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.red.shade100, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withValues(alpha: 0.05),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.red.shade50,
-                        backgroundImage: otherUser.profileImageUrl != null
-                            ? NetworkImage(otherUser.profileImageUrl!)
-                            : null,
-                        child: otherUser.profileImageUrl == null
-                            ? const Icon(Icons.person_rounded, color: Colors.red)
-                            : null,
-                      ),
-                    ),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))),
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.red.shade50,
+                    backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
+                    child: otherUser.profileImageUrl == null ? const Icon(Icons.person_rounded, color: Colors.red) : null,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -215,86 +169,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-                            child: Text(
-                              otherUser.name,
-                              style: GoogleFonts.notoSansBengali(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            child: Text(otherUser.name, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ),
                           _buildStatusBadge(status),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.local_hospital_rounded, color: Colors.red.shade300, size: 14),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              hospital,
-                              style: GoogleFonts.notoSansBengali(
-                                color: Colors.grey.shade600,
-                                fontSize: 13,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 14),
-                              const SizedBox(width: 4),
-                              Text(
-                                otherUser.rank,
-                                style: GoogleFonts.poppins(
-                                  color: Colors.amber.shade800,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          GestureDetector(
-                            onTap: () => _launchMapUrl(hospital),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.map_rounded, color: Colors.blue.shade700, size: 12),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'ম্যাপ',
-                                    style: GoogleFonts.notoSansBengali(
-                                      color: Colors.blue.shade700,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      Text(hospital, style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
+                const Icon(Icons.chevron_right_rounded, color: Colors.grey),
               ],
             ),
           ),
@@ -305,30 +190,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildStatusBadge(String status) {
     Color color = Colors.blue;
-    String text = status.toUpperCase();
-
-    if (status == 'completed') {
+    String text = 'চলমান';
+    if (status == 'completed' || status == 'donated') {
       color = Colors.green;
       text = 'সফল';
-    } else if (status == 'donated') {
+    } else if (status == 'pending') {
       color = Colors.orange;
-      text = 'রক্তদান';
+      text = 'অপেক্ষমান';
     }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.notoSansBengali(
-          color: color,
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+      child: Text(text, style: GoogleFonts.notoSansBengali(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 

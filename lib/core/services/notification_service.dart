@@ -95,6 +95,7 @@ class NotificationService {
           'blood_donate_channel', 'Blood Donate Notifications',
           importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher',
           playSound: true, enableVibration: true,
+          styleInformation: BigTextStyleInformation(''),
         ),
       ),
     );
