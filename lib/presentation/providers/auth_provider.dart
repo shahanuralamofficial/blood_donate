@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../data/models/user_model.dart';
+import '../../core/services/notification_service.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl();
@@ -20,6 +21,10 @@ final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
   return authState.when(
     data: (user) {
       if (user == null) return Stream.value(null);
+      
+      // ইউজার লগইন অবস্থায় থাকলে নোটিফিকেশন লিসেনার চালু করা
+      NotificationService().startListening();
+
       return FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)

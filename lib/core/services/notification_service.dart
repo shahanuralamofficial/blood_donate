@@ -60,8 +60,12 @@ class NotificationService {
   // নোটিফিকেশনে ক্লিক করলে এখানে আসবে (Foreground/Background)
   void _onDidReceiveNotificationResponse(NotificationResponse response) {
     if (response.payload != null) {
-      final Map<String, dynamic> data = jsonDecode(response.payload!);
-      _navigateBasedOnData(data);
+      try {
+        final Map<String, dynamic> data = jsonDecode(response.payload!);
+        _navigateBasedOnData(data);
+      } catch (e) {
+        debugPrint('Notification Payload Error: $e');
+      }
     }
   }
 
@@ -75,23 +79,30 @@ class NotificationService {
       final chatId = data['chatId'];
       final senderName = data['senderName'] ?? 'বার্তা';
       
-      // চ্যাট স্ক্রিনে নেভিগেট করার আগে নোটিফিকেশনটি রিড হিসেবে মার্ক করা যেতে পারে 
-      // যাতে এটি বারবার পপআপ না হয়।
-
       navigatorKey.currentState?.pushNamed('/chat', arguments: {
         'chatId': chatId,
         'otherUserName': senderName,
       });
-    } else if (data['type'] == 'blood_request') {
-       // ব্লাড রিকোয়েস্টের জন্য নেভিগেশন
-       // navigatorKey.currentState?.pushNamed('/request_details', arguments: data['requestId']);
+    } else if (data['type'] == 'blood_request' || data['type'] == 'emergency') {
+      if (data['requestId'] != null) {
+        // ব্লাড রিকোয়েস্ট ডিটেইলস স্ক্রিনে যাওয়ার লজিক
+      }
     }
+  }
+
+  // ইউজার লগইন করার পর এই মেথডটি কল করতে হবে
+  void startListening() {
+    _startNotificationListener();
   }
 
   void _startNotificationListener() {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      debugPrint('No user found to start notification listener');
+      return;
+    }
 
+    debugPrint('Starting notification listener for: ${user.uid}');
     _notificationSubscription?.cancel();
     _notificationSubscription = FirebaseFirestore.instance
         .collection('users')
@@ -99,23 +110,25 @@ class NotificationService {
         .collection('notifications')
         .where('isRead', isEqualTo: false)
         .orderBy('createdAt', descending: true)
-        .limit(1)
+        .limit(5)
         .snapshots()
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
           final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-          if (createdAt != null && DateTime.now().difference(createdAt).inSeconds < 10) {
+          
+          // চেক: নোটিফিকেশনটি যদি গত ১ মিনিটের মধ্যে তৈরি হয়ে থাকে তবেই পপআপ দেখাবে
+          if (createdAt != null && DateTime.now().difference(createdAt).inMinutes < 1) {
             _showLocalNotification(
-              title: data['title'] ?? 'নতুন বার্তা',
+              title: data['title'] ?? 'নতুন নোটিফিকেশন',
               body: data['body'] ?? '',
               payload: jsonEncode(data['data'] ?? {}),
             );
           }
         }
       }
-    });
+    }, onError: (e) => debugPrint('Notification Listener Error: $e'));
   }
 
   Future<void> _saveTokenToFirestore(String token) async {
@@ -142,8 +155,11 @@ class NotificationService {
       NotificationDetails(
         android: AndroidNotificationDetails(
           'blood_donate_channel', 'Blood Donate Notifications',
-          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher',
-          playSound: true, enableVibration: true,
+          importance: Importance.max, 
+          priority: Priority.high, 
+          icon: '@mipmap/ic_launcher',
+          playSound: true, 
+          enableVibration: true,
           styleInformation: const BigTextStyleInformation(''),
         ),
       ),
@@ -166,7 +182,7 @@ class NotificationService {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Send Notification Error: $e');
+      debugPrint('Send Notification Error: $e');
     }
   }
 
@@ -196,7 +212,12 @@ class NotificationService {
             receiverId: doc.id,
             title: 'জরুরি $bloodGroup রক্ত প্রয়োজন!',
             body: '$thana, $district-এ আপনার গ্রুপের রক্তের আবেদন করা হয়েছে।',
-            data: {'requestId': requestId, 'type': 'blood_request'},
+            data: {
+              'requestId': requestId, 
+              'type': 'blood_request',
+              'thana': thana,
+              'district': district,
+            },
           );
           notifiedUserIds.add(doc.id);
         }
@@ -218,19 +239,24 @@ class NotificationService {
               receiverId: doc.id,
               title: 'আপনার জেলায় $bloodGroup রক্ত প্রয়োজন!',
               body: '$district-এ রক্তের জরুরি আবেদন করা হয়েছে। দয়া করে দেখুন।',
-              data: {'requestId': requestId, 'type': 'blood_request'},
+              data: {
+                'requestId': requestId, 
+                'type': 'blood_request',
+                'thana': thana,
+                'district': district,
+              },
             );
             notifiedUserIds.add(doc.id);
           }
         }
       }
     } catch (e) {
-      print('Notify Nearby Donors Error: $e');
-      _notifyFallback(bloodGroup, requestId, currentUserId);
+      debugPrint('Notify Nearby Donors Error: $e');
+      _notifyFallback(bloodGroup, requestId, currentUserId, thana, district);
     }
   }
 
-  Future<void> _notifyFallback(String bloodGroup, String requestId, String? currentUserId) async {
+  Future<void> _notifyFallback(String bloodGroup, String requestId, String? currentUserId, String thana, String district) async {
     try {
       final fallbackDonors = await FirebaseFirestore.instance
           .collection('users')
@@ -245,12 +271,17 @@ class NotificationService {
             receiverId: doc.id,
             title: 'জরুরি রক্তের প্রয়োজন!',
             body: 'আপনার গ্রুপের রক্তের একটি নতুন আবেদন করা হয়েছে। দ্রুত চেক করুন।',
-            data: {'requestId': requestId, 'type': 'blood_request'},
+            data: {
+              'requestId': requestId, 
+              'type': 'blood_request',
+              'thana': thana,
+              'district': district,
+            },
           );
         }
       }
     } catch (e) {
-      print('Fallback Notification Error: $e');
+      debugPrint('Fallback Notification Error: $e');
     }
   }
 }
