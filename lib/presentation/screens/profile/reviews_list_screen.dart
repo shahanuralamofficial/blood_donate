@@ -96,7 +96,7 @@ class ReviewsListScreen extends StatelessWidget {
                     )),
                   ),
                   Text(
-                    DateFormat('dd MMM yyyy').format(req.createdAt ?? DateTime.now()),
+                    DateFormat('dd MMM yyyy').format(req.reviewedAt ?? req.completedAt ?? req.createdAt ?? DateTime.now()),
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
                   ),
                 ],
@@ -145,7 +145,7 @@ class ReviewsListScreen extends StatelessWidget {
                 children: [
                   const Icon(Icons.favorite, color: Colors.red, size: 20),
                   Text(
-                    DateFormat('dd MMM yyyy').format(req.createdAt ?? DateTime.now()),
+                    DateFormat('dd MMM yyyy').format(req.reviewedAt ?? req.completedAt ?? req.createdAt ?? DateTime.now()),
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
                   ),
                 ],

@@ -668,6 +668,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 await FirebaseFirestore.instance.collection('blood_requests').doc(requestId).update({
                   'donorExperience': commentController.text.trim(),
                   'donorRating': rating,
+                  'reviewedAt': FieldValue.serverTimestamp(),
                 });
               }
               if (context.mounted) {

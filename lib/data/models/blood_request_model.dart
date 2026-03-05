@@ -29,6 +29,7 @@ class BloodRequestModel {
   final DateTime? requiredDate;
   final DateTime? createdAt;
   final DateTime? completedAt; // রক্তদান সম্পন্ন হওয়ার তারিখ
+  final DateTime? reviewedAt; // রিভিউ দেওয়ার তারিখ
 
   BloodRequestModel({
     required this.requestId,
@@ -57,7 +58,9 @@ class BloodRequestModel {
     this.donorExperience,
     this.requiredDate,
     this.createdAt,
-    this.donationType, this.completedAt,
+    this.donationType, 
+    this.completedAt,
+    this.reviewedAt,
   });
 
   factory BloodRequestModel.fromMap(Map<String, dynamic> map, String id) {
@@ -90,6 +93,7 @@ class BloodRequestModel {
       requiredDate: (map['requiredDate'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
       completedAt: (map['completedAt'] as Timestamp?)?.toDate(),
+      reviewedAt: (map['reviewedAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -122,6 +126,7 @@ class BloodRequestModel {
       'requiredDate': requiredDate != null ? Timestamp.fromDate(requiredDate!) : null,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'reviewedAt': reviewedAt != null ? Timestamp.fromDate(reviewedAt!) : null,
     };
   }
 }
