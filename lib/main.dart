@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/auth/auth_wrapper.dart';
 import 'core/services/notification_service.dart';
+import 'presentation/screens/chat/chat_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -38,6 +39,20 @@ class BloodDonateApp extends StatelessWidget {
       title: 'রক্তদান - Blood Donate',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      navigatorKey: NotificationService.navigatorKey, // নেভিগেটর কি সেট করা হলো
+      onGenerateRoute: (settings) {
+        if (settings.name == '/chat') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              requestId: args['chatId'],
+              otherUserName: args['otherUserName'],
+              otherUserId: args['otherUserId'],
+            ),
+          );
+        }
+        return null;
+      },
       home: const AuthWrapper(),
     );
   }

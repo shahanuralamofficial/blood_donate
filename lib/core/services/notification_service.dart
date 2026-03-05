@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +15,9 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
+  // গ্লোবাল নেভিগেটর কি (যাতে যেকোনো জায়গা থেকে নেভিগেট করা যায়)
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   Future<void> init() async {
     NotificationSettings settings = await _fcm.requestPermission(
       alert: true, badge: true, sound: true,
@@ -23,21 +28,63 @@ class NotificationService {
       if (token != null) await _saveTokenToFirestore(token);
       _fcm.onTokenRefresh.listen(_saveTokenToFirestore);
 
-      const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+      const AndroidInitializationSettings initializationSettingsAndroid = 
+          AndroidInitializationSettings('@mipmap/ic_launcher');
       
-      await _localNotifications.initialize(initializationSettings);
-
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'blood_donate_channel', 'Blood Donate Notifications',
-        importance: Importance.max, playSound: true,
+      const InitializationSettings initializationSettings = 
+          InitializationSettings(android: initializationSettingsAndroid);
+      
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
       );
 
-      await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'blood_donate_channel', 
+        'Blood Donate Notifications',
+        importance: Importance.max, 
+        playSound: true,
+      );
+
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel);
       
       FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpened);
 
       _startNotificationListener();
+    }
+  }
+
+  // নোটিফিকেশনে ক্লিক করলে এখানে আসবে (Foreground/Background)
+  void _onDidReceiveNotificationResponse(NotificationResponse response) {
+    if (response.payload != null) {
+      final Map<String, dynamic> data = jsonDecode(response.payload!);
+      _navigateBasedOnData(data);
+    }
+  }
+
+  // অ্যাপ বন্ধ থাকলে বা ব্যাকগ্রাউন্ডে থাকলে নোটিফিকেশনে ক্লিক করলে
+  void _handleMessageOpened(RemoteMessage message) {
+    _navigateBasedOnData(message.data);
+  }
+
+  void _navigateBasedOnData(Map<String, dynamic> data) {
+    if (data['type'] == 'chat') {
+      final chatId = data['chatId'];
+      final senderName = data['senderName'] ?? 'বার্তা';
+      
+      // চ্যাট স্ক্রিনে নেভিগেট করার আগে নোটিফিকেশনটি রিড হিসেবে মার্ক করা যেতে পারে 
+      // যাতে এটি বারবার পপআপ না হয়।
+
+      navigatorKey.currentState?.pushNamed('/chat', arguments: {
+        'chatId': chatId,
+        'otherUserName': senderName,
+      });
+    } else if (data['type'] == 'blood_request') {
+       // ব্লাড রিকোয়েস্টের জন্য নেভিগেশন
+       // navigatorKey.currentState?.pushNamed('/request_details', arguments: data['requestId']);
     }
   }
 
@@ -59,15 +106,16 @@ class NotificationService {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
           final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-          if (createdAt != null && DateTime.now().difference(createdAt).inSeconds < 30) {
+          if (createdAt != null && DateTime.now().difference(createdAt).inSeconds < 10) {
             _showLocalNotification(
               title: data['title'] ?? 'নতুন বার্তা',
               body: data['body'] ?? '',
+              payload: jsonEncode(data['data'] ?? {}),
             );
           }
         }
       }
-    }, onError: (e) => print('Notification Listener Error: $e'));
+    });
   }
 
   Future<void> _saveTokenToFirestore(String token) async {
@@ -81,23 +129,25 @@ class NotificationService {
   }
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
-    RemoteNotification? notification = message.notification;
-    if (notification != null) {
-      _showLocalNotification(title: notification.title, body: notification.body);
-    }
+    _showLocalNotification(
+      title: message.notification?.title, 
+      body: message.notification?.body,
+      payload: jsonEncode(message.data),
+    );
   }
 
-  Future<void> _showLocalNotification({String? title, String? body}) async {
+  Future<void> _showLocalNotification({String? title, String? body, String? payload}) async {
     await _localNotifications.show(
       DateTime.now().millisecond, title, body,
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'blood_donate_channel', 'Blood Donate Notifications',
           importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher',
           playSound: true, enableVibration: true,
-          styleInformation: BigTextStyleInformation(''),
+          styleInformation: const BigTextStyleInformation(''),
         ),
       ),
+      payload: payload,
     );
   }
 
@@ -116,7 +166,7 @@ class NotificationService {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Send Notification Error for $receiverId: $e');
+      print('Send Notification Error: $e');
     }
   }
 
@@ -131,7 +181,6 @@ class NotificationService {
     Set<String> notifiedUserIds = {};
 
     try {
-      // ১. থানা লেভেলে দাতাদের খোঁজা (সবচেয়ে সঠিক ফিল্টারিং)
       final thanaDonors = await FirebaseFirestore.instance
           .collection('users')
           .where('address.division', isEqualTo: division)
@@ -153,7 +202,6 @@ class NotificationService {
         }
       }
 
-      // ২. যদি থানা লেভেলে দাতা কম থাকে, তবে জেলা লেভেলে বাড়ানো
       if (notifiedUserIds.length < 3) {
         final districtDonors = await FirebaseFirestore.instance
             .collection('users')
@@ -176,16 +224,12 @@ class NotificationService {
           }
         }
       }
-      
-      print('Total donors notified: ${notifiedUserIds.length}');
     } catch (e) {
       print('Notify Nearby Donors Error: $e');
-      // যদি ইনডেক্স এরর হয়, তবে ব্যাকআপ হিসেবে শুধুমাত্র ব্লাড গ্রুপ দিয়ে খুঁজি
       _notifyFallback(bloodGroup, requestId, currentUserId);
     }
   }
 
-  // ব্যাকআপ নোটিফিকেশন লজিক (যদি এরিয়া কুয়েরি ফেইল করে)
   Future<void> _notifyFallback(String bloodGroup, String requestId, String? currentUserId) async {
     try {
       final fallbackDonors = await FirebaseFirestore.instance

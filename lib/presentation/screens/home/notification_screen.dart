@@ -45,7 +45,16 @@ class NotificationScreen extends StatelessWidget {
                   return _buildEmptyState();
                 }
 
-                final notifications = snapshot.data!.docs;
+                // চ্যাট নোটিফিকেশনগুলো বাদ দিয়ে ফিল্টার করা হচ্ছে
+                final notifications = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final type = data['data']?['type'] ?? 'general';
+                  return type != 'chat'; // চ্যাট নোটিফিকেশন দেখাবে না
+                }).toList();
+
+                if (notifications.isEmpty) {
+                  return _buildEmptyState();
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
