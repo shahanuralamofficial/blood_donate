@@ -29,43 +29,71 @@ class NotificationScreen extends StatelessWidget {
       ),
       body: userId == null 
           ? const Center(child: Text('লগইন প্রয়োজন'))
-          : StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(userId)
-                  .collection('notifications')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.red));
-                }
+          : FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.red));
+                
+                final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+                final userThana = userData?['address']?['thana']?.toString().toLowerCase();
+                final userDistrict = userData?['address']?['district']?.toString().toLowerCase();
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return _buildEmptyState();
-                }
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(userId)
+                      .collection('notifications')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: Colors.red));
+                    }
 
-                // চ্যাট নোটিফিকেশনগুলো বাদ দিয়ে ফিল্টার করা হচ্ছে
-                final notifications = snapshot.data!.docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final type = data['data']?['type'] ?? 'general';
-                  return type != 'chat'; // চ্যাট নোটিফিকেশন দেখাবে না
-                }).toList();
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return _buildEmptyState();
+                    }
 
-                if (notifications.isEmpty) {
-                  return _buildEmptyState();
-                }
+                    // স্মার্ট ফিল্টারিং লজিক
+                    final notifications = snapshot.data!.docs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final type = data['data']?['type'] ?? 'general';
+                      
+                      // ১. চ্যাট নোটিফিকেশন লিস্টে দেখাবে না
+                      if (type == 'chat') return false;
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final doc = notifications[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    return _buildNotificationCard(context, doc.id, userId, data);
+                      // ২. র‍্যাঙ্ক আপডেট সংক্রান্ত হলে দেখাবে
+                      if (type == 'rank_up' || (data['title']?.toString().contains('র‍্যাঙ্ক') ?? false)) return true;
+
+                      // ৩. ব্লাড রিকোয়েস্ট হলে নিজ থানা/জেলা চেক করবে
+                      if (type == 'emergency' || (data['title']?.toString().contains('রক্ত') ?? false)) {
+                        final reqThana = data['data']?['thana']?.toString().toLowerCase();
+                        final reqDistrict = data['data']?['district']?.toString().toLowerCase();
+                        
+                        // যদি থানা বা জেলা মিলে যায় তবে দেখাবে
+                        return (reqThana != null && reqThana == userThana) || 
+                               (reqDistrict != null && reqDistrict == userDistrict);
+                      }
+
+                      return true; // অন্যান্য সাধারণ নোটিফিকেশন দেখাবে
+                    }).toList();
+
+                    if (notifications.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final doc = notifications[index];
+                        final data = doc.data() as Map<String, dynamic>;
+                        return _buildNotificationCard(context, doc.id, userId, data);
+                      },
+                    );
                   },
                 );
-              },
+              }
             ),
     );
   }
