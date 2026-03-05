@@ -24,6 +24,9 @@ final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
       
       // ইউজার লগইন অবস্থায় থাকলে নোটিফিকেশন লিসেনার চালু করা
       NotificationService().startListening();
+      
+      // অনলাইন স্ট্যাটাস ট্র্যাকিং শুরু (অপশনাল কিন্তু নিরাপদ রাখা ভালো)
+      _updateUserOnlineStatus(user.uid, true);
 
       return FirebaseFirestore.instance
           .collection('users')
@@ -35,6 +38,32 @@ final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
     error: (_, __) => Stream.value(null),
   );
 });
+
+// ইউজার অনলাইন স্ট্যাটাস আপডেট করার ফাংশন
+Future<void> _updateUserOnlineStatus(String uid, bool isOnline) async {
+  try {
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'isOnline': isOnline,
+      'lastActive': FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    print('Error updating online status: $e');
+  }
+}
+
+final userStatusProvider = Provider((ref) => UserStatusNotifier());
+
+class UserStatusNotifier {
+  Future<void> updateStatus(bool isOnline) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'isOnline': isOnline,
+        'lastActive': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+}
 
 // যে কোনো ইউজারের ডাটা আইডি দিয়ে স্ট্রিম করার প্রোভাইডার
 final userStreamByIdProvider = StreamProvider.family<UserModel?, String>((ref, uid) {

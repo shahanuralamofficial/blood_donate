@@ -30,8 +30,40 @@ void main() async {
   );
 }
 
-class BloodDonateApp extends StatelessWidget {
+class BloodDonateApp extends ConsumerStatefulWidget {
   const BloodDonateApp({super.key});
+
+  @override
+  ConsumerState<BloodDonateApp> createState() => _BloodDonateAppState();
+}
+
+class _BloodDonateAppState extends ConsumerState<BloodDonateApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _updateStatus(true);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _updateStatus(false);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _updateStatus(true);
+    } else {
+      _updateStatus(false);
+    }
+  }
+
+  void _updateStatus(bool isOnline) {
+    ref.read(userStatusProvider).updateStatus(isOnline);
+  }
 
   @override
   Widget build(BuildContext context) {
