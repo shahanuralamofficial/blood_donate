@@ -20,8 +20,13 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  final notificationService = NotificationService();
-  await notificationService.init();
+  try {
+    final notificationService = NotificationService();
+    await notificationService.init();
+  } catch (e) {
+    debugPrint("Notification Initialization Error: $e");
+  }
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
