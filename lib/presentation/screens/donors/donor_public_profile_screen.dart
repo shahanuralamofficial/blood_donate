@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../chat/chat_screen.dart';
 import '../profile/reviews_list_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DonorPublicProfileScreen extends ConsumerWidget {
   final UserModel donor;
@@ -327,7 +328,25 @@ class DonorPublicProfileScreen extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: 'direct_${donor.uid}', otherUserName: donor.name))),
+                onPressed: () {
+                  final currentUser = FirebaseAuth.instance.currentUser;
+                  if (currentUser != null) {
+                    List<String> ids = [currentUser.uid, donor.uid];
+                    ids.sort();
+                    final chatId = 'direct_${ids[0]}_${ids[1]}';
+                    
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreen(
+                          requestId: chatId,
+                          otherUserName: donor.name,
+                          otherUserId: donor.uid,
+                        ),
+                      ),
+                    );
+                  }
+                },
                 icon: const Icon(Icons.chat_bubble_rounded),
                 label: const Text('মেসেজ দিন'),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),

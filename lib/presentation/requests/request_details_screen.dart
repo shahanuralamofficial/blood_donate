@@ -175,7 +175,25 @@ class RequestDetailsScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.chat_bubble_rounded, color: Colors.blue, size: 30),
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(requestId: req.requestId, otherUserName: isRequester ? 'রক্তদাতা' : 'গ্রহীতা')));
+                final currentUser = FirebaseAuth.instance.currentUser;
+                if (currentUser != null) {
+                  final otherUserId = isRequester ? (req.donorId ?? '') : req.requesterId;
+                  if (otherUserId.isNotEmpty) {
+                    List<String> ids = [currentUser.uid, otherUserId];
+                    ids.sort();
+                    final chatId = 'direct_${ids[0]}_${ids[1]}';
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreen(
+                          requestId: chatId,
+                          otherUserName: isRequester ? 'রক্তদাতা' : 'গ্রহীতা',
+                          otherUserId: otherUserId,
+                        ),
+                      ),
+                    );
+                  }
+                }
               },
             ),
           ],
