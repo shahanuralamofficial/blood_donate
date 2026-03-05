@@ -38,6 +38,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    // চ্যাট স্ক্রিনে প্রবেশের সময় এই চ্যাট আইডি সেট করা হচ্ছে যাতে নোটিফিকেশন না আসে
+    NotificationService.currentChatId = widget.requestId;
+    
     _receiverId = widget.otherUserId;
     if (_receiverId == null && widget.requestId.startsWith('direct_')) {
       final parts = widget.requestId.split('_');
@@ -46,6 +49,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _receiverId = parts[1] == currentUid ? parts[2] : parts[1];
       }
     }
+  }
+
+  @override
+  void dispose() {
+    // চ্যাট স্ক্রিন থেকে বের হওয়ার সময় চ্যাট আইডি ক্লিয়ার করা হচ্ছে
+    NotificationService.currentChatId = null;
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _sendMessage() async {

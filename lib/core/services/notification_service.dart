@@ -15,6 +15,9 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
+  // বর্তমানে ইউজার কোন চ্যাট স্ক্রিনে আছে তা ট্র্যাক করার জন্য
+  static String? currentChatId;
+
   // গ্লোবাল নেভিগেটর কি (যাতে যেকোনো জায়গা থেকে নেভিগেট করা যায়)
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -120,6 +123,15 @@ class NotificationService {
           
           // চেক: নোটিফিকেশনটি যদি গত ১ মিনিটের মধ্যে তৈরি হয়ে থাকে তবেই পপআপ দেখাবে
           if (createdAt != null && DateTime.now().difference(createdAt).inMinutes < 1) {
+            final notificationData = data['data'] as Map<String, dynamic>?;
+            
+            // যদি এটি চ্যাট নোটিফিকেশন হয় এবং ইউজার বর্তমানে ওই চ্যাটে থাকে, তবে দেখাবে না
+            if (notificationData != null && 
+                notificationData['type'] == 'chat' && 
+                notificationData['chatId'] == currentChatId) {
+              return;
+            }
+
             _showLocalNotification(
               title: data['title'] ?? 'নতুন নোটিফিকেশন',
               body: data['body'] ?? '',
