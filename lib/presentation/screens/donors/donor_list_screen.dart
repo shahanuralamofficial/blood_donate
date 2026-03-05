@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:blood_donate/data/models/user_model.dart';
@@ -55,6 +56,19 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint("Call Error: $e");
+    }
+  }
+
+  Future<void> _openWhatsApp(String phone) async {
+    String cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!cleanPhone.startsWith('88')) {
+      cleanPhone = '88$cleanPhone';
+    }
+    final Uri url = Uri.parse("https://wa.me/$cleanPhone");
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("WhatsApp Error: $e");
     }
   }
 
@@ -335,12 +349,22 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                       Expanded(
                         child: _buildActionBtn(
                           icon: Icons.call_rounded,
-                          label: 'কল করুন',
+                          label: 'কল',
                           color: Colors.green,
                           onTap: () => _makeCall(user.phone),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildActionBtn(
+                          icon: FontAwesomeIcons.whatsapp,
+                          label: 'WhatsApp',
+                          color: const Color(0xFF25D366),
+                          isFontAwesome: true,
+                          onTap: () => _openWhatsApp(user.phone),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _buildActionBtn(
                           icon: Icons.chat_bubble_rounded,
@@ -441,6 +465,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
     required String label,
     required Color color,
     required VoidCallback onTap,
+    bool isFontAwesome = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -455,14 +480,20 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.notoSansBengali(
-                color: color,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
+            isFontAwesome
+                ? FaIcon(icon, color: color, size: 16)
+                : Icon(icon, color: color, size: 18),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.notoSansBengali(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

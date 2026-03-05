@@ -24,7 +24,20 @@ class LocationService {
           'Location permissions are permanently denied, we cannot request permissions.');
     }
 
-    return await Geolocator.getCurrentPosition();
+    try {
+      // Adding a timeout and accuracy setting to handle system-level instabilities
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
+    } catch (e) {
+      // Fallback to last known position if current request fails (e.g., Error 11)
+      Position? lastPosition = await Geolocator.getLastKnownPosition();
+      if (lastPosition != null) {
+        return lastPosition;
+      }
+      return Future.error('Location error: $e');
+    }
   }
 
   Future<String> getAddressFromLatLng(double lat, double lng) async {

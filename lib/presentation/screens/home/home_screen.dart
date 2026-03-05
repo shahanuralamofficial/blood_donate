@@ -43,13 +43,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final now = DateTime.now();
     final epoch = DateTime(2024, 1, 1);
     final diffInDays = now.difference(epoch).inDays;
-    
+
     // Safety check for negative difference or empty list
     if (_donationFacts.isEmpty) {
       _dailyFact = 'রক্তদান করুন, জীবন বাঁচান। ❤️';
       return;
     }
-    
+
     final index = diffInDays.abs() % _donationFacts.length;
     _dailyFact = _donationFacts[index];
   }
@@ -185,7 +185,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               await Future.delayed(const Duration(seconds: 1));
             },
             child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
               slivers: [
                 _buildAppBar(user),
                 SliverPadding(
@@ -198,10 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 24),
                         _buildQuickStats(user),
                         const SizedBox(height: 24),
-                        _buildActiveActivitySection(
-                          myRequests,
-                          myDonations,
-                        ),
+                        _buildActiveActivitySection(myRequests, myDonations),
                         _buildNextDonationSection(user),
                         _buildFactCard(),
                         const SizedBox(height: 32),
@@ -220,9 +219,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                 ),
-            ],
-          ),
-        );
+              ],
+            ),
+          );
         },
       ),
     );
@@ -257,9 +256,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         Row(
           children: [
-            _buildStatBox('মোট দান', '${user.totalDonations}', Colors.red, Icons.bloodtype),
+            _buildStatBox(
+              'মোট দান',
+              '${user.totalDonations}',
+              Colors.red,
+              Icons.bloodtype,
+            ),
             const SizedBox(width: 12),
-            _buildStatBox('আবেদন', '${user.totalRequests}', Colors.blue, Icons.campaign),
+            _buildStatBox(
+              'আবেদন',
+              '${user.totalRequests}',
+              Colors.blue,
+              Icons.campaign,
+            ),
             const SizedBox(width: 12),
             _buildStatBox(
               'সেভ করা',
@@ -276,9 +285,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
-            _buildStatBox('ব্যাগ পেয়েছেন', '${user.totalReceivedBags}', Colors.green, Icons.opacity),
-            const SizedBox(width: 12),
-            _buildStatBox('বাতিল আবেদন', '${user.totalCancelled}', Colors.blueGrey, Icons.cancel_outlined),
+            _buildStatBox(
+              'ব্যাগ পেয়েছেন',
+              '${user.totalReceivedBags}',
+              Colors.green,
+              Icons.opacity,
+            ),
+
             const SizedBox(width: 12),
             _buildStatBox(
               'গড় রেটিং',
@@ -286,13 +299,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Colors.amber,
               Icons.star_rounded,
             ),
+            const SizedBox(width: 12),
+            _buildStatBox(
+              'বাতিল আবেদন',
+              '${user.totalCancelled}',
+              Colors.blueGrey,
+              Icons.cancel_outlined,
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStatBox(String title, String value, Color color, IconData icon, {VoidCallback? onTap}) {
+  Widget _buildStatBox(
+    String title,
+    String value,
+    Color color,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
@@ -424,7 +450,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            title.contains('নিচ্ছেন') ? Icons.volunteer_activism : Icons.history_edu,
+            title.contains('নিচ্ছেন')
+                ? Icons.volunteer_activism
+                : Icons.history_edu,
             color: color,
             size: 22,
           ),
@@ -443,18 +471,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 4),
             Text(
               req.hospitalName,
-              style: GoogleFonts.notoSansBengali(fontSize: 12, color: Colors.grey.shade700),
+              style: GoogleFonts.notoSansBengali(
+                fontSize: 12,
+                color: Colors.grey.shade700,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
               'অবস্থা: ${req.status.toUpperCase()}',
-              style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
             ),
           ],
         ),
-        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color.withValues(alpha: 0.5)),
+        trailing: Icon(
+          Icons.arrow_forward_ios_rounded,
+          size: 14,
+          color: color.withValues(alpha: 0.5),
+        ),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req)),
@@ -757,11 +796,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  canDonate ? 'আপনি এখন রক্তদান করতে পারবেন' : 'পরবর্তী রক্তদানের সময়',
+                  canDonate
+                      ? 'আপনি এখন রক্তদান করতে পারবেন'
+                      : 'পরবর্তী রক্তদানের সময়',
                   style: GoogleFonts.notoSansBengali(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: canDonate ? Colors.green.shade900 : Colors.orange.shade900,
+                    color: canDonate
+                        ? Colors.green.shade900
+                        : Colors.orange.shade900,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -782,14 +825,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildRequestList(AsyncValue<List<BloodRequestModel>> requestsAsync, String? currentUserId) {
+  Widget _buildRequestList(
+    AsyncValue<List<BloodRequestModel>> requestsAsync,
+    String? currentUserId,
+  ) {
     return requestsAsync.when(
       loading: () =>
           const Center(child: CircularProgressIndicator(color: Colors.red)),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (requests) {
-        final filteredRequests = requests.where((r) => r.requesterId != currentUserId).toList();
-        
+        final filteredRequests = requests
+            .where((r) => r.requesterId != currentUserId)
+            .toList();
+
         if (filteredRequests.isEmpty) {
           return Center(
             child: Padding(
@@ -880,7 +928,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade600,
                                   borderRadius: BorderRadius.circular(6),
@@ -932,7 +982,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.location_on_rounded, size: 16, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${req.district}, ${req.thana}',

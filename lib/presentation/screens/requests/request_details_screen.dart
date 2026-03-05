@@ -142,30 +142,12 @@ class RequestDetailsScreen extends ConsumerWidget {
 
                 if (isDonor && liveRequest.status == 'accepted')
                   ElevatedButton(
-                    onPressed: () async {
-                      await ref
-                          .read(bloodRequestRepositoryProvider)
-                          .updateRequestStatus(
-                            liveRequest.requestId,
-                            'donated',
-                          );
-                      NotificationService().sendNotificationToUser(
-                        receiverId: liveRequest.requesterId,
-                        title: 'রক্তদান আপডেট',
-                        body:
-                            '${user?.name} জানিয়েছেন তিনি রক্ত দিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।',
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'রক্ত দিয়েছেন নিশ্চিত করার জন্য ধন্যবাদ!',
-                            ),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      }
-                    },
+                    onPressed: () => _showDonorDonatedDialog(
+                      context,
+                      ref,
+                      liveRequest,
+                      user,
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       minimumSize: const Size(double.infinity, 56),
@@ -273,6 +255,59 @@ class RequestDetailsScreen extends ConsumerWidget {
         loading: () =>
             const Center(child: CircularProgressIndicator(color: Colors.red)),
         error: (e, s) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  void _showDonorDonatedDialog(
+    BuildContext context,
+    WidgetRef ref,
+    BloodRequestModel req,
+    UserModel? donor,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('রক্তদান নিশ্চিত করুন'),
+        content: const Text(
+          'আপনি কি নিশ্চিত যে আপনি রক্ত দিয়েছেন? এটি গ্রহীতাকে রক্তদান নিশ্চিত করতে অনুরোধ করবে।',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('না'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await ref
+                  .read(bloodRequestRepositoryProvider)
+                  .updateRequestStatus(
+                    req.requestId,
+                    'donated',
+                  );
+
+              NotificationService().sendNotificationToUser(
+                receiverId: req.requesterId,
+                title: 'রক্তদান আপডেট',
+                body:
+                    '${donor?.name ?? 'রক্তদাতা'} জানিয়েছেন তিনি রক্ত দিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।',
+              );
+
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('রক্ত দিয়েছেন নিশ্চিত করার জন্য ধন্যবাদ!'),
+                  ),
+                );
+                Navigator.pop(context); // Go back
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('হ্যাঁ, দিয়েছি', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

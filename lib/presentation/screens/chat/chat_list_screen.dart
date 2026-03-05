@@ -182,10 +182,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   child: Hero(
                     tag: 'chat_avatar_${otherUser.uid}',
                     child: Container(
-                      padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.red.shade100, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
                       child: CircleAvatar(
                         radius: 28,
@@ -225,8 +231,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       ),
                       const SizedBox(height: 4),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          Icon(Icons.local_hospital_rounded, color: Colors.red.shade300, size: 14),
+                          const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               hospital,
@@ -238,42 +245,55 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => _launchMapUrl(hospital),
-                            child: Text(
-                              'ম্যাপ দেখুন',
-                              style: GoogleFonts.notoSansBengali(
-                                color: Colors.blue.shade700,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            otherUser.rank,
-                            style: GoogleFonts.poppins(
-                              color: Colors.amber.shade800,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                          Row(
+                            children: [
+                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                otherUser.rank,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.amber.shade800,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: () => _launchMapUrl(hospital),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.map_rounded, color: Colors.blue.shade700, size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'ম্যাপ',
+                                    style: GoogleFonts.notoSansBengali(
+                                      color: Colors.blue.shade700,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Colors.grey.shade300,
                 ),
               ],
             ),
