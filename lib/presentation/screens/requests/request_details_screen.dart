@@ -133,7 +133,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 const SizedBox(height: 20),
                 _buildInfoCard(liveRequest),
                 const SizedBox(height: 24),
-                _buildContactCard(context, isRequester, liveRequest),
+                _buildContactCard(context, isRequester, liveRequest, user),
                 const SizedBox(height: 32),
 
                 if (!isRequester && liveRequest.status == 'pending')
@@ -982,6 +982,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     BuildContext context,
     bool isRequester,
     BloodRequestModel req,
+    UserModel? user,
   ) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1077,15 +1078,23 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildContactButton(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        requestId: req.requestId,
-                        otherUserName: isRequester ? 'রক্তদাতা' : 'গ্রহীতা',
+                  onTap: () {
+                    if (user == null) return;
+                    List<String> ids = [user.uid, req.requesterId];
+                    ids.sort();
+                    final chatId = 'direct_${ids[0]}_${ids[1]}';
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreen(
+                          requestId: chatId,
+                          otherUserName: isRequester ? 'রক্তদাতা' : req.patientName,
+                          otherUserId: req.requesterId,
+                          requestMention: 'রোগী: ${req.patientName} (${req.bloodGroup})',
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                   icon: Icons.chat_bubble_rounded,
                   label: 'চ্যাট',
                   color: Colors.blue,

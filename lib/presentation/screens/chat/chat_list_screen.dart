@@ -19,27 +19,37 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return const Scaffold(body: Center(child: Text('লগইন প্রয়োজন')));
+    if (currentUser == null) {
+      return const Scaffold(body: Center(child: Text('লগইন প্রয়োজন')));
+    }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFB),
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text('মেসেজ লিস্ট', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(
+          'মেসেজ লিস্ট',
+          style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        elevation: 0,
+        elevation: 0.5,
       ),
       body: Column(
         children: [
           _buildSearchBar(),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              // শুধুমাত্র নতুন সিস্টেমের চ্যাটগুলো দেখাচ্ছি (যা ১০০% কাজ করবে)
               stream: FirebaseFirestore.instance
                   .collection('direct_chats')
                   .where('participants', arrayContains: currentUser.uid)
+                  .orderBy('lastMessageTime', descending: true) // সরাসরি ফায়ারবেস থেকে সর্ট করে আনছি
                   .snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  // যদি ইনডেক্স এরর দেয় তবে আমরা ম্যানুয়ালি সর্ট করবো
+                  return _buildManualSortedList(currentUser.uid);
+                }
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(color: Colors.red));
                 }
@@ -48,47 +58,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   return _buildEmptyState();
                 }
 
-                // সময়ের ভিত্তিতে সাজানো
-                final List<DocumentSnapshot> chatDocs = snapshot.data!.docs.toList();
-                chatDocs.sort((a, b) {
-                  final aTime = (a.data() as Map<String, dynamic>)['lastMessageTime'] as Timestamp?;
-                  final bTime = (b.data() as Map<String, dynamic>)['lastMessageTime'] as Timestamp?;
-                  if (aTime == null) return 1;
-                  if (bTime == null) return -1;
-                  return bTime.compareTo(aTime);
-                });
-
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: chatDocs.length,
+                  itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
-                    final chatData = chatDocs[index].data() as Map<String, dynamic>;
-                    final chatId = chatDocs[index].id;
-                    
-                    final List<dynamic> participants = chatData['participants'] ?? [];
-                    final otherId = participants.firstWhere((id) => id != currentUser.uid, orElse: () => '');
-
-                    if (otherId.isEmpty) return const SizedBox.shrink();
-
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance.collection('users').doc(otherId).get(),
-                      builder: (context, userSnap) {
-                        if (!userSnap.hasData || userSnap.data!.data() == null) return const SizedBox.shrink();
-                        final otherUser = UserModel.fromMap(userSnap.data!.data() as Map<String, dynamic>);
-
-                        if (_searchQuery.isNotEmpty && !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase())) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return _buildChatTile(
-                          context, 
-                          chatId, 
-                          otherUser, 
-                          chatData['lastMessage'] ?? 'মেসেজ পাঠানো হয়েছে', 
-                          chatData['lastMessageTime'] as Timestamp?
-                        );
-                      },
-                    );
+                    final chatData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                    final chatId = snapshot.data!.docs[index].id;
+                    return _buildChatItem(chatId, chatData, currentUser.uid);
                   },
                 );
               },
@@ -99,6 +75,147 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
+  Widget _buildManualSortedList(String currentUid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('direct_chats')
+          .where('participants', arrayContains: currentUid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return _buildEmptyState();
+
+        final docs = snapshot.data!.docs.toList();
+        docs.sort((a, b) {
+          final aTime = (a.data() as Map<String, dynamic>)['lastMessageTime'] as Timestamp?;
+          final bTime = (b.data() as Map<String, dynamic>)['lastMessageTime'] as Timestamp?;
+          return (bTime ?? Timestamp(0, 0)).compareTo(aTime ?? Timestamp(0, 0));
+        });
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final chatData = docs[index].data() as Map<String, dynamic>;
+            final chatId = docs[index].id;
+            return _buildChatItem(chatId, chatData, currentUid);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildChatItem(String chatId, Map<String, dynamic> chatData, String currentUid) {
+    final List<dynamic> participants = chatData['participants'] ?? [];
+    final otherId = participants.firstWhere((id) => id != currentUid, orElse: () => '');
+
+    if (otherId.isEmpty) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(otherId).snapshots(),
+      builder: (context, userSnap) {
+        if (!userSnap.hasData || !userSnap.data!.exists) return const SizedBox.shrink();
+        
+        final userData = userSnap.data!.data() as Map<String, dynamic>?;
+        if (userData == null) return const SizedBox.shrink();
+        
+        final otherUser = UserModel.fromMap(userData);
+        final bool isOnline = userData['isOnline'] ?? false;
+
+        if (_searchQuery.isNotEmpty && !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase())) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: ListTile(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatScreen(
+                  requestId: chatId,
+                  otherUserName: otherUser.name,
+                  otherUserId: otherUser.uid,
+                ),
+              ),
+            ),
+            leading: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundImage: otherUser.profileImageUrl != null
+                      ? NetworkImage(otherUser.profileImageUrl!)
+                      : null,
+                  child: otherUser.profileImageUrl == null
+                      ? const Icon(Icons.person, color: Colors.grey)
+                      : null,
+                ),
+                if (isOnline)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            title: Text(
+              otherUser.name,
+              style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Text(
+              chatData['lastMessage'] ?? 'মেসেজ শুরু করুন',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 13,
+                fontWeight: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
+                    ? FontWeight.bold 
+                    : FontWeight.normal,
+              ),
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (chatData['lastMessageTime'] != null)
+                  Text(
+                    _formatTime((chatData['lastMessageTime'] as Timestamp).toDate()),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                  ),
+                const SizedBox(height: 4),
+                if (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true)
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -106,10 +223,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: TextField(
         decoration: InputDecoration(
           hintText: 'নাম দিয়ে খুঁজুন...',
-          prefixIcon: const Icon(Icons.search, size: 20),
+          prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
           filled: true,
           fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
           contentPadding: EdgeInsets.zero,
         ),
         onChanged: (v) => setState(() => _searchQuery = v),
@@ -117,45 +237,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  Widget _buildChatTile(BuildContext context, String chatId, UserModel otherUser, String lastMsg, Timestamp? time) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
-        border: Border.all(color: Colors.grey.shade100),
-      ),
-      child: ListTile(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatScreen(
-              requestId: chatId,
-              otherUserName: otherUser.name,
-              otherUserId: otherUser.uid,
-            ),
-          ),
-        ),
-        leading: CircleAvatar(
-          radius: 26,
-          backgroundColor: Colors.red.shade50,
-          backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
-          child: otherUser.profileImageUrl == null ? const Icon(Icons.person, color: Colors.red) : null,
-        ),
-        title: Text(otherUser.name, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16)),
-        subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-        trailing: time != null ? Text(_formatTime(time.toDate()), style: TextStyle(color: Colors.grey.shade400, fontSize: 11)) : null,
-      ),
-    );
-  }
-
   String _formatTime(DateTime date) {
     final now = DateTime.now();
-    if (now.day == date.day && now.month == date.month && now.year == date.year) {
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
       return DateFormat('hh:mm a').format(date);
+    } else if (difference.inDays == 1) {
+      return 'গতকাল';
+    } else if (difference.inDays < 7) {
+      return DateFormat('EEEE').format(date); // সপ্তাহের নাম
+    } else {
+      return DateFormat('dd/MM/yy').format(date);
     }
-    return DateFormat('dd/MM/yy').format(date);
   }
 
   Widget _buildEmptyState() {
@@ -163,9 +257,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline_rounded, size: 80, color: Colors.grey.shade200),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
+            child: Icon(Icons.chat_bubble_outline_rounded, size: 60, color: Colors.red.shade200),
+          ),
           const SizedBox(height: 16),
-          Text('এখনো কোনো মেসেজ নেই', style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
+          Text(
+            'এখনো কোনো মেসেজ নেই',
+            style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 16),
+          ),
         ],
       ),
     );

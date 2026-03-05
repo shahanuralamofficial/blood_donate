@@ -10,39 +10,38 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<void> sendMessage(String chatId, MessageModel message) async {
-    // chatId যদি direct_ দিয়ে শুরু হয় তবে সেটি কমন চ্যাট
-    final isDirect = chatId.startsWith('direct_');
-    final collectionPath = isDirect ? 'direct_chats' : 'blood_requests';
-    
-    // ১. মেসেজটি সাব-কালেকশনে যোগ করা
+    // এখানে আমরা কঠোরভাবে চ্যাট আইডি ফরম্যাট চেক করব।
+    // চ্যাট আইডি অবশ্যই 'direct_uid1_uid2' ফরম্যাটে হতে হবে।
+    if (!chatId.startsWith('direct_')) {
+      throw Exception('Invalid Chat Protocol. Only direct user-to-user chats are allowed.');
+    }
+
+    final parts = chatId.split('_');
+    if (parts.length < 3) throw Exception('Invalid Chat ID format.');
+
+    final participants = [parts[1], parts[2]];
+
+    // ১. মেইন চ্যাট ডকুমেন্টে মেটাডাটা সেভ করা (participants মাস্ট)
+    await _firestore.collection('direct_chats').doc(chatId).set({
+      'participants': participants,
+      'lastMessage': message.text,
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // ২. মেসেজটি 'messages' সাব-কালেকশনে যোগ করা
     await _firestore
-        .collection(collectionPath)
+        .collection('direct_chats')
         .doc(chatId)
         .collection('messages')
         .add(message.toMap());
-
-    // ২. যদি সরাসরি চ্যাট হয়, তবে মেইন চ্যাট ডকুমেন্টে লাস্ট মেসেজ আপডেট করা (চ্যাট লিস্টে দেখানোর জন্য)
-    if (isDirect) {
-      // chatId থেকে দুই ইউজারের আইডি বের করা (direct_uid1_uid2)
-      final parts = chatId.split('_');
-      if (parts.length >= 3) {
-        await _firestore.collection('direct_chats').doc(chatId).set({
-          'participants': [parts[1], parts[2]],
-          'lastMessage': message.text,
-          'lastMessageTime': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
-    }
   }
 
   @override
   Stream<List<MessageModel>> streamMessages(String chatId) {
-    final isDirect = chatId.startsWith('direct_');
-    final collectionPath = isDirect ? 'direct_chats' : 'blood_requests';
-
+    // শুধুমাত্র direct_chats থেকে ডাটা স্ট্রিম হবে
     return _firestore
-        .collection(collectionPath)
+        .collection('direct_chats')
         .doc(chatId)
         .collection('messages')
         .orderBy('timestamp', descending: true)

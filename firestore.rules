@@ -3,63 +3,65 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // হেল্পার ফাংশন: ইউজার লগইন করা আছে কি না চেক করে
     function isSignedIn() {
-      return request.auth != null;
-    }
+      return request.auth != null;    }
 
+    // হেল্পার ফাংশন: ইউজারের নিজের ডাটা কি না চেক করে
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // --- Users Collection ---
+    // --- ইউজার কালেকশন ---
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn();
+      allow update: if isSignedIn(); // অনলাইন স্ট্যাটাস বা রেটিং আপডেটের জন্য সবার অনুমতি দেওয়া হয়েছে
 
-      // Notifications Sub-collection
+      // নোটিফিকেশন সাব-কালেকশন
       match /notifications/{notificationId} {
         allow read: if isSignedIn() && isOwner(userId);
         allow create: if isSignedIn();
-        allow update: if isSignedIn() && isOwner(userId);
-        allow delete: if isSignedIn() && isOwner(userId);
+        allow update, delete: if isSignedIn() && isOwner(userId);
       }
     }
 
-    // --- Blood Requests Collection ---
+    // --- ব্লাড রিকোয়েস্ট কালেকশন (চ্যাট পুরোপুরি বন্ধ) ---
     match /blood_requests/{requestId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.requesterId == request.auth.uid;
 
-      // ব্লাড রিকোয়েস্টের ভেতরের চ্যাট মেসেজ
+      // ব্লাড রিকোয়েস্টের ভেতরের মেসেজ পাথ পুরোপুরি ব্লক করা হয়েছে
       match /messages/{messageId} {
-        allow read, write: if isSignedIn();
+        allow read, write: if false;
       }
     }
 
-    // --- Direct Chats Collection (সরাসরি চ্যাটের জন্য) ---
+    // --- ডাইরেক্ট চ্যাট কালেকশন (User-to-User) ---
     match /direct_chats/{chatId} {
-      allow read, write: if isSignedIn();
+      // শুধুমাত্র চ্যাটের মেম্বাররা (participants) চ্যাটটি দেখতে পারবে
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.participants);
+
+      // চ্যাট তৈরি বা আপডেট করার সময় চেক করা হচ্ছে ইউজার নিজে এর অংশ কি না
+      allow create, update: if isSignedIn() && (request.auth.uid in request.resource.data.participants);
+
       match /messages/{messageId} {
+        // চ্যাট মেম্বাররা মেসেজ পড়তে এবং পাঠাতে পারবে
         allow read, write: if isSignedIn();
       }
     }
 
-    // --- Donors Collection ---
+    // --- রক্তদাতা (Donors) কালেকশন ---
     match /donors/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && isOwner(userId);
     }
 
-    // --- Legacy Chats (পুরানো চ্যাট কালেকশন থাকলে) ---
+    // পুরনো বা অন্য কোনো ভুল পাথ ব্লক
     match /chats/{chatId} {
-      allow read, write: if isSignedIn();
-      match /messages/{messageId} {
-        allow read, write: if isSignedIn();
-      }
+      allow read, write: if false;
     }
   }
 }

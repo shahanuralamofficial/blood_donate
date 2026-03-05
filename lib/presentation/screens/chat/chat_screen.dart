@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../providers/auth_provider.dart';
@@ -11,15 +12,17 @@ import '../../../core/services/notification_service.dart';
 import '../donors/donor_public_profile_screen.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
-  final String requestId; 
+  final String requestId; // This is now the chatId (direct_uidA_uidB)
   final String otherUserName;
   final String? otherUserId;
+  final String? requestMention; // উদাহরণ: "রোগী: রহিম (A+)"
 
   const ChatScreen({
     super.key,
     required this.requestId,
     required this.otherUserName,
     this.otherUserId,
+    this.requestMention,
   });
 
   @override
@@ -54,6 +57,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     setState(() => _isSending = true);
 
+    // যদি এটি প্রথম মেসেজ হয় এবং রিকোয়েস্ট মেনশন থাকে, তবে মেনশনটি সহ পাঠাতে পারি
+    // অথবা মেনশনটি জাস্ট ইউআই-তে থাকবে। ইউজার যা লিখবে তাই যাবে।
     final message = MessageModel(
       senderId: user.uid,
       text: text,
@@ -106,31 +111,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ? StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance.collection('users').doc(_receiverId).snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return Text(widget.otherUserName);
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return Text(widget.otherUserName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold));
+                }
                 
                 final userData = snapshot.data!.data() as Map<String, dynamic>?;
-                if (userData == null) return Text(widget.otherUserName);
-                
-                final otherUser = UserModel.fromMap(userData);
-                final bool isOnline = userData['isOnline'] ?? false;
+                final otherUser = userData != null ? UserModel.fromMap(userData) : null;
+                final bool isOnline = userData?['isOnline'] ?? false;
 
                 return InkWell(
-                  onTap: () => Navigator.push(
+                  onTap: otherUser != null ? () => Navigator.push(
                     context, 
                     MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))
-                  ),
+                  ) : null,
                   child: Row(
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
-                        child: otherUser.profileImageUrl == null ? const Icon(Icons.person, size: 20) : null,
+                        backgroundImage: otherUser?.profileImageUrl != null ? NetworkImage(otherUser!.profileImageUrl!) : null,
+                        child: otherUser?.profileImageUrl == null ? const Icon(Icons.person, size: 20) : null,
                       ),
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(otherUser.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(otherUser?.name ?? widget.otherUserName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           Text(
                             isOnline ? 'অনলাইন' : 'অফলাইন', 
                             style: TextStyle(
@@ -146,13 +151,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 );
               },
             )
-          : Text(widget.otherUserName),
-        backgroundColor: const Color(0xFFE53935),
+          : Text(widget.otherUserName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1,
       ),
       body: Column(
         children: [
+          // রিকোয়েস্ট মেনশন কার্ড (যদি থাকে)
+          if (widget.requestMention != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'প্রসঙ্গ: ${widget.requestMention}',
+                      style: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.blue.shade800, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
           Expanded(
             child: messagesAsync.when(
               data: (messages) {
@@ -186,9 +216,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFFE53935) : Colors.white,
+          color: isMe ? Colors.red.shade600 : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2)],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)],
         ),
         child: Column(
           crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -205,7 +235,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, -2))],
+      ),
       child: SafeArea(
         child: Row(
           children: [
@@ -220,7 +253,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ),
             ),
-            IconButton(icon: const Icon(Icons.send_rounded, color: Colors.red), onPressed: _sendMessage),
+            const SizedBox(width: 8),
+            CircleAvatar(
+              backgroundColor: Colors.red,
+              child: IconButton(icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20), onPressed: _sendMessage),
+            ),
           ],
         ),
       ),
