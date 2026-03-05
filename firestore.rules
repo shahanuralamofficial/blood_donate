@@ -16,17 +16,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(userId);
-
-      // অন্য ইউজাররা র‍্যাঙ্ক বা স্ট্যাটাস আপডেট করার সময় (যেমন রিভিউ বা রক্ত পাওয়া নিশ্চিত করলে)
-      // কিছু নির্দিষ্ট ফিল্ড আপডেট করার প্রয়োজন হতে পারে। তাই আপডেট উন্মুক্ত রাখা হয়েছে।
       allow update: if isSignedIn();
 
       // Notifications Sub-collection
       match /notifications/{notificationId} {
         allow read: if isSignedIn() && isOwner(userId);
-        // যেকোনো ইউজার অন্য কাউকে নোটিফিকেশন পাঠাতে পারবে
         allow create: if isSignedIn();
-        // নিজের নোটিফিকেশন নিজে রিড/আপডেট করতে পারবে
         allow update: if isSignedIn() && isOwner(userId);
         allow delete: if isSignedIn() && isOwner(userId);
       }
@@ -35,33 +30,36 @@ service cloud.firestore {
     // --- Blood Requests Collection ---
     match /blood_requests/{requestId} {
       allow read: if isSignedIn();
-      // যেকোনো সাইন-ইন করা ইউজার রিকোয়েস্ট তৈরি করতে পারবে
       allow create: if isSignedIn();
-      // রিকোয়েস্টার, একসেপ্ট করা ডোনার অথবা অন্য কেউ (স্ট্যাটাস আপডেট বা রিভিউর জন্য) আপডেট করতে পারবে
       allow update: if isSignedIn();
-      // রিকোয়েস্ট ডিলিট করার ক্ষমতা শুধুমাত্র রিকোয়েস্টারের
       allow delete: if isSignedIn() && resource.data.requesterId == request.auth.uid;
+
+      // ব্লাড রিকোয়েস্টের ভেতরের চ্যাট মেসেজ
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
     }
 
-    // --- Donors Collection ---
-    // (পাবলিকলি সার্চ করার জন্য)
-    match /donors/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && isOwner(userId);
-    }
-
-    // --- Chats/Messages (ভবিষ্যতের জন্য) ---
-    match /chats/{chatId} {
+    // --- Direct Chats Collection (সরাসরি চ্যাটের জন্য) ---
+    match /direct_chats/{chatId} {
       allow read, write: if isSignedIn();
       match /messages/{messageId} {
         allow read, write: if isSignedIn();
       }
     }
 
-    // --- App Metadata / Config (ঐচ্ছিক) ---
-    match /app_config/{configId} {
-      allow read: if true;
-      allow write: if false; // শুধুমাত্র অ্যাডমিন ড্যাশবোর্ড থেকে
+    // --- Donors Collection ---
+    match /donors/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isOwner(userId);
+    }
+
+    // --- Legacy Chats (পুরানো চ্যাট কালেকশন থাকলে) ---
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn();
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
     }
   }
 }
