@@ -37,12 +37,10 @@ class NotificationService {
       
       FirebaseMessaging.onMessage.listen(_showForegroundNotification);
 
-      // গুরুত্বপূর্ণ: অ্যাপ ওপেন হওয়ার পর লিসেনার শুরু করা
       _startNotificationListener();
     }
   }
 
-  // রিয়েল-টাইম লিসেনার: ডাটাবেসে নতুন নোটিফিকেশন আসলেই পুশ দেখাবে
   void _startNotificationListener() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -60,10 +58,8 @@ class NotificationService {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
-          
-          // সময় চেক করা (যাতে পুরনো নোটিফিকেশন বারবার না আসে)
           final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-          if (createdAt != null && DateTime.now().difference(createdAt).inSeconds < 10) {
+          if (createdAt != null && DateTime.now().difference(createdAt).inSeconds < 30) {
             _showLocalNotification(
               title: data['title'] ?? 'নতুন বার্তা',
               body: data['body'] ?? '',
@@ -71,7 +67,7 @@ class NotificationService {
           }
         }
       }
-    });
+    }, onError: (e) => print('Notification Listener Error: $e'));
   }
 
   Future<void> _saveTokenToFirestore(String token) async {
@@ -79,6 +75,7 @@ class NotificationService {
     if (user != null) {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'fcmToken': token,
+        'lastActive': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }
   }
@@ -97,6 +94,7 @@ class NotificationService {
         android: AndroidNotificationDetails(
           'blood_donate_channel', 'Blood Donate Notifications',
           importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher',
+          playSound: true, enableVibration: true,
         ),
       ),
     );
@@ -117,7 +115,7 @@ class NotificationService {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Notification Error: $e');
+      print('Send Notification Error for $receiverId: $e');
     }
   }
 
@@ -129,54 +127,85 @@ class NotificationService {
     required String requestId,
   }) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    Set<String> notifiedUserIds = {};
 
-    // একই বিভাগ, জেলা ও থানার দাতাদের খোঁজা হচ্ছে
-    final donorsQuery = await FirebaseFirestore.instance
-        .collection('users')
-        .where('address.division', isEqualTo: division)
-        .where('address.district', isEqualTo: district)
-        .where('address.thana', isEqualTo: thana)
-        .where('bloodGroup', isEqualTo: bloodGroup)
-        .get();
-
-    for (var doc in donorsQuery.docs) {
-      if (doc.id != currentUserId) {
-        await sendNotificationToUser(
-          receiverId: doc.id,
-          title: 'জরুরি $bloodGroup রক্তের প্রয়োজন!',
-          body: '$thana, $district-এ আপনার গ্রুপের রক্ত প্রয়োজন। দ্রুত অ্যাপে দেখুন।',
-          data: {
-            'requestId': requestId,
-            'type': 'blood_request',
-            'bloodGroup': bloodGroup,
-            'location': '$thana, $district'
-          },
-        );
-      }
-    }
-
-    // যদি থানা পর্যায়ে পর্যাপ্ত দাতা না পাওয়া যায়, তবে পুরো জেলার দাতাদেরও জানানো যেতে পারে (ঐচ্ছিক)
-    if (donorsQuery.docs.length < 5) {
-      final districtDonorsQuery = await FirebaseFirestore.instance
+    try {
+      // ১. থানা লেভেলে দাতাদের খোঁজা (সবচেয়ে সঠিক ফিল্টারিং)
+      final thanaDonors = await FirebaseFirestore.instance
           .collection('users')
           .where('address.division', isEqualTo: division)
           .where('address.district', isEqualTo: district)
+          .where('address.thana', isEqualTo: thana)
           .where('bloodGroup', isEqualTo: bloodGroup)
-          .limit(20) // অতিরিক্ত লোড এড়াতে লিমিট
+          .where('isAvailable', isEqualTo: true)
           .get();
 
-      for (var doc in districtDonorsQuery.docs) {
-        // যারা অলরেডি থানা লেভেলে নোটিফিকেশন পায়নি তাদের পাঠানো
-        bool alreadyNotified = donorsQuery.docs.any((d) => d.id == doc.id);
-        if (doc.id != currentUserId && !alreadyNotified) {
+      for (var doc in thanaDonors.docs) {
+        if (doc.id != currentUserId) {
           await sendNotificationToUser(
             receiverId: doc.id,
-            title: 'আপনার জেলায় $bloodGroup রক্তের প্রয়োজন!',
-            body: '$district-এ রক্তের জরুরি আবেদন করা হয়েছে। দয়া করে দেখুন।',
+            title: 'জরুরি $bloodGroup রক্ত প্রয়োজন!',
+            body: '$thana, $district-এ আপনার গ্রুপের রক্তের আবেদন করা হয়েছে।',
+            data: {'requestId': requestId, 'type': 'blood_request'},
+          );
+          notifiedUserIds.add(doc.id);
+        }
+      }
+
+      // ২. যদি থানা লেভেলে দাতা কম থাকে, তবে জেলা লেভেলে বাড়ানো
+      if (notifiedUserIds.length < 3) {
+        final districtDonors = await FirebaseFirestore.instance
+            .collection('users')
+            .where('address.division', isEqualTo: division)
+            .where('address.district', isEqualTo: district)
+            .where('bloodGroup', isEqualTo: bloodGroup)
+            .where('isAvailable', isEqualTo: true)
+            .limit(15)
+            .get();
+
+        for (var doc in districtDonors.docs) {
+          if (doc.id != currentUserId && !notifiedUserIds.contains(doc.id)) {
+            await sendNotificationToUser(
+              receiverId: doc.id,
+              title: 'আপনার জেলায় $bloodGroup রক্ত প্রয়োজন!',
+              body: '$district-এ রক্তের জরুরি আবেদন করা হয়েছে। দয়া করে দেখুন।',
+              data: {'requestId': requestId, 'type': 'blood_request'},
+            );
+            notifiedUserIds.add(doc.id);
+          }
+        }
+      }
+      
+      print('Total donors notified: ${notifiedUserIds.length}');
+    } catch (e) {
+      print('Notify Nearby Donors Error: $e');
+      // যদি ইনডেক্স এরর হয়, তবে ব্যাকআপ হিসেবে শুধুমাত্র ব্লাড গ্রুপ দিয়ে খুঁজি
+      _notifyFallback(bloodGroup, requestId, currentUserId);
+    }
+  }
+
+  // ব্যাকআপ নোটিফিকেশন লজিক (যদি এরিয়া কুয়েরি ফেইল করে)
+  Future<void> _notifyFallback(String bloodGroup, String requestId, String? currentUserId) async {
+    try {
+      final fallbackDonors = await FirebaseFirestore.instance
+          .collection('users')
+          .where('bloodGroup', isEqualTo: bloodGroup)
+          .where('isAvailable', isEqualTo: true)
+          .limit(10)
+          .get();
+
+      for (var doc in fallbackDonors.docs) {
+        if (doc.id != currentUserId) {
+          await sendNotificationToUser(
+            receiverId: doc.id,
+            title: 'জরুরি রক্তের প্রয়োজন!',
+            body: 'আপনার গ্রুপের রক্তের একটি নতুন আবেদন করা হয়েছে। দ্রুত চেক করুন।',
             data: {'requestId': requestId, 'type': 'blood_request'},
           );
         }
       }
+    } catch (e) {
+      print('Fallback Notification Error: $e');
     }
   }
 }
