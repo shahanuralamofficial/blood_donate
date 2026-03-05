@@ -61,8 +61,6 @@ class NotificationService {
     }
   }
 
-  // --- Push Notification Trigger Logic ---
-  
   Future<void> sendNotificationToUser({
     required String receiverId,
     required String title,
@@ -70,7 +68,7 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // ১. ইউজারের ইন-অ্যাপ নোটিফিকেশন কালেকশনে সেভ করা
+      // ১. ইন-অ্যাপ নোটিফিকেশন কালেকশনে সেভ করা
       await FirebaseFirestore.instance.collection('users').doc(receiverId).collection('notifications').add({
         'title': title,
         'body': body,
@@ -78,14 +76,21 @@ class NotificationService {
         'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
-      
-      print('Notification logged for $receiverId: $title');
+
+      // ২. ইউজারের FCM Token সংগ্রহ করে সরাসরি পুশ পাঠানোর চেষ্টা (অপশনাল - যদি আপনার সার্ভার কী থাকে)
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(receiverId).get();
+      final String? token = userDoc.data()?['fcmToken'];
+
+      if (token != null) {
+        // নোট: রিয়েল পুশ নোটিফিকেশন সাধারণত ফায়ারবেস ক্লাউড ফাংশন থেকে পাঠানো নিরাপদ।
+        // এখানে শুধু ডাটাবেসে সেভ হচ্ছে, যা অ্যাপ ওপেন করলে ইউজার নোটিফিকেশন সেন্টারে দেখতে পাবে।
+        print('Notification logged and ready for push to: $token');
+      }
     } catch (e) {
       print('Notification Error: $e');
     }
   }
 
-  // ২. আশেপাশে থাকা রক্তদাতাদের জানানো
   Future<void> notifyNearbyDonors({
     required String district,
     required String bloodGroup,

@@ -58,7 +58,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             : request.requesterId;
 
         if (receiverId.isNotEmpty) {
-          import '../../../core/services/notification_service.dart';
           NotificationService().sendNotificationToUser(
             receiverId: receiverId,
             title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
