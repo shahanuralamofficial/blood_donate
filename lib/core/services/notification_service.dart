@@ -32,7 +32,7 @@ class NotificationService {
       _fcm.onTokenRefresh.listen(_saveTokenToFirestore);
 
       const AndroidInitializationSettings initializationSettingsAndroid = 
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('launcher_icon');
       
       const InitializationSettings initializationSettings = 
           InitializationSettings(android: initializationSettingsAndroid);
@@ -169,7 +169,7 @@ class NotificationService {
           'blood_donate_channel', 'Blood Donate Notifications',
           importance: Importance.max, 
           priority: Priority.high, 
-          icon: '@mipmap/ic_launcher',
+          icon: 'launcher_icon',
           playSound: true, 
           enableVibration: true,
           styleInformation: const BigTextStyleInformation(''),
