@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
@@ -10,6 +11,13 @@ import 'rank_progress_screen.dart';
 
 class PersonalProfileScreen extends ConsumerWidget {
   const PersonalProfileScreen({super.key});
+
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,6 +64,8 @@ class PersonalProfileScreen extends ConsumerWidget {
                       _buildInfoSection(context, user), // Added context for nav
                       const SizedBox(height: 24),
                       _buildReviewCard(context, user),
+                      const SizedBox(height: 24),
+                      _buildHelpSection(context),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -66,6 +76,42 @@ class PersonalProfileScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
         error: (e, _) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildHelpSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'সহযোগিতা ও মতামত',
+            style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey.shade800),
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            Icons.facebook_rounded,
+            'ফেসবুক পেজ',
+            'আমাদের সাথে যুক্ত হন',
+            Colors.blue.shade700,
+            onTap: () => _launchUrl('https://www.facebook.com/blooddonate'),
+          ),
+          const Divider(height: 32, thickness: 0.5),
+          _buildInfoRow(
+            Icons.message_rounded,
+            'মতামত ও পরামর্শ',
+            'আপনার মতামত জানান',
+            Colors.teal,
+            onTap: () => _launchUrl('mailto:support@blooddonate.com?subject=Feedback for Blood Donate App'), // আপনার ইমেইল এখানে দিন
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
@@ -26,10 +28,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedDistrict;
   String? _selectedThana;
   bool _isAvailable = true;
+  bool _isLoadingData = true;
+  Map<String, dynamic> _allLocationData = {};
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
   final List<String> _genders = ['পুরুষ', 'মহিলা', 'অন্যান্য'];
-  final List<String> _divisions = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
 
   @override
   void initState() {
@@ -41,10 +44,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _selectedBloodGroup = widget.user.bloodGroup;
     _selectedGender = widget.user.gender;
     _isAvailable = widget.user.isAvailable;
+    
     if (widget.user.address != null) {
       _selectedDivision = widget.user.address!['division'];
       _selectedDistrict = widget.user.address!['district'];
       _selectedThana = widget.user.address!['thana'];
+    }
+    _loadLocations();
+  }
+
+  Future<void> _loadLocations() async {
+    try {
+      final String response = await rootBundle.loadString('assets/unions.json');
+      final List<dynamic> dataList = json.decode(response);
+      Map<String, dynamic> tempMap = {};
+      for (var div in dataList) {
+        tempMap[div['name']] = div;
+      }
+      setState(() {
+        _allLocationData = tempMap;
+        _isLoadingData = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingData = false);
     }
   }
 
@@ -81,19 +103,35 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (mounted) {
         Navigator.pop(context); // Close loading
         ref.invalidate(currentUserDataProvider);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('প্রোফাইল আপডেট সফল হয়েছে!')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('প্রোফাইল আপডেট সফল হয়েছে!'), backgroundColor: Colors.green));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('এরর: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('এরর: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    List<String> divisions = _allLocationData.keys.toList();
+    List<String> districts = [];
+    if (_selectedDivision != null && _allLocationData.containsKey(_selectedDivision)) {
+      var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
+      districts = districtsList.map((e) => e['name'].toString()).toList();
+    }
+    List<String> thanas = [];
+    if (_selectedDistrict != null && _selectedDivision != null) {
+      var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
+      var districtData = districtsList.firstWhere((e) => e['name'] == _selectedDistrict, orElse: () => null);
+      if (districtData != null) {
+        var thanasList = districtData['thanas'] as List;
+        thanas = thanasList.map((e) => e['name'].toString()).toList();
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -102,7 +140,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
       ),
-      body: SingleChildScrollView(
+      body: _isLoadingData 
+        ? const Center(child: CircularProgressIndicator(color: Colors.red))
+        : SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
@@ -127,13 +167,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              Text('ঠিকানা', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+              Text('ঠিকানা (বিভাগ, জেলা ও থানা)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
               const SizedBox(height: 12),
-              _buildDropdown('বিভাগ', _divisions, _selectedDivision, (v) => setState(() => _selectedDivision = v)),
+              _buildDropdown('বিভাগ', divisions, _selectedDivision, (v) => setState(() {
+                _selectedDivision = v;
+                _selectedDistrict = null;
+                _selectedThana = null;
+              })),
               const SizedBox(height: 16),
-              _buildTextField('জেলা', TextEditingController(text: _selectedDistrict), Icons.location_city, onChanged: (v) => _selectedDistrict = v),
+              _buildDropdown('জেলা', districts, _selectedDistrict, (v) => setState(() {
+                _selectedDistrict = v;
+                _selectedThana = null;
+              })),
               const SizedBox(height: 16),
-              _buildTextField('থানা', TextEditingController(text: _selectedThana), Icons.map_outlined, onChanged: (v) => _selectedThana = v),
+              _buildDropdown('থানা', thanas, _selectedThana, (v) => setState(() => _selectedThana = v)),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -183,13 +230,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         filled: true,
         fillColor: Colors.grey.shade50,
       ),
-      validator: (v) => v!.isEmpty ? 'তথ্য দিন' : null,
+      validator: (v) => (v == null || v.isEmpty) && label != 'ইমেইল' ? 'তথ্য দিন' : null,
     );
   }
 
   Widget _buildDropdown(String label, List<String> items, String? selected, Function(String?) onChanged) {
     return DropdownButtonFormField<String>(
-      value: selected,
+      value: (selected != null && items.contains(selected)) ? selected : null,
+      hint: Text(label),
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
@@ -199,6 +247,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ),
       items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
+      validator: (v) => v == null ? 'নির্বাচন করুন' : null,
     );
   }
 }
