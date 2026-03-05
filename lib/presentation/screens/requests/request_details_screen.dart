@@ -510,7 +510,7 @@ class RequestDetailsScreen extends ConsumerWidget {
                 'thankYouNote': thankYouController.text.trim(),
                 'donorId': req.donorId,
                 'donationType': donationType,
-                'completedAt': FieldValue.serverTimestamp(), // সম্পন্ন হওয়ার সময় সেভ
+                'completedAt': FieldValue.serverTimestamp(),
               });
 
               if (req.donorId != null) {
@@ -1137,36 +1137,51 @@ class RequestDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildSuccessMessage(BloodRequestModel req) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.green.shade100),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
-          const SizedBox(height: 16),
-          Text(
-            'রক্তদান সফল হয়েছে! ❤️',
-            style: GoogleFonts.notoSansBengali(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.green.shade800,
-            ),
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.green.shade100),
           ),
-          if (req.thankYouNote != null && req.thankYouNote!.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            _buildNoteCard(req.thankYouNote!, 'গ্রহীতার পক্ষ থেকে (ধন্যবাদ বার্তা)'),
-          ],
-          if (req.donorExperience != null && req.donorExperience!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _buildNoteCard(req.donorExperience!, 'রক্তদাতার পক্ষ থেকে (অভিজ্ঞতা)'),
-          ],
+          child: Column(
+            children: [
+              const Icon(Icons.check_circle_rounded,
+                  color: Colors.green, size: 60),
+              const SizedBox(height: 16),
+              Text(
+                'রক্তদান সফল হয়েছে! ❤️',
+                style: GoogleFonts.notoSansBengali(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'রক্তদাতা ও গ্রহীতা উভয়ের সহযোগিতায় একটি প্রাণ বেঁচে গেল।',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.notoSansBengali(
+                  fontSize: 13,
+                  color: Colors.green.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (req.thankYouNote != null && req.thankYouNote!.trim().isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _buildNoteCard(req.thankYouNote!, 'গ্রহীতার পক্ষ থেকে (ধন্যবাদ বার্তা)'),
         ],
-      ),
+        if (req.donorExperience != null &&
+            req.donorExperience!.trim().isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildNoteCard(req.donorExperience!, 'রক্তদাতার পক্ষ থেকে (অভিজ্ঞতা)'),
+        ],
+      ],
     );
   }
 
