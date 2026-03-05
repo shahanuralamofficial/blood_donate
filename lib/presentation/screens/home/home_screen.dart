@@ -14,6 +14,8 @@ import '../requests/request_details_screen.dart';
 import '../requests/request_list_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
+import '../history/history_screen.dart';
+import '../profile/reviews_list_screen.dart';
 import 'notification_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -261,6 +263,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               '${user.totalDonations}',
               Colors.red,
               Icons.bloodtype,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(initialIndex: 2),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             _buildStatBox(
@@ -268,6 +276,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               '${user.totalRequests}',
               Colors.blue,
               Icons.campaign,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(initialIndex: 0),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             _buildStatBox(
@@ -290,14 +304,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               '${user.totalReceivedBags}',
               Colors.green,
               Icons.opacity,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(),
+                ),
+              ),
             ),
-
             const SizedBox(width: 12),
             _buildStatBox(
               'গড় রেটিং',
               user.averageRating.toStringAsFixed(1),
               Colors.amber,
               Icons.star_rounded,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReviewsListScreen(
+                    userId: user.uid,
+                    userName: user.name,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             _buildStatBox(
@@ -305,6 +333,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               '${user.totalCancelled}',
               Colors.blueGrey,
               Icons.cancel_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(),
+                ),
+              ),
             ),
           ],
         ),

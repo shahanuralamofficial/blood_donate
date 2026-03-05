@@ -8,7 +8,8 @@ import '../requests/request_details_screen.dart';
 import '../../../core/services/report_service.dart';
 
 class HistoryScreen extends ConsumerWidget {
-  const HistoryScreen({super.key});
+  final int initialIndex;
+  const HistoryScreen({super.key, this.initialIndex = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,6 +21,7 @@ class HistoryScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 4,
+      initialIndex: initialIndex,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
