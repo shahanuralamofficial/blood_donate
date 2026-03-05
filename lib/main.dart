@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'presentation/screens/auth/auth_wrapper.dart';
 import 'core/services/notification_service.dart';
 import 'presentation/screens/chat/chat_screen.dart';
+import 'presentation/providers/auth_provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
