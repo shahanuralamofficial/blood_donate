@@ -13,6 +13,7 @@ import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
 import '../requests/request_list_screen.dart';
 import '../chat/chat_list_screen.dart';
+import '../chat/chat_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/reviews_list_screen.dart';
