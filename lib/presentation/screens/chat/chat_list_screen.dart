@@ -16,6 +16,13 @@ class ChatListScreen extends StatefulWidget {
 class _ChatListScreenState extends State<ChatListScreen> {
   String _searchQuery = '';
 
+  // দুই ইউজারের জন্য একটি ইউনিক চ্যাট আইডি তৈরি করা
+  String _getChatId(String uid1, String uid2) {
+    List<String> ids = [uid1, uid2];
+    ids.sort(); // সবসময় একই অর্ডার থাকবে
+    return 'direct_${ids[0]}_${ids[1]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -47,32 +54,32 @@ class _ChatListScreenState extends State<ChatListScreen> {
             return _buildEmptyState();
           }
 
-          // ইউজারের সাথে সম্পর্কিত সকল রিকোয়েস্ট (পেন্ডিং, এক্সেপ্টেড সব)
-          var allRequests = snapshot.data!.docs.where((doc) {
+          // ১. ইউজারের সাথে সম্পর্কিত সকল ইউনিক চ্যাট পার্টনার খুঁজে বের করা
+          Map<String, dynamic> uniquePartners = {};
+          for (var doc in snapshot.data!.docs) {
             final data = doc.data() as Map<String, dynamic>;
-            return data['requesterId'] == currentUser.uid || data['donorId'] == currentUser.uid;
-          }).toList();
+            final requesterId = data['requesterId'];
+            final donorId = data['donorId'];
 
-          Map<String, dynamic> uniqueChats = {};
-          for (var doc in allRequests) {
-            final data = doc.data() as Map<String, dynamic>;
-            final otherUserId = data['requesterId'] == currentUser.uid ? data['donorId'] : data['requesterId'];
-            
-            if (otherUserId != null && otherUserId.isNotEmpty) {
-              if (!uniqueChats.containsKey(otherUserId)) {
-                uniqueChats[otherUserId] = {
-                  'requestId': doc.id,
-                  'otherUserId': otherUserId,
-                  'hospitalName': data['hospitalName'] ?? 'রক্তের আবেদন',
-                  'status': data['status'],
-                  'time': data['lastMessageTime'] ?? data['createdAt'] ?? Timestamp.now(),
-                };
+            if (requesterId == currentUser.uid || donorId == currentUser.uid) {
+              final otherUserId = requesterId == currentUser.uid ? donorId : requesterId;
+              
+              if (otherUserId != null && otherUserId.isNotEmpty && otherUserId != currentUser.uid) {
+                // যদি আগে থেকেই এই ইউজারের সাথে চ্যাট লিস্টে থাকে, তবে নতুন করে যোগ করবে না (Group by User)
+                if (!uniquePartners.containsKey(otherUserId)) {
+                  uniquePartners[otherUserId] = {
+                    'chatId': _getChatId(currentUser.uid, otherUserId),
+                    'otherUserId': otherUserId,
+                    'lastActivity': data['createdAt'] ?? Timestamp.now(),
+                    'hospital': data['hospitalName'] ?? 'রক্তের আবেদন',
+                  };
+                }
               }
             }
           }
 
-          var chatList = uniqueChats.values.toList();
-          chatList.sort((a, b) => (b['time'] as Timestamp).compareTo(a['time'] as Timestamp));
+          var chatList = uniquePartners.values.toList();
+          chatList.sort((a, b) => (b['lastActivity'] as Timestamp).compareTo(a['lastActivity'] as Timestamp));
 
           if (chatList.isEmpty) return _buildEmptyState();
 
@@ -97,7 +104,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     return const SizedBox.shrink();
                   }
 
-                  return _buildChatCard(context, chat['requestId'], otherUser, chat['hospitalName'], chat['status']);
+                  return _buildChatCard(context, chat['chatId'], otherUser, chat['hospital']);
                 },
               );
             },
@@ -125,7 +132,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  Widget _buildChatCard(BuildContext context, String requestId, UserModel otherUser, String hospital, String status) {
+  Widget _buildChatCard(BuildContext context, String chatId, UserModel otherUser, String hospital) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -134,74 +141,29 @@ class _ChatListScreenState extends State<ChatListScreen> {
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         border: Border.all(color: Colors.grey.shade100),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                requestId: requestId,
-                otherUserName: otherUser.name,
-              ),
-            ),
-          ),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))),
-                  child: CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.red.shade50,
-                    backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
-                    child: otherUser.profileImageUrl == null ? const Icon(Icons.person_rounded, color: Colors.red) : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Text(otherUser.name, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
-                          _buildStatusBadge(status),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(hospital, style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-              ],
+      child: ListTile(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              requestId: chatId,
+              otherUserName: otherUser.name,
             ),
           ),
         ),
+        leading: GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))),
+          child: CircleAvatar(
+            radius: 25,
+            backgroundColor: Colors.red.shade50,
+            backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
+            child: otherUser.profileImageUrl == null ? const Icon(Icons.person_rounded, color: Colors.red) : null,
+          ),
+        ),
+        title: Text(otherUser.name, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Text(hospital, style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
       ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color color = Colors.blue;
-    String text = 'চলমান';
-    if (status == 'completed' || status == 'donated') {
-      color = Colors.green;
-      text = 'সফল';
-    } else if (status == 'pending') {
-      color = Colors.orange;
-      text = 'অপেক্ষমান';
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(text, style: GoogleFonts.notoSansBengali(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 
