@@ -27,7 +27,6 @@ dependencies:
   riverpod_annotation: ^2.6.1
 
   # Location & Maps
-  google_maps_flutter: ^2.10.0
   geolocator: ^13.0.2
   geocoding: ^3.0.0
 
