@@ -5,9 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../data/models/blood_request_model.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/blood_request_provider.dart';
+import '../../../core/services/notification_service.dart'; // নোটিফিকেশন সার্ভিস ইমপোর্ট
 
 class CreateRequestScreen extends ConsumerStatefulWidget {
   const CreateRequestScreen({super.key});
@@ -110,7 +108,16 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
 
     try {
       // আবেদন তৈরি
-      await ref.read(bloodRequestRepositoryProvider).createRequest(request);
+      final String requestId = await ref.read(bloodRequestRepositoryProvider).createRequest(request);
+
+      // নিকটস্থ দাতাদের নোটিফিকেশন পাঠানো
+      NotificationService().notifyNearbyDonors(
+        division: _selectedDivision ?? '',
+        district: _selectedDistrict ?? '',
+        thana: _selectedThana ?? '',
+        bloodGroup: _selectedBloodGroup!,
+        requestId: requestId,
+      );
 
       // ইউজারের মোট আবেদনের সংখ্যা বাড়ানো (Transaction used for reliability)
       final userRef = FirebaseFirestore.instance

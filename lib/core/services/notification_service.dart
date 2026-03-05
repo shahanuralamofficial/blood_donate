@@ -122,24 +122,60 @@ class NotificationService {
   }
 
   Future<void> notifyNearbyDonors({
+    required String division,
     required String district,
+    required String thana,
     required String bloodGroup,
     required String requestId,
   }) async {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    // একই বিভাগ, জেলা ও থানার দাতাদের খোঁজা হচ্ছে
     final donorsQuery = await FirebaseFirestore.instance
         .collection('users')
+        .where('address.division', isEqualTo: division)
         .where('address.district', isEqualTo: district)
+        .where('address.thana', isEqualTo: thana)
         .where('bloodGroup', isEqualTo: bloodGroup)
         .get();
 
     for (var doc in donorsQuery.docs) {
-      if (doc.id != FirebaseAuth.instance.currentUser?.uid) {
+      if (doc.id != currentUserId) {
         await sendNotificationToUser(
           receiverId: doc.id,
-          title: 'জরুরি রক্তের প্রয়োজন!',
-          body: '$district-এ $bloodGroup রক্ত প্রয়োজন। এখনই আবেদনটি দেখুন।',
-          data: {'requestId': requestId, 'type': 'emergency'},
+          title: 'জরুরি $bloodGroup রক্তের প্রয়োজন!',
+          body: '$thana, $district-এ আপনার গ্রুপের রক্ত প্রয়োজন। দ্রুত অ্যাপে দেখুন।',
+          data: {
+            'requestId': requestId,
+            'type': 'blood_request',
+            'bloodGroup': bloodGroup,
+            'location': '$thana, $district'
+          },
         );
+      }
+    }
+
+    // যদি থানা পর্যায়ে পর্যাপ্ত দাতা না পাওয়া যায়, তবে পুরো জেলার দাতাদেরও জানানো যেতে পারে (ঐচ্ছিক)
+    if (donorsQuery.docs.length < 5) {
+      final districtDonorsQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('address.division', isEqualTo: division)
+          .where('address.district', isEqualTo: district)
+          .where('bloodGroup', isEqualTo: bloodGroup)
+          .limit(20) // অতিরিক্ত লোড এড়াতে লিমিট
+          .get();
+
+      for (var doc in districtDonorsQuery.docs) {
+        // যারা অলরেডি থানা লেভেলে নোটিফিকেশন পায়নি তাদের পাঠানো
+        bool alreadyNotified = donorsQuery.docs.any((d) => d.id == doc.id);
+        if (doc.id != currentUserId && !alreadyNotified) {
+          await sendNotificationToUser(
+            receiverId: doc.id,
+            title: 'আপনার জেলায় $bloodGroup রক্তের প্রয়োজন!',
+            body: '$district-এ রক্তের জরুরি আবেদন করা হয়েছে। দয়া করে দেখুন।',
+            data: {'requestId': requestId, 'type': 'blood_request'},
+          );
+        }
       }
     }
   }
