@@ -69,8 +69,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     setState(() => _isSending = true);
 
-    // যদি এটি প্রথম মেসেজ হয় এবং রিকোয়েস্ট মেনশন থাকে, তবে মেনশনটি সহ পাঠাতে পারি
-    // অথবা মেনশনটি জাস্ট ইউআই-তে থাকবে। ইউজার যা লিখবে তাই যাবে।
     final message = MessageModel(
       senderId: user.uid,
       text: text,
@@ -81,6 +79,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(messageRepositoryProvider).sendMessage(widget.requestId, message);
       
       if (_receiverId != null) {
+        // চ্যাট নোটিফিকেশন পাঠানো
         NotificationService().sendNotificationToUser(
           receiverId: _receiverId!,
           title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
@@ -89,6 +88,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             'type': 'chat',
             'chatId': widget.requestId,
             'senderName': user.name,
+            'senderId': user.uid, // senderId যোগ করা হলো
           },
         );
       }

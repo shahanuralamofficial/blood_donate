@@ -1080,16 +1080,28 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 child: _buildContactButton(
                   onTap: () {
                     if (user == null) return;
-                    List<String> ids = [user.uid, req.requesterId];
+                    
+                    // যার সাথে চ্যাট হবে তার আইডি (আবেদনকারী অথবা দাতা)
+                    final String otherId = isRequester && req.donorId != null 
+                        ? req.donorId! 
+                        : req.requesterId;
+                    
+                    final String otherName = isRequester && req.donorId != null
+                        ? 'রক্তদাতা'
+                        : req.patientName;
+
+                    // আইডি দুটিকে বর্ণানুক্রমিকভাবে সাজিয়ে ইউনিক চ্যাট আইডি তৈরি
+                    List<String> ids = [user.uid, otherId];
                     ids.sort();
                     final chatId = 'direct_${ids[0]}_${ids[1]}';
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => ChatScreen(
                           requestId: chatId,
-                          otherUserName: isRequester ? 'রক্তদাতা' : req.patientName,
-                          otherUserId: req.requesterId,
+                          otherUserName: otherName,
+                          otherUserId: otherId,
                           requestMention: 'রোগী: ${req.patientName} (${req.bloodGroup})',
                         ),
                       ),

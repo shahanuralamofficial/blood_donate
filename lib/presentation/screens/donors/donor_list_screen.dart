@@ -371,12 +371,21 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                           label: 'মেসেজ',
                           color: Colors.blue,
                           onTap: () {
+                            final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                            if (currentUid == null) return;
+
+                            // একটি ইউনিক চ্যাট আইডি তৈরি করা (সবসময় একই ফরম্যাটে যাতে দুইজন ইউজারের একটিই চ্যাট থাকে)
+                            final List<String> ids = [currentUid, user.uid];
+                            ids.sort(); // আইডিগুলো সর্ট করলে A_B এবং B_A একই আইডি (A_B) দিবে
+                            final chatId = 'direct_${ids[0]}_${ids[1]}';
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ChatScreen(
-                                  requestId: 'direct_${user.uid}',
+                                  requestId: chatId,
                                   otherUserName: user.name,
+                                  otherUserId: user.uid,
                                 ),
                               ),
                             );

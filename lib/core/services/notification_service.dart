@@ -81,10 +81,12 @@ class NotificationService {
     if (data['type'] == 'chat') {
       final chatId = data['chatId'];
       final senderName = data['senderName'] ?? 'বার্তা';
+      final senderId = data['senderId']; // senderId যোগ করা হলো
       
       navigatorKey.currentState?.pushNamed('/chat', arguments: {
         'chatId': chatId,
         'otherUserName': senderName,
+        'otherUserId': senderId,
       });
     } else if (data['type'] == 'blood_request' || data['type'] == 'emergency') {
       if (data['requestId'] != null) {

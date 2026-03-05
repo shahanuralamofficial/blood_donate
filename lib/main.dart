@@ -62,13 +62,17 @@ class _BloodDonateAppState extends ConsumerState<BloodDonateApp> with WidgetsBin
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _updateStatus(true);
-    } else {
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
       _updateStatus(false);
     }
   }
 
   void _updateStatus(bool isOnline) {
-    ref.read(userStatusProvider).updateStatus(isOnline);
+    try {
+      ref.read(userStatusProvider).updateStatus(isOnline);
+    } catch (e) {
+      debugPrint("Status Update Error: $e");
+    }
   }
 
   @override

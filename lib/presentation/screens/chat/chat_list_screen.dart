@@ -106,7 +106,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildChatItem(String chatId, Map<String, dynamic> chatData, String currentUid) {
     final List<dynamic> participants = chatData['participants'] ?? [];
-    final otherId = participants.firstWhere((id) => id != currentUid, orElse: () => '');
+    
+    // নিজের আইডি বাদে অন্য ইউজারের আইডি বের করা
+    final String otherId = participants.firstWhere(
+      (id) => id.toString() != currentUid, 
+      orElse: () => ''
+    ).toString();
 
     if (otherId.isEmpty) return const SizedBox.shrink();
 
@@ -121,24 +126,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
         final otherUser = UserModel.fromMap(userData);
         final bool isOnline = userData['isOnline'] ?? false;
 
+        // সার্চ ফিল্টারিং
         if (_searchQuery.isNotEmpty && !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase())) {
           return const SizedBox.shrink();
         }
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.symmetric(vertical: 6), // মার্জিন কিছুটা কমানো হলো
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
                 offset: const Offset(0, 4),
               )
             ],
           ),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -152,21 +159,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
             leading: Stack(
               children: [
                 CircleAvatar(
-                  radius: 26,
+                  radius: 28,
+                  backgroundColor: Colors.grey.shade100,
                   backgroundImage: otherUser.profileImageUrl != null
                       ? NetworkImage(otherUser.profileImageUrl!)
                       : null,
                   child: otherUser.profileImageUrl == null
-                      ? const Icon(Icons.person, color: Colors.grey)
+                      ? Icon(Icons.person, color: Colors.grey.shade400, size: 30)
                       : null,
                 ),
                 if (isOnline)
                   Positioned(
-                    right: 0,
-                    bottom: 0,
+                    right: 2,
+                    bottom: 2,
                     child: Container(
-                      width: 14,
-                      height: 14,
+                      width: 12,
+                      height: 12,
                       decoration: BoxDecoration(
                         color: Colors.green,
                         shape: BoxShape.circle,
@@ -178,14 +186,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
             title: Text(
               otherUser.name,
-              style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16),
+              style: GoogleFonts.notoSansBengali(
+                fontWeight: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
+                    ? FontWeight.bold 
+                    : FontWeight.w600,
+                fontSize: 16,
+              ),
             ),
             subtitle: Text(
               chatData['lastMessage'] ?? 'মেসেজ শুরু করুন',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
+                    ? Colors.black87 
+                    : Colors.grey.shade600,
                 fontSize: 13,
                 fontWeight: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
                     ? FontWeight.bold 
@@ -199,14 +214,25 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 if (chatData['lastMessageTime'] != null)
                   Text(
                     _formatTime((chatData['lastMessageTime'] as Timestamp).toDate()),
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                    style: TextStyle(
+                      color: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
+                          ? Colors.red.shade400 
+                          : Colors.grey.shade400, 
+                      fontSize: 11
+                    ),
                   ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 if (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true)
                   Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      'NEW',
+                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                    ),
                   ),
               ],
             ),
