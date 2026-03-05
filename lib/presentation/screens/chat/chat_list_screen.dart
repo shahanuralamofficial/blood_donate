@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
 
@@ -33,7 +34,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           _buildSearchBar(),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              // শুধুমাত্র সেই চ্যাটগুলো খুঁজবে যেখানে বর্তমান ইউজার একজন পার্টিসিপেন্ট
+              // শুধুমাত্র নতুন সিস্টেমের চ্যাটগুলো দেখাচ্ছি (যা ১০০% কাজ করবে)
               stream: FirebaseFirestore.instance
                   .collection('direct_chats')
                   .where('participants', arrayContains: currentUser.uid)
@@ -47,7 +48,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   return _buildEmptyState();
                 }
 
-                final chatDocs = snapshot.data!.docs;
+                // সময়ের ভিত্তিতে সাজানো
+                final List<DocumentSnapshot> chatDocs = snapshot.data!.docs.toList();
+                chatDocs.sort((a, b) {
+                  final aTime = (a.data() as Map<String, dynamic>)['lastMessageTime'] as Timestamp?;
+                  final bTime = (b.data() as Map<String, dynamic>)['lastMessageTime'] as Timestamp?;
+                  if (aTime == null) return 1;
+                  if (bTime == null) return -1;
+                  return bTime.compareTo(aTime);
+                });
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -55,36 +64,27 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   itemBuilder: (context, index) {
                     final chatData = chatDocs[index].data() as Map<String, dynamic>;
                     final chatId = chatDocs[index].id;
-
-                    // অন্য ইউজারের আইডি খুঁজে বের করা
+                    
                     final List<dynamic> participants = chatData['participants'] ?? [];
-                    final otherUserId = participants.firstWhere(
-                      (id) => id != currentUser.uid,
-                      orElse: () => null
-                    );
+                    final otherId = participants.firstWhere((id) => id != currentUser.uid, orElse: () => '');
 
-                    if (otherUserId == null) return const SizedBox.shrink();
+                    if (otherId.isEmpty) return const SizedBox.shrink();
 
                     return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance.collection('users').doc(otherUserId).get(),
+                      future: FirebaseFirestore.instance.collection('users').doc(otherId).get(),
                       builder: (context, userSnap) {
-                        if (!userSnap.hasData) return const SizedBox.shrink();
+                        if (!userSnap.hasData || userSnap.data!.data() == null) return const SizedBox.shrink();
+                        final otherUser = UserModel.fromMap(userSnap.data!.data() as Map<String, dynamic>);
 
-                        final otherUserData = userSnap.data!.data() as Map<String, dynamic>?;
-                        if (otherUserData == null) return const SizedBox.shrink();
-
-                        final otherUser = UserModel.fromMap(otherUserData);
-
-                        if (_searchQuery.isNotEmpty &&
-                            !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase())) {
+                        if (_searchQuery.isNotEmpty && !otherUser.name.toLowerCase().contains(_searchQuery.toLowerCase())) {
                           return const SizedBox.shrink();
                         }
 
                         return _buildChatTile(
-                          context,
-                          chatId,
-                          otherUser,
-                          chatData['lastMessage'] ?? 'কোনো মেসেজ নেই',
+                          context, 
+                          chatId, 
+                          otherUser, 
+                          chatData['lastMessage'] ?? 'মেসেজ পাঠানো হয়েছে', 
                           chatData['lastMessageTime'] as Timestamp?
                         );
                       },
@@ -119,10 +119,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Widget _buildChatTile(BuildContext context, String chatId, UserModel otherUser, String lastMsg, Timestamp? time) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         border: Border.all(color: Colors.grey.shade100),
       ),
       child: ListTile(
@@ -132,20 +133,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
             builder: (_) => ChatScreen(
               requestId: chatId,
               otherUserName: otherUser.name,
+              otherUserId: otherUser.uid,
             ),
           ),
         ),
         leading: CircleAvatar(
-          radius: 25,
+          radius: 26,
+          backgroundColor: Colors.red.shade50,
           backgroundImage: otherUser.profileImageUrl != null ? NetworkImage(otherUser.profileImageUrl!) : null,
-          child: otherUser.profileImageUrl == null ? const Icon(Icons.person) : null,
+          child: otherUser.profileImageUrl == null ? const Icon(Icons.person, color: Colors.red) : null,
         ),
-        title: Text(otherUser.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(otherUser.name, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-        trailing: time != null ? Text(
-          _formatTime(time.toDate()),
-          style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
-        ) : null,
+        trailing: time != null ? Text(_formatTime(time.toDate()), style: TextStyle(color: Colors.grey.shade400, fontSize: 11)) : null,
       ),
     );
   }
@@ -153,9 +153,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
   String _formatTime(DateTime date) {
     final now = DateTime.now();
     if (now.day == date.day && now.month == date.month && now.year == date.year) {
-      return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+      return DateFormat('hh:mm a').format(date);
     }
-    return "${date.day}/${date.month}";
+    return DateFormat('dd/MM/yy').format(date);
   }
 
   Widget _buildEmptyState() {
@@ -163,9 +163,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 60, color: Colors.grey.shade300),
+          Icon(Icons.chat_bubble_outline_rounded, size: 80, color: Colors.grey.shade200),
           const SizedBox(height: 16),
-          Text('এখনো কোনো মেসেজ নেই', style: TextStyle(color: Colors.grey.shade500)),
+          Text('এখনো কোনো মেসেজ নেই', style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

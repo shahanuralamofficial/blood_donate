@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../data/models/message_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/message_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
-  final String requestId; // এটি এখন সরাসরি চ্যাট আইডি অথবা অন্য ইউজারের আইডি হতে পারে
+  final String requestId;
   final String otherUserName;
   final String? otherUserId;
 
@@ -28,27 +29,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isSending = false;
   late String _finalChatId;
+  String? _receiverId;
 
   @override
   void initState() {
     super.initState();
     _calculateChatId();
+    _receiverId = widget.otherUserId;
   }
 
   void _calculateChatId() {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
 
-    // যদি অলরেডি direct_ আইডি থাকে তবে সেটিই ব্যবহার করো
     if (widget.requestId.startsWith('direct_')) {
       _finalChatId = widget.requestId;
+      // আইডি থেকে রিসিভার আইডি বের করা যদি widget.otherUserId নাল হয়
+      if (_receiverId == null) {
+        final parts = widget.requestId.split('_');
+        if (parts.length >= 3) {
+          _receiverId = parts[1] == currentUser.uid ? parts[2] : parts[1];
+        }
+      }
     } else if (widget.otherUserId != null) {
-      // অন্য ইউজারের আইডি থাকলে ইউনিক আইডি তৈরি করো
       List<String> ids = [currentUser.uid, widget.otherUserId!];
       ids.sort();
       _finalChatId = 'direct_${ids[0]}_${ids[1]}';
     } else {
-      // ব্যাকওয়ার্ড কম্প্যাটিবিলিটির জন্য
       _finalChatId = widget.requestId;
     }
   }
@@ -70,6 +77,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     try {
       await ref.read(messageRepositoryProvider).sendMessage(_finalChatId, message);
+      
+      // নোটিফিকেশন পাঠানোর লজিক
+      if (_receiverId != null && _receiverId!.isNotEmpty) {
+        NotificationService().sendNotificationToUser(
+          receiverId: _receiverId!,
+          title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
+          body: text,
+          data: {
+            'type': 'chat',
+            'chatId': _finalChatId,
+            'senderName': user.name,
+          },
+        );
+      }
+
       _messageController.clear();
       _scrollToBottom();
     } catch (e) {
@@ -112,12 +134,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
-                    final isMe = msg.senderId == user?.uid;
-                    return _buildMessageBubble(msg, isMe);
+                    return _buildMessageBubble(msg, msg.senderId == user?.uid);
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
               error: (e, s) => Center(child: Text('Error: $e')),
             ),
           ),
@@ -133,29 +154,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
           color: isMe ? const Color(0xFFE53935) : Colors.white,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2)],
         ),
-        child: Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black)),
+        child: Column(
+          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14)),
+            const SizedBox(height: 2),
+            Text(DateFormat('hh:mm a').format(msg.timestamp), style: TextStyle(fontSize: 9, color: isMe ? Colors.white70 : Colors.black54)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       color: Colors.white,
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: const InputDecoration(hintText: 'মেসেজ লিখুন...', border: InputBorder.none),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(24)),
+                child: TextField(
+                  controller: _messageController,
+                  decoration: const InputDecoration(hintText: 'মেসেজ লিখুন...', border: InputBorder.none),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
             ),
-          ),
-          IconButton(icon: const Icon(Icons.send, color: Colors.red), onPressed: _sendMessage),
-        ],
+            IconButton(icon: const Icon(Icons.send_rounded, color: Colors.red), onPressed: _sendMessage),
+          ],
+        ),
       ),
     );
   }
