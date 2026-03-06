@@ -34,7 +34,29 @@ class MessageRepositoryImpl implements MessageRepository {
         .collection('direct_chats')
         .doc(chatId)
         .collection('messages')
-        .add(message.toMap());
+        .add({
+          ...message.toMap(),
+          'isRead': false, // ডিফল্টভাবে মেসেজটি অপঠিত থাকবে
+        });
+  }
+
+  @override
+  Future<void> markMessagesAsRead(String chatId, String userId) async {
+    final unreadMessages = await _firestore
+        .collection('direct_chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('senderId', isNotEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    if (unreadMessages.docs.isNotEmpty) {
+      final batch = _firestore.batch();
+      for (var doc in unreadMessages.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    }
   }
 
   @override

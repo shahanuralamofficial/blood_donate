@@ -116,6 +116,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final messagesAsync = ref.watch(messagesStreamProvider(widget.requestId));
     final user = ref.watch(currentUserDataProvider).value;
 
+    // মেসেজ রিড মার্ক করার লজিক
+    if (user != null) {
+      ref.read(messageRepositoryProvider).markMessagesAsRead(widget.requestId, user.uid);
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
@@ -224,23 +229,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildMessageBubble(MessageModel msg, bool isMe) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: isMe ? Colors.red.shade600 : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)],
-        ),
-        child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14)),
-            const SizedBox(height: 2),
-            Text(DateFormat('hh:mm a').format(msg.timestamp), style: TextStyle(fontSize: 9, color: isMe ? Colors.white70 : Colors.black54)),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+            decoration: BoxDecoration(
+              color: isMe ? Colors.red.shade600 : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)],
+            ),
+            child: Text(
+              msg.text, 
+              style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14)
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('hh:mm a').format(msg.timestamp), 
+                  style: TextStyle(fontSize: 9, color: Colors.grey.shade600)
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    msg.isRead ? Icons.done_all : Icons.done,
+                    size: 12,
+                    color: msg.isRead ? Colors.blue : Colors.grey,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
       ),
     );
   }
