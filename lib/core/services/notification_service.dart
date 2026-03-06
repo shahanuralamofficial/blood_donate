@@ -10,6 +10,7 @@ class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   StreamSubscription<QuerySnapshot>? _notificationSubscription;
+  final Set<String> _notifiedChatIds = {}; // ট্র্যাক করবে কোন চ্যাটের নোটিফিকেশন অলরেডি দেখানো হয়েছে
 
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -121,15 +122,25 @@ class NotificationService {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
-          
-          // চেক: এটি কি চ্যাট নোটিফিকেশন এবং ইউজার কি বর্তমানে ওই চ্যাটে আছে?
           final notificationData = data['data'] as Map<String, dynamic>?;
-          if (notificationData != null && 
-              notificationData['type'] == 'chat' && 
-              notificationData['chatId'] == currentChatId) {
-            // ইউজারের সামনে চ্যাট খোলা থাকলে নোটিফিকেশন দেখানোর দরকার নেই, শুধু Read মার্ক করে দিচ্ছি
-            change.doc.reference.update({'isRead': true});
-            return;
+
+          // ১. চ্যাট নোটিফিকেশন চেক
+          if (notificationData != null && notificationData['type'] == 'chat') {
+            final chatId = notificationData['chatId'];
+
+            // ইউজার যদি অলরেডি এই চ্যাটরুমে থাকে, তবে নোটিফিকেশন দেখাবে না এবং এটাকে Read মার্ক করবে
+            if (chatId == currentChatId) {
+              change.doc.reference.update({'isRead': true});
+              continue;
+            }
+
+            // এই চ্যাটের জন্য যদি অলরেডি একবার নোটিফিকেশন দেখানো হয়ে থাকে (ইউজার এখনও পড়েনি), তবে আর দেখাবে না
+            if (_notifiedChatIds.contains(chatId)) {
+              continue;
+            }
+
+            // নতুন চ্যাটের নোটিফিকেশন দেখানোর আগে লিস্টে যোগ করা
+            _notifiedChatIds.add(chatId);
           }
 
           _showLocalNotification(
@@ -137,12 +148,14 @@ class NotificationService {
             body: data['body'] ?? '',
             payload: jsonEncode(data['data'] ?? {}),
           );
-          
-          // নোটিফিকেশন দেখানোর পর অটোমেটিক Read মার্ক করা (অপশনাল)
-          // change.doc.reference.update({'isRead': true});
         }
       }
     }, onError: (e) => debugPrint('Notification Listener Error: $e'));
+  }
+
+  // যখন ইউজার কোনো চ্যাট ওপেন করবে, তখন ওই চ্যাটের জন্য নতুন নোটিফিকেশন এলাউ করতে হবে
+  static void clearNotifiedChat(String chatId) {
+    NotificationService()._notifiedChatIds.remove(chatId);
   }
 
   Future<void> _saveTokenToFirestore(String token) async {

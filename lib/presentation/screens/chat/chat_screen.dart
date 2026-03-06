@@ -53,7 +53,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
-    // চ্যাট স্ক্রিন থেকে বের হওয়ার সময় চ্যাট আইডি ক্লিয়ার করা হচ্ছে
+    // চ্যাট স্ক্রিন থেকে বের হওয়ার সময় চ্যাট আইডি ক্লিয়ার করা হচ্ছে এবং নোটিফিকেশন এলাউ করা হচ্ছে
+    if (NotificationService.currentChatId != null) {
+      NotificationService.clearNotifiedChat(NotificationService.currentChatId!);
+    }
     NotificationService.currentChatId = null;
     _messageController.dispose();
     _scrollController.dispose();
