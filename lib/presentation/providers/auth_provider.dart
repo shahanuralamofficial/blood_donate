@@ -20,12 +20,26 @@ final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
   
   return authState.when(
     data: (user) {
-      if (user == null) return Stream.value(null);
+      if (user == null) {
+        // ইউজার লগআউট করলে সাবস্ক্রিপশন বন্ধ করা বা ক্লিনআপ করা
+        return Stream.value(null);
+      }
       
-      // ইউজার লগইন অবস্থায় থাকলে নোটিফিকেশন লিসেনার চালু করা
-      NotificationService().startListening();
+      // নতুন ইউজার লগইন করলে তার নোটিফিকেশন সার্ভিস রিফ্রেশ করা
+      final notificationService = NotificationService();
+      notificationService.startListening();
       
-      // অনলাইন স্ট্যাটাস ট্র্যাকিং শুরু (অপশনাল কিন্তু নিরাপদ রাখা ভালো)
+      // ইউজারের FCM Token আপডেট করা যাতে সঠিক ফোনে নোটিফিকেশন যায়
+      FirebaseMessaging.instance.getToken().then((token) {
+        if (token != null) {
+          FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+            'fcmToken': token,
+            'lastActive': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+      });
+      
+      // অনলাইন স্ট্যাটাস আপডেট করা
       _updateUserOnlineStatus(user.uid, true);
 
       return FirebaseFirestore.instance
@@ -34,7 +48,7 @@ final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
           .snapshots()
           .map((doc) => doc.exists ? UserModel.fromMap(doc.data()!) : null);
     },
-    loading: () => Stream.value(null),
+    loading: () => const Stream.empty(),
     error: (_, __) => Stream.value(null),
   );
 });
