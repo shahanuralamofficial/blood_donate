@@ -105,12 +105,15 @@ class _RootScreenState extends ConsumerState<RootScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const EditProfileScreen(),
-                ),
-              );
+              final user = ref.read(currentUserDataProvider).value;
+              if (user != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditProfileScreen(user: user),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
