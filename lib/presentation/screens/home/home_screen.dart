@@ -285,80 +285,86 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildDrawerHeader(UserModel? user) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-      decoration: const BoxDecoration(
-        color: Color(0xFFB71C1C),
-        image: DecorationImage(
-          image: NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'), // Subtle pattern overlay
-          opacity: 0.1,
-          repeat: ImageRepeat.repeat,
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+        decoration: const BoxDecoration(
+          color: Color(0xFFB71C1C),
+          image: DecorationImage(
+            image: NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'), // Subtle pattern overlay
+            opacity: 0.1,
+            repeat: ImageRepeat.repeat,
+          ),
+          borderRadius: BorderRadius.only(bottomRight: Radius.circular(50)),
         ),
-        borderRadius: BorderRadius.only(bottomRight: Radius.circular(50)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: CircleAvatar(
-              radius: 38,
-              backgroundColor: Colors.grey.shade100,
-              backgroundImage: user?.profileImageUrl != null ? NetworkImage(user!.profileImageUrl!) : null,
-              child: user?.profileImageUrl == null ? const Icon(Icons.person, size: 45, color: Color(0xFFE53935)) : null,
-            ),
-          ),
-          const SizedBox(height: 15),
-          Text(
-            user?.name ?? 'অতিথি',
-            style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 5),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.bloodtype, color: Colors.white, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      'গ্রুপ: ${user?.bloodGroup ?? "N/A"}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              child: CircleAvatar(
+                radius: 38,
+                backgroundColor: Colors.grey.shade100,
+                backgroundImage: user?.profileImageUrl != null ? NetworkImage(user!.profileImageUrl!) : null,
+                child: user?.profileImageUrl == null ? const Icon(Icons.person, size: 45, color: Color(0xFFE53935)) : null,
               ),
-              const SizedBox(width: 8),
-              if (user?.rank != null)
+            ),
+            const SizedBox(height: 15),
+            Text(
+              user?.name ?? 'অতিথি',
+              style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Row(
+              children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.2),
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.stars, color: Colors.amber, size: 14),
+                      const Icon(Icons.bloodtype, color: Colors.white, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        user!.rank.toUpperCase(),
-                        style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                        'গ্রুপ: ${user?.bloodGroup ?? "N/A"}',
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
                 ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 8),
+                if (user?.rank != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.stars, color: Colors.amber, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          user!.rank.toUpperCase(),
+                          style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -427,9 +433,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           IconButton(
             onPressed: () async {
-              // Sign out logic
-              await ref.read(userStatusProvider).updateStatus(false);
-              await FirebaseAuth.instance.signOut();
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  title: Text('লগআউট', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
+                  content: Text('আপনি কি নিশ্চিতভাবে লগআউট করতে চান?', style: GoogleFonts.notoSansBengali()),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('না', style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('হ্যাঁ, লগআউট করুন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldLogout == true) {
+                // ১. প্রথমে অফলাইন স্ট্যাটাস আপডেট করা
+                await ref.read(userStatusProvider).updateStatus(false);
+                
+                // ২. রিভারপড প্রোভাইডারগুলো রিসেট করা যাতে নতুন ইউজার লগইন করলে পুরনো ডাটা না থাকে
+                ref.invalidate(currentUserDataProvider);
+                ref.invalidate(emergencyRequestsProvider);
+                ref.invalidate(myRequestsProvider);
+                ref.invalidate(myDonationsProvider);
+                
+                // ৩. তারপর লগআউট করা
+                await FirebaseAuth.instance.signOut();
+              }
             },
             icon: const Icon(Icons.logout_rounded, color: Colors.grey),
             tooltip: 'Log Out',
