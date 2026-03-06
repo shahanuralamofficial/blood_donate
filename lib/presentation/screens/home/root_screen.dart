@@ -18,6 +18,7 @@ class RootScreen extends ConsumerStatefulWidget {
 class _RootScreenState extends ConsumerState<RootScreen> {
   int _selectedIndex = 0;
   bool _celebrationShown = false;
+  bool _profileAlertShown = false;
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -77,24 +78,70 @@ class _RootScreenState extends ConsumerState<RootScreen> {
     );
   }
 
+  void _showProfileCompleteDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.person_pin_rounded, color: Colors.blue, size: 30),
+            SizedBox(width: 10),
+            Text('প্রোফাইল অসম্পূর্ণ!'),
+          ],
+        ),
+        content: const Text(
+          'আপনার প্রোফাইলটি এখনও সম্পূর্ণ করা হয়নি। রক্ত দান বা গ্রহণ করার জন্য দয়া করে আপনার ব্লাড গ্রুপ এবং ঠিকানা আপডেট করুন।',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('পরে করব', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // প্রোফাইল স্ক্রিনে বা এডিট প্রোফাইল স্ক্রিনে নিয়ে যাওয়ার লজিক
+              // যেহেতু আমাদের বটম ন্যাভ আছে, তাই আমরা ৩ নম্বর ইন্ডেক্সে (প্রোফাইল যদি থাকে) বা সরাসরি এডিট স্ক্রিনে পাঠাতে পারি
+              // এখানে শুধু এডিট স্ক্রিনে পাঠানোর জন্য নেভিগেট করা যেতে পারে যদি আপনার এডিট স্ক্রিন আলাদা থাকে
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('এখনই করুন'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // গ্লোবাল অভিনন্দন লিসেনার
+    // গ্লোবাল লিসেনার (র‍্যাঙ্ক এবং প্রোফাইল চেক)
     ref.listen(currentUserDataProvider, (previous, next) {
       final user = next.value;
-      if (user != null && user.rankUpdatePending && !_celebrationShown) {
+      if (user == null) return;
+
+      // ১. র‍্যাঙ্ক আপডেট পপআপ
+      if (user.rankUpdatePending && !_celebrationShown) {
         _celebrationShown = true;
-        // ডাটাবেসে আপডেট করে দিচ্ছি যাতে পুনরায় না আসে
         FirebaseFirestore.instance.collection('users').doc(user.uid).update({
           'rankUpdatePending': false,
         });
-        
-        // পপআপ দেখাচ্ছি
         _showCelebrationDialog(user.rank);
-        
-        // কিছু সময় পর ফ্ল্যাগ রিসেট করছি যাতে ভবিষ্যতে আবার আসতে পারে
-        Future.delayed(const Duration(minutes: 1), () {
-          _celebrationShown = false;
+      }
+
+      // ২. প্রোফাইল কমপ্লিট পপআপ (যদি ব্লাড গ্রুপ বা ঠিকানা না থাকে)
+      if ((user.bloodGroup == null || user.address == null) && !_profileAlertShown) {
+        _profileAlertShown = true;
+        // একটু দেরি করে দেখাচ্ছি যাতে হোম স্ক্রিন লোড হওয়ার পর আসে
+        Future.delayed(const Duration(seconds: 2), () {
+          _showProfileCompleteDialog();
         });
       }
     });
