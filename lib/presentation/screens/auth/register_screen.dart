@@ -96,14 +96,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   ref.tr('register_title'),
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.notoSansBengali(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 Text(
                   ref.tr('registration_info'),
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 30),
