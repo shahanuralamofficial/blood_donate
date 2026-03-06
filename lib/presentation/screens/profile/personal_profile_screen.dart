@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -96,6 +97,8 @@ class PersonalProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
                       _buildReviewCard(context, user),
                       const SizedBox(height: 24),
+                      _buildDangerZone(context, ref, user),
+                      const SizedBox(height: 24),
                       _buildHelpSection(context),
                       const SizedBox(height: 40),
                     ],
@@ -107,6 +110,126 @@ class PersonalProfileScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
         error: (e, _) => Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+
+  Widget _buildDangerZone(BuildContext context, WidgetRef ref, UserModel user) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.red.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ডেঞ্জার জোন',
+            style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red.shade900),
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            Icons.delete_forever_rounded,
+            'অ্যাকাউন্ট মুছে ফেলুন',
+            'আপনার সকল তথ্য স্থায়ীভাবে মুছে যাবে',
+            Colors.red,
+            onTap: () => _showDeleteAccountDialog(context, ref, user),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, UserModel user) {
+    final passwordController = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('অ্যাকাউন্ট মুছে ফেলবেন?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'নিরাপত্তার স্বার্থে আপনার পাসওয়ার্ডটি পুনরায় প্রদান করুন। আপনার সকল তথ্য চিরতরে মুছে যাবে।',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'আপনার পাসওয়ার্ড',
+                  hintText: 'পাসওয়ার্ড লিখুন',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('না'),
+            ),
+            ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                if (passwordController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('পাসওয়ার্ড প্রয়োজন')));
+                  return;
+                }
+
+                setState(() => isLoading = true);
+
+                try {
+                  final currentUser = FirebaseAuth.instance.currentUser;
+                  if (currentUser != null && currentUser.email != null) {
+                    // ১. পাসওয়ার্ড দিয়ে পুনরায় অথেন্টিকেট করা
+                    final credential = EmailAuthProvider.credential(
+                      email: currentUser.email!,
+                      password: passwordController.text,
+                    );
+                    await currentUser.reauthenticateWithCredential(credential);
+
+                    // ২. স্ট্যাটাস অফলাইন করা
+                    await ref.read(userStatusProvider).updateStatus(false);
+
+                    // ৩. ডাটাবেস থেকে ইউজার ডকুমেন্ট ডিলিট করা
+                    await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+
+                    // ৪. ফায়ারবেস অথ থেকে ইউজার ডিলিট করা
+                    await currentUser.delete();
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('অ্যাকাউন্টটি সফলভাবে মুছে ফেলা হয়েছে')),
+                      );
+                    }
+                  }
+                } on FirebaseAuthException catch (e) {
+                  setState(() => isLoading = false);
+                  String message = 'কিছু ভুল হয়েছে';
+                  if (e.code == 'wrong-password') message = 'ভুল পাসওয়ার্ড!';
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।')));
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: isLoading 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('হ্যাঁ, মুছে ফেলুন'),
+            ),
+          ],
+        ),
       ),
     );
   }
