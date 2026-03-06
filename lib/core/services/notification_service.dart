@@ -111,7 +111,9 @@ class NotificationService {
     debugPrint('Starting notification listener for: ${user.uid}');
     _notificationSubscription?.cancel();
     
-    // ইন্ডেক্স এরর এড়াতে orderBy সরিয়ে শুধুমাত্র snapshots নিচ্ছি
+    // শুধুমাত্র লিসেনার শুরু হওয়ার পর থেকে আসা নোটিফিকেশনগুলো দেখানোর জন্য টাইমস্ট্যাম্প নিচ্ছি
+    final DateTime startTime = DateTime.now();
+
     _notificationSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -122,11 +124,27 @@ class NotificationService {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
+          
+          // পুরাতন নোটিফিকেশন ইগনোর করা (লিসেনার শুরু হওয়ার আগের গুলো)
+          final Timestamp? createdAt = data['createdAt'] as Timestamp?;
+          if (createdAt != null && createdAt.toDate().isBefore(startTime)) {
+            continue;
+          }
+
+          if (data['isRead'] == true) continue;
+
           final notificationData = data['data'] as Map<String, dynamic>?;
 
-          // ১. চ্যাট নোটিফিকেশন চেক
+          // ২. চ্যাট নোটিফিকেশন স্পেশাল ফিল্টারিং
           if (notificationData != null && notificationData['type'] == 'chat') {
             final chatId = notificationData['chatId'];
+            final senderId = notificationData['senderId'];
+
+            // ইউজার যদি নিজের মেসেজের নোটিফিকেশন পায় (কদাচিৎ ঘটে), তবে ইগনোর করবে
+            if (senderId == user.uid) {
+              change.doc.reference.update({'isRead': true});
+              continue;
+            }
 
             // ইউজার যদি অলরেডি এই চ্যাটরুমে থাকে, তবে নোটিফিকেশন দেখাবে না এবং এটাকে Read মার্ক করবে
             if (chatId == currentChatId) {
@@ -139,7 +157,6 @@ class NotificationService {
               continue;
             }
 
-            // নতুন চ্যাটের নোটিফিকেশন দেখানোর আগে লিস্টে যোগ করা
             _notifiedChatIds.add(chatId);
           }
 
