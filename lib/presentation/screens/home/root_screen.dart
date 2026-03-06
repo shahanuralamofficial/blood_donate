@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../history/history_screen.dart';
 import '../donors/donor_list_screen.dart';
 import '../requests/request_list_screen.dart';
+import '../profile/edit_profile_screen.dart';
 import 'home_screen.dart';
 
 class RootScreen extends ConsumerStatefulWidget {
@@ -104,9 +105,12 @@ class _RootScreenState extends ConsumerState<RootScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // প্রোফাইল স্ক্রিনে বা এডিট প্রোফাইল স্ক্রিনে নিয়ে যাওয়ার লজিক
-              // যেহেতু আমাদের বটম ন্যাভ আছে, তাই আমরা ৩ নম্বর ইন্ডেক্সে (প্রোফাইল যদি থাকে) বা সরাসরি এডিট স্ক্রিনে পাঠাতে পারি
-              // এখানে শুধু এডিট স্ক্রিনে পাঠানোর জন্য নেভিগেট করা যেতে পারে যদি আপনার এডিট স্ক্রিন আলাদা থাকে
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const EditProfileScreen(),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
