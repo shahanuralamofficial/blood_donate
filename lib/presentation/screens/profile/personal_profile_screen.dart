@@ -32,9 +32,39 @@ class PersonalProfileScreen extends ConsumerWidget {
         foregroundColor: Colors.black,
         actions: [
           userAsync.when(
-            data: (user) => user != null ? IconButton(
-              icon: const Icon(Icons.edit_note_rounded, color: Colors.red),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfileScreen(user: user))),
+            data: (user) => user != null ? Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_note_rounded, color: Colors.red),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditProfileScreen(user: user))),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout_rounded, color: Colors.grey),
+                  onPressed: () async {
+                    final shouldLogout = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('লগআউট'),
+                        content: const Text('আপনি কি নিশ্চিতভাবে লগআউট করতে চান?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('না')),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('হ্যাঁ', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldLogout == true) {
+                      // প্রথমে অফলাইন স্ট্যাটাস আপডেট করা
+                      await ref.read(userStatusProvider).updateStatus(false);
+                      // তারপর লগআউট করা
+                      await FirebaseAuth.instance.signOut();
+                    }
+                  },
+                ),
+              ],
             ) : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
