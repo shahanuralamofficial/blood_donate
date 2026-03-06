@@ -32,7 +32,7 @@ class NotificationService {
       _fcm.onTokenRefresh.listen(_saveTokenToFirestore);
 
       const AndroidInitializationSettings initializationSettingsAndroid = 
-          AndroidInitializationSettings('launcher_icon');
+          AndroidInitializationSettings('@mipmap/launcher_icon');
       
       const InitializationSettings initializationSettings = 
           InitializationSettings(android: initializationSettingsAndroid);
@@ -109,37 +109,37 @@ class NotificationService {
 
     debugPrint('Starting notification listener for: ${user.uid}');
     _notificationSubscription?.cancel();
+    
+    // ইন্ডেক্স এরর এড়াতে orderBy সরিয়ে শুধুমাত্র snapshots নিচ্ছি
     _notificationSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('notifications')
         .where('isRead', isEqualTo: false)
-        .orderBy('createdAt', descending: true)
-        .limit(5)
         .snapshots()
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
-          final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
           
-          // চেক: নোটিফিকেশনটি যদি গত ১ মিনিটের মধ্যে তৈরি হয়ে থাকে তবেই পপআপ দেখাবে
-          if (createdAt != null && DateTime.now().difference(createdAt).inMinutes < 1) {
-            final notificationData = data['data'] as Map<String, dynamic>?;
-            
-            // যদি এটি চ্যাট নোটিফিকেশন হয় এবং ইউজার বর্তমানে ওই চ্যাটে থাকে, তবে দেখাবে না
-            if (notificationData != null && 
-                notificationData['type'] == 'chat' && 
-                notificationData['chatId'] == currentChatId) {
-              return;
-            }
-
-            _showLocalNotification(
-              title: data['title'] ?? 'নতুন নোটিফিকেশন',
-              body: data['body'] ?? '',
-              payload: jsonEncode(data['data'] ?? {}),
-            );
+          // চেক: এটি কি চ্যাট নোটিফিকেশন এবং ইউজার কি বর্তমানে ওই চ্যাটে আছে?
+          final notificationData = data['data'] as Map<String, dynamic>?;
+          if (notificationData != null && 
+              notificationData['type'] == 'chat' && 
+              notificationData['chatId'] == currentChatId) {
+            // ইউজারের সামনে চ্যাট খোলা থাকলে নোটিফিকেশন দেখানোর দরকার নেই, শুধু Read মার্ক করে দিচ্ছি
+            change.doc.reference.update({'isRead': true});
+            return;
           }
+
+          _showLocalNotification(
+            title: data['title'] ?? 'নতুন বার্তা',
+            body: data['body'] ?? '',
+            payload: jsonEncode(data['data'] ?? {}),
+          );
+          
+          // নোটিফিকেশন দেখানোর পর অটোমেটিক Read মার্ক করা (অপশনাল)
+          // change.doc.reference.update({'isRead': true});
         }
       }
     }, onError: (e) => debugPrint('Notification Listener Error: $e'));
@@ -171,9 +171,10 @@ class NotificationService {
           'blood_donate_channel', 'Blood Donate Notifications',
           importance: Importance.max, 
           priority: Priority.high, 
-          icon: 'launcher_icon',
+          icon: '@mipmap/launcher_icon',
           playSound: true, 
           enableVibration: true,
+          showWhen: true,
           styleInformation: const BigTextStyleInformation(''),
         ),
       ),
