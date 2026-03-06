@@ -470,6 +470,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 
                 // ৩. তারপর লগআউট করা
                 await FirebaseAuth.instance.signOut();
+                
+                // ৪. লগইন পেজে বা রুট পেজে পাঠিয়ে দেওয়া (যদি অটোমেটিক না যায়)
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                }
               }
             },
             icon: const Icon(Icons.logout_rounded, color: Colors.grey),

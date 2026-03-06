@@ -8,23 +8,24 @@ final bloodRequestRepositoryProvider = Provider<BloodRequestRepository>((ref) {
   return BloodRequestRepositoryImpl();
 });
 
-final emergencyRequestsProvider = StreamProvider<List<BloodRequestModel>>((ref) {
+// autoDispose যোগ করা হলো যাতে লগআউট করলে ডাটা ক্লিয়ার হয়
+final emergencyRequestsProvider = StreamProvider.autoDispose<List<BloodRequestModel>>((ref) {
   return ref.watch(bloodRequestRepositoryProvider).streamEmergencyRequests();
 });
 
-final myRequestsProvider = StreamProvider<List<BloodRequestModel>>((ref) {
+final myRequestsProvider = StreamProvider.autoDispose<List<BloodRequestModel>>((ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value([]);
   return ref.watch(bloodRequestRepositoryProvider).streamMyRequests(user.uid);
 });
 
-final myDonationsProvider = StreamProvider<List<BloodRequestModel>>((ref) {
+final myDonationsProvider = StreamProvider.autoDispose<List<BloodRequestModel>>((ref) {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return Stream.value([]);
   return ref.watch(bloodRequestRepositoryProvider).streamMyDonations(user.uid);
 });
 
 // রিকোয়েস্ট আইডি অনুযায়ী রিয়েল-টাইম স্ট্রিম প্রোভাইডার
-final requestStreamByIdProvider = StreamProvider.family<BloodRequestModel, String>((ref, requestId) {
+final requestStreamByIdProvider = StreamProvider.family.autoDispose<BloodRequestModel, String>((ref, requestId) {
   return ref.watch(bloodRequestRepositoryProvider).streamRequestById(requestId);
 });
