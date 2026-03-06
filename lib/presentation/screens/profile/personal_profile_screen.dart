@@ -98,8 +98,6 @@ class PersonalProfileScreen extends ConsumerWidget {
                       _buildReviewCard(context, user),
                       const SizedBox(height: 24),
                       _buildDangerZone(context, ref, user),
-                      const SizedBox(height: 24),
-                      _buildHelpSection(context),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -234,41 +232,7 @@ class PersonalProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHelpSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'সহযোগিতা ও মতামত',
-            style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey.shade800),
-          ),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            Icons.facebook_rounded,
-            'ফেসবুক পেজ',
-            'আমাদের সাথে যুক্ত হন',
-            Colors.blue.shade700,
-            onTap: () => _launchUrl('https://www.facebook.com/blooddonate'),
-          ),
-          const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(
-            Icons.message_rounded,
-            'মতামত ও পরামর্শ',
-            'আপনার মতামত জানান',
-            Colors.teal,
-            onTap: () => _launchUrl('mailto:blooddonate.help@gmail.com?subject=Feedback for Blood Donate App'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildHeader(BuildContext context, UserModel user) {
     return Container(
