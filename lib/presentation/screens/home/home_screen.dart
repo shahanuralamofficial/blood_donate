@@ -217,26 +217,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  _buildDrawerSectionTitle('সাধারণ'),
+                  _buildDrawerSectionTitle(ref.tr('general')),
                   _buildDrawerItem(
                     icon: Icons.language_rounded,
                     title: ref.tr('language'),
                     color: Colors.purple.shade700,
-                    trailing: DropdownButton<String>(
-                      value: ref.watch(languageProvider).languageCode,
-                      underline: const SizedBox(),
-                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade400, size: 18),
-                      items: const [
-                        DropdownMenuItem(value: 'bn', child: Text('বাংলা', style: TextStyle(fontSize: 14))),
-                        DropdownMenuItem(value: 'en', child: Text('English', style: TextStyle(fontSize: 14))),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          ref.read(languageProvider.notifier).changeLanguage(val);
-                        }
-                      },
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        ref.watch(languageProvider).languageCode == 'bn' ? 'বাংলা' : 'English',
+                        style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
                     ),
-                    onTap: () {},
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                        ),
+                        builder: (context) => Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                ref.tr('language'),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 20),
+                              ListTile(
+                                leading: const Text('🇧🇩', style: TextStyle(fontSize: 24)),
+                                title: const Text('বাংলা', style: TextStyle(fontWeight: FontWeight.bold)),
+                                trailing: ref.watch(languageProvider).languageCode == 'bn' 
+                                    ? const Icon(Icons.check_circle, color: Colors.green) 
+                                    : null,
+                                onTap: () {
+                                  ref.read(languageProvider.notifier).changeLanguage('bn');
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              ListTile(
+                                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                                title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+                                trailing: ref.watch(languageProvider).languageCode == 'en' 
+                                    ? const Icon(Icons.check_circle, color: Colors.green) 
+                                    : null,
+                                onTap: () {
+                                  ref.read(languageProvider.notifier).changeLanguage('en');
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   _buildDrawerItem(
                     icon: Icons.settings_suggest_rounded,
@@ -317,7 +357,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: const BoxDecoration(
           color: Color(0xFFB71C1C),
           image: DecorationImage(
-            image: NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'), // Subtle pattern overlay
+            image: NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'),
             opacity: 0.1,
             repeat: ImageRepeat.repeat,
           ),
@@ -338,7 +378,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 15),
             Text(
-              user?.name ?? 'অতিথি',
+              user?.name ?? ref.tr('guest'),
               style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 5),
@@ -356,7 +396,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const Icon(Icons.bloodtype, color: Colors.white, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        'গ্রুপ: ${user?.bloodGroup ?? "N/A"}',
+                        '${ref.tr('group')}: ${user?.bloodGroup ?? "N/A"}',
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
