@@ -28,6 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _celebrationShown = false;
   String _dailyFact = 'রক্তদান করুন, জীবন বাঁচান। ❤️';
   List<String> _donationFacts = [];
@@ -115,6 +116,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint("URL Error: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserDataProvider);
@@ -123,6 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final myDonations = ref.watch(myDonationsProvider);
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF8F9FA),
       drawer: _buildDrawer(context, userAsync.value),
       floatingActionButton: FloatingActionButton.extended(
@@ -199,7 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 _buildDrawerItem(
                   icon: Icons.local_hospital_rounded,
-                  title: 'ক্লিনিক ও হাসপাতাল',
+                  title: 'হাসপাতাল ও ক্লিনিক',
                   subtitle: 'Coming Soon',
                   onTap: () {
                     Navigator.pop(context);
@@ -286,9 +297,87 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('সাপোর্ট ও ফিডব্যাক'),
-        content: const Text('যেকোনো প্রয়োজনে আমাদের ইমেইল করুন: support@blooddonate.com'),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('বন্ধ করুন'))],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        title: Text('সহযোগিতা ও মতামত', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'যেকোনো সমস্যায় বা আপনার মূল্যবান মতামত জানাতে আমাদের সাথে যোগাযোগ করুন।',
+              style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.blueGrey.shade700),
+            ),
+            const SizedBox(height: 24),
+            _buildSupportOption(
+              icon: Icons.facebook_rounded,
+              title: 'ফেসবুক পেজ',
+              subtitle: 'আমাদের ফেসবুক কমিউনিটি',
+              color: const Color(0xFF1877F2),
+              onTap: () {
+                Navigator.pop(context);
+                _launchUrl('https://www.facebook.com/blooddonate');
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSupportOption(
+              icon: Icons.telegram_rounded,
+              title: 'টেলিগ্রাম সাপোর্ট',
+              subtitle: 'নম্বর গোপন রেখে মেসেজ দিন',
+              color: const Color(0xFF0088cc),
+              onTap: () {
+                Navigator.pop(context);
+                _launchUrl('https://t.me/sn_alam');
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('বন্ধ করুন', style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                  Text(subtitle, style: GoogleFonts.notoSansBengali(fontSize: 11, color: Colors.blueGrey.shade600)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color.withOpacity(0.5)),
+          ],
+        ),
       ),
     );
   }
@@ -304,7 +393,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.menu_rounded, color: Colors.white),
-        onPressed: () => Scaffold.of(context).openDrawer(),
+        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
       title: Text('হ্যালো, $firstName', style: GoogleFonts.notoSansBengali(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
       flexibleSpace: FlexibleSpaceBar(
