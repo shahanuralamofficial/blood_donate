@@ -90,7 +90,7 @@ class NotificationService {
       });
     } else if (data['type'] == 'blood_request' || data['type'] == 'emergency') {
       if (data['requestId'] != null) {
-        // ব্লাড রিকোয়েস্ট ডিটেইলস স্ক্রিনে যাওয়ার লজিক
+        navigatorKey.currentState?.pushNamed('/request_details', arguments: data['requestId']);
       }
     }
   }
@@ -133,7 +133,7 @@ class NotificationService {
           }
 
           _showLocalNotification(
-            title: data['title'] ?? 'নতুন বার্তা',
+            title: data['title'] ?? (data['data']?['type'] == 'blood_request' ? 'জরুরি রক্তের আবেদন' : 'নতুন বার্তা'),
             body: data['body'] ?? '',
             payload: jsonEncode(data['data'] ?? {}),
           );
