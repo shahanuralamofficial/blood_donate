@@ -76,11 +76,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
 
     try {
-      await ref.read(messageRepositoryProvider).sendMessage(widget.requestId, message);
+      final messageRepo = ref.read(messageRepositoryProvider);
+      await messageRepo.sendMessage(widget.requestId, message);
       
       if (_receiverId != null) {
-        // চ্যাট নোটিফিকেশন পাঠানো
-        NotificationService().sendNotificationToUser(
+        // চ্যাট নোটিফিকেশন ডাটাবেসে পাঠানো
+        await NotificationService().sendNotificationToUser(
           receiverId: _receiverId!,
           title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
           body: text,
@@ -88,7 +89,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             'type': 'chat',
             'chatId': widget.requestId,
             'senderName': user.name,
-            'senderId': user.uid, // senderId যোগ করা হলো
+            'senderId': user.uid,
           },
         );
       }
