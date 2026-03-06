@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/blood_request_provider.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/blood_request_model.dart';
+import '../../providers/language_provider.dart';
 import '../profile/personal_profile_screen.dart';
 import '../requests/create_request_screen.dart';
 import '../requests/request_details_screen.dart';
@@ -141,7 +142,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
         backgroundColor: const Color(0xFFE53935),
         icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-        label: Text('রক্তের আবেদন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
+        label: Text(ref.tr('blood_request'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
         elevation: 4,
       ),
       body: userAsync.when(
@@ -180,11 +181,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         _buildNextDonationSection(user),
                         _buildFactCard(),
                         const SizedBox(height: 32),
-                        _buildSectionHeader('জরুরি রক্তের আবেদনসমূহ', () {
+                        _buildSectionHeader(ref.tr('emergency_requests_title'), () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestListScreen()));
                         }),
                         const SizedBox(height: 16),
-                        _buildRequestList(emergencyRequests, user),
+                        _buildRequestList(ref, emergencyRequests, user),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -218,8 +219,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 20),
                   _buildDrawerSectionTitle('সাধারণ'),
                   _buildDrawerItem(
+                    icon: Icons.language_rounded,
+                    title: ref.tr('language'),
+                    color: Colors.purple.shade700,
+                    trailing: DropdownButton<String>(
+                      value: ref.watch(languageProvider).languageCode,
+                      underline: const SizedBox(),
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade400, size: 18),
+                      items: const [
+                        DropdownMenuItem(value: 'bn', child: Text('বাংলা', style: TextStyle(fontSize: 14))),
+                        DropdownMenuItem(value: 'en', child: Text('English', style: TextStyle(fontSize: 14))),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          ref.read(languageProvider.notifier).changeLanguage(val);
+                        }
+                      },
+                    ),
+                    onTap: () {},
+                  ),
+                  _buildDrawerItem(
                     icon: Icons.settings_suggest_rounded,
-                    title: 'সেটিংস ও প্রোফাইল',
+                    title: ref.tr('settings_profile'),
                     color: Colors.blue.shade700,
                     onTap: () {
                       Navigator.pop(context);
@@ -228,7 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.favorite_rounded,
-                    title: 'সেভ করা ডোনার',
+                    title: ref.tr('saved_donors'),
                     color: Colors.red.shade600,
                     onTap: () {
                       Navigator.pop(context);
@@ -237,7 +258,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.history_rounded,
-                    title: 'অ্যাক্টিভিটি হিস্ট্রি',
+                    title: ref.tr('activity_history'),
                     color: Colors.orange.shade700,
                     onTap: () {
                       Navigator.pop(context);
@@ -248,20 +269,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: Divider(thickness: 0.5),
                   ),
-                  _buildDrawerSectionTitle('অন্যান্য'),
+                  _buildDrawerSectionTitle(ref.tr('others')),
                   _buildDrawerItem(
                     icon: Icons.local_hospital_rounded,
-                    title: 'হাসপাতাল ও ক্লিনিক',
-                    subtitle: 'শীঘ্রই আসছে',
+                    title: ref.tr('hospitals'),
+                    subtitle: ref.tr('coming_soon'),
                     color: Colors.teal,
                     onTap: () {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('এই ফিচারটি শীঘ্রই আসছে!')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('coming_soon_msg'))));
                     },
                   ),
                   _buildDrawerItem(
                     icon: Icons.headset_mic_rounded,
-                    title: 'সাপোর্ট ও ফিডব্যাক',
+                    title: ref.tr('support_feedback'),
                     color: Colors.indigo,
                     onTap: () {
                       Navigator.pop(context);
@@ -270,7 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   _buildDrawerItem(
                     icon: Icons.info_outline_rounded,
-                    title: 'আমাদের সম্পর্কে',
+                    title: ref.tr('about_us'),
                     color: Colors.grey.shade700,
                     onTap: () { Navigator.pop(context); },
                   ),
@@ -390,6 +411,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String? subtitle,
     required Color color,
     required VoidCallback onTap,
+    Widget? trailing,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -409,7 +431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           style: GoogleFonts.notoSansBengali(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade900),
         ),
         subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.red, fontSize: 11)) : null,
-        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey.shade400),
+        trailing: trailing ?? Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey.shade400),
       ),
     );
   }
@@ -576,7 +598,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   SliverAppBar _buildAppBar(UserModel user) {
     final firstName = user.name.split(' ').first;
-    final location = "${user.address?['district'] ?? 'অবস্থান'}, ${user.address?['division'] ?? 'নেই'}";
+    final location = "${user.address?['district'] ?? ref.tr('location')}, ${user.address?['division'] ?? ''}";
     return SliverAppBar(
       pinned: true,
       expandedHeight: 140,
@@ -587,7 +609,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         icon: const Icon(Icons.menu_rounded, color: Colors.white),
         onPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
-      title: Text('হ্যালো, $firstName', style: GoogleFonts.notoSansBengali(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+      title: Text('${ref.tr('hello')}, $firstName', style: GoogleFonts.notoSansBengali(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
@@ -721,9 +743,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('আপনার ড্যাশবোর্ড', style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text(ref.tr('dashboard'), style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
         const SizedBox(height: 4),
-        Text('আজকের রক্তদান একটি জীবন বাঁচাতে পারে', style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade600)),
+        Text(ref.tr('tagline'), style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade600)),
       ],
     );
   }
@@ -732,19 +754,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       children: [
         Row(children: [
-          _buildStatBox('মোট দান', '${user.totalDonations}', Colors.red, Icons.bloodtype, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 2)))),
+          _buildStatBox(ref.tr('total_donations'), '${user.totalDonations}', Colors.red, Icons.bloodtype, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 2)))),
           const SizedBox(width: 12),
-          _buildStatBox('আবেদন', '${user.totalRequests}', Colors.blue, Icons.campaign, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 0)))),
+          _buildStatBox(ref.tr('request_count'), '${user.totalRequests}', Colors.blue, Icons.campaign, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 0)))),
           const SizedBox(width: 12),
-          _buildStatBox('সেভ করা', '${user.savedDonors.length}', Colors.orange, Icons.favorite, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedDonorsScreen()))),
+          _buildStatBox(ref.tr('saved'), '${user.savedDonors.length}', Colors.orange, Icons.favorite, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedDonorsScreen()))),
         ]),
         const SizedBox(height: 12),
         Row(children: [
-          _buildStatBox('ব্যাগ পেয়েছেন', '${user.totalReceivedBags}', Colors.green, Icons.opacity, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 1)))),
+          _buildStatBox(ref.tr('bags_received'), '${user.totalReceivedBags}', Colors.green, Icons.opacity, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 1)))),
           const SizedBox(width: 12),
-          _buildStatBox('গড় রেটিং', user.averageRating.toStringAsFixed(1), Colors.amber, Icons.star_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: user.uid, userName: user.name)))),
+          _buildStatBox(ref.tr('avg_rating'), user.averageRating.toStringAsFixed(1), Colors.amber, Icons.star_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: user.uid, userName: user.name)))),
           const SizedBox(width: 12),
-          _buildStatBox('বাতিল আবেদন', '${user.totalCancelled}', Colors.blueGrey, Icons.cancel_outlined, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 3)))),
+          _buildStatBox(ref.tr('cancelled'), '${user.totalCancelled}', Colors.blueGrey, Icons.cancel_outlined, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen(initialIndex: 3)))),
         ]),
       ],
     );
@@ -850,18 +872,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildSectionHeader(String title, VoidCallback onTap) {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text(title, style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-      GestureDetector(onTap: onTap, child: Text('সবগুলো দেখুন', style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.bold))),
+      GestureDetector(onTap: onTap, child: Text(ref.tr('see_all'), style: TextStyle(color: Colors.red.shade700, fontSize: 13, fontWeight: FontWeight.bold))),
     ]);
   }
 
-  Widget _buildRequestList(AsyncValue<List<BloodRequestModel>> requestsAsync, UserModel? user) {
+  Widget _buildRequestList(WidgetRef ref, AsyncValue<List<BloodRequestModel>> requestsAsync, UserModel? user) {
     return requestsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (requests) {
         if (user == null) return const SizedBox.shrink();
         final filtered = requests.where((r) => r.requesterId != user.uid && r.division.toLowerCase() == (user.address?['division']?.toString().toLowerCase() ?? '')).toList();
-        if (filtered.isEmpty) return const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Text('আপনার বিভাগে কোনো পেন্ডিং আবেদন নেই')));
+        if (filtered.isEmpty) return Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 40), child: Text(ref.tr('no_pending_requests'))));
         
         filtered.sort((a, b) {
           if (a.isEmergency && !b.isEmergency) return -1;
@@ -887,7 +909,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Container(width: 56, height: 56, decoration: BoxDecoration(color: req.isEmergency ? Colors.red : Colors.red.shade50, borderRadius: BorderRadius.circular(16)), child: Center(child: Text(req.bloodGroup, style: TextStyle(color: req.isEmergency ? Colors.white : Colors.red, fontWeight: FontWeight.bold, fontSize: 20)))),
               const SizedBox(width: 16),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [Text(req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16)), if (req.isEmergency) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red.shade600, borderRadius: BorderRadius.circular(6)), child: Text('জরুরি', style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 10)))]]),
+                Row(children: [Text(req.patientName.isEmpty ? ref.tr('unknown') : req.patientName, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16)), if (req.isEmergency) ...[const SizedBox(width: 8), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red.shade600, borderRadius: BorderRadius.circular(6)), child: Text(ref.tr('emergency'), style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 10)))]]),
                 Text(req.hospitalName, style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
               ])),
               const Icon(Icons.keyboard_arrow_right_rounded, color: Colors.blue),
@@ -895,7 +917,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const Divider(height: 24),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Row(children: [Icon(Icons.location_on_rounded, size: 16, color: Colors.grey.shade400), const SizedBox(width: 4), Text('${req.district}, ${req.thana}', style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 12))]),
-              GestureDetector(onTap: () => _launchMapUrl(req.mapUrl ?? req.hospitalName), child: Text('ম্যাপ দেখুন', style: GoogleFonts.notoSansBengali(color: Colors.blue.shade700, fontSize: 12, fontWeight: FontWeight.bold))),
+              GestureDetector(onTap: () => _launchMapUrl(req.mapUrl ?? req.hospitalName), child: Text(ref.tr('map'), style: GoogleFonts.notoSansBengali(color: Colors.blue.shade700, fontSize: 12, fontWeight: FontWeight.bold))),
             ]),
           ]),
         ),

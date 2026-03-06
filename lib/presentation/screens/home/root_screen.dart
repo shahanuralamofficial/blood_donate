@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,8 @@ import '../history/history_screen.dart';
 import '../donors/donor_list_screen.dart';
 import '../requests/request_list_screen.dart';
 import '../profile/edit_profile_screen.dart';
+import '../home/notification_screen.dart';
+import '../../providers/language_provider.dart';
 import 'home_screen.dart';
 
 class RootScreen extends ConsumerStatefulWidget {
@@ -154,6 +157,117 @@ class _RootScreenState extends ConsumerState<RootScreen> {
     });
 
     return Scaffold(
+      drawer: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xFFE53935)),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Text(
+                  ref.watch(currentUserDataProvider).value?.name[0].toUpperCase() ?? 'U',
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFE53935)),
+                ),
+              ),
+              accountName: Text(ref.watch(currentUserDataProvider).value?.name ?? 'User'),
+              accountEmail: Text(ref.watch(currentUserDataProvider).value?.email ?? ''),
+            ),
+            ListTile(
+              leading: const Icon(Icons.language_rounded, color: Colors.blue),
+              title: Text(ref.tr('language')),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  ref.watch(languageProvider).languageCode == 'bn' ? 'বাংলা' : 'English',
+                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                  ),
+                  builder: (context) => Container(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          ref.tr('language'),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 20),
+                        ListTile(
+                          leading: const Text('🇧🇩', style: TextStyle(fontSize: 24)),
+                          title: const Text('বাংলা', style: TextStyle(fontWeight: FontWeight.bold)),
+                          trailing: ref.watch(languageProvider).languageCode == 'bn' 
+                              ? const Icon(Icons.check_circle, color: Colors.green) 
+                              : null,
+                          onTap: () {
+                            ref.read(languageProvider.notifier).changeLanguage('bn');
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                          title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+                          trailing: ref.watch(languageProvider).languageCode == 'en' 
+                              ? const Icon(Icons.check_circle, color: Colors.green) 
+                              : null,
+                          onTap: () {
+                            ref.read(languageProvider.notifier).changeLanguage('en');
+                            Navigator.pop(context);
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.notifications_rounded, color: Colors.orange),
+              title: Text(ref.tr('notifications')),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+              },
+            ),
+            const Spacer(),
+            ListTile(
+              leading: const Icon(Icons.logout_rounded, color: Colors.red),
+              title: Text(ref.tr('logout')),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(ref.tr('logout')),
+                    content: Text(ref.tr('confirm_logout')),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: Text(ref.tr('no'))),
+                      TextButton(
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          Navigator.pop(context);
+                        },
+                        child: Text(ref.tr('yes'), style: const TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -181,11 +295,11 @@ class _RootScreenState extends ConsumerState<RootScreen> {
               selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               unselectedLabelStyle: const TextStyle(fontSize: 11),
               elevation: 0,
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'হোম'),
-                BottomNavigationBarItem(icon: Icon(Icons.bloodtype_rounded), label: 'আবেদনকারী'),
-                BottomNavigationBarItem(icon: Icon(Icons.search_rounded), label: 'দাতা'),
-                BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: 'ইতিহাস'),
+              items: [
+                BottomNavigationBarItem(icon: const Icon(Icons.home_rounded), label: ref.tr('home')),
+                BottomNavigationBarItem(icon: const Icon(Icons.bloodtype_rounded), label: ref.tr('requests')),
+                BottomNavigationBarItem(icon: const Icon(Icons.search_rounded), label: ref.tr('donors')),
+                BottomNavigationBarItem(icon: const Icon(Icons.history_rounded), label: ref.tr('history')),
               ],
             ),
           ),

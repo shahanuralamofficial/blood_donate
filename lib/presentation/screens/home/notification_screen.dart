@@ -1,21 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/services/notification_service.dart';
+import '../../providers/language_provider.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: Text('নোটিফিকেশন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(ref.tr('notifications'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -25,13 +27,13 @@ class NotificationScreen extends StatelessWidget {
             IconButton(
               onPressed: () => _markAllAsRead(userId),
               icon: const Icon(Icons.done_all_rounded, color: Colors.red),
-              tooltip: 'সবগুলো পড়া হয়েছে',
+              tooltip: ref.tr('mark_all_as_read'),
             ),
           const SizedBox(width: 8),
         ],
       ),
       body: userId == null 
-          ? const Center(child: Text('লগইন প্রয়োজন'))
+          ? Center(child: Text(ref.tr('login_required')))
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
@@ -45,7 +47,7 @@ class NotificationScreen extends StatelessWidget {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return _buildEmptyState();
+                  return _buildEmptyState(ref);
                 }
 
                 // চ্যাট বাদে সব নোটিফিকেশন ফিল্টার করা
@@ -56,7 +58,7 @@ class NotificationScreen extends StatelessWidget {
                 }).toList();
 
                 if (notifications.isEmpty) {
-                  return _buildEmptyState();
+                  return _buildEmptyState(ref);
                 }
 
                 return ListView.builder(
@@ -65,7 +67,7 @@ class NotificationScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final doc = notifications[index];
                     final data = doc.data() as Map<String, dynamic>;
-                    return _buildNotificationCard(context, doc.id, userId, data);
+                    return _buildNotificationCard(context, ref, doc.id, userId, data);
                   },
                 );
               },
@@ -88,7 +90,7 @@ class NotificationScreen extends StatelessWidget {
     await batch.commit();
   }
 
-  Widget _buildNotificationCard(BuildContext context, String docId, String userId, Map<String, dynamic> data) {
+  Widget _buildNotificationCard(BuildContext context, WidgetRef ref, String docId, String userId, Map<String, dynamic> data) {
     final bool isRead = data['isRead'] ?? false;
     final Map<String, dynamic> extraData = data['data'] ?? {};
     final String type = extraData['type'] ?? 'general';
@@ -170,7 +172,7 @@ class NotificationScreen extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                data['title'] ?? 'নতুন নোটিফিকেশন',
+                                data['title'] ?? ref.tr('new_notification'),
                                 style: GoogleFonts.notoSansBengali(
                                   fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
                                   fontSize: 15,
@@ -210,7 +212,7 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -222,12 +224,12 @@ class NotificationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'এখনো কোনো নোটিফিকেশন নেই',
+            ref.tr('no_notifications'),
             style: GoogleFonts.notoSansBengali(color: Colors.grey.shade400, fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Text(
-            'নতুন কোনো আপডেট এলে এখানে দেখতে পাবেন।',
+            ref.tr('new_updates_will_appear_here'),
             style: GoogleFonts.notoSansBengali(color: Colors.grey.shade300, fontSize: 12),
           ),
         ],

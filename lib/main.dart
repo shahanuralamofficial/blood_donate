@@ -10,6 +10,7 @@ import 'presentation/screens/chat/chat_screen.dart';
 import 'presentation/screens/requests/request_details_screen.dart';
 import 'presentation/screens/home/notification_screen.dart';
 import 'presentation/providers/auth_provider.dart';
+import 'presentation/providers/language_provider.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -85,10 +86,13 @@ class _BloodDonateAppState extends ConsumerState<BloodDonateApp> with WidgetsBin
 
   @override
   Widget build(BuildContext context) {
+    final locale = ref.watch(languageProvider);
+
     return MaterialApp(
       title: 'রক্তদান - Blood Donate',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      locale: locale,
       navigatorKey: NotificationService.navigatorKey, // নেভিগেটর কি সেট করা হলো
       onGenerateRoute: (settings) {
         if (settings.name == '/chat') {

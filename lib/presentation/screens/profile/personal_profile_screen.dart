@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
 import 'reviews_list_screen.dart';
@@ -28,7 +29,7 @@ class PersonalProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: Text('আমার প্রোফাইল', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(ref.tr('my_profile'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -46,13 +47,13 @@ class PersonalProfileScreen extends ConsumerWidget {
                     final shouldLogout = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('লগআউট'),
-                        content: const Text('আপনি কি নিশ্চিতভাবে লগআউট করতে চান?'),
+                        title: Text(ref.tr('logout')),
+                        content: Text(ref.tr('confirm_logout')),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('না')),
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(ref.tr('no'))),
                           TextButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text('হ্যাঁ', style: TextStyle(color: Colors.red)),
+                            child: Text(ref.tr('yes'), style: const TextStyle(color: Colors.red)),
                           ),
                         ],
                       ),
@@ -75,7 +76,7 @@ class PersonalProfileScreen extends ConsumerWidget {
       ),
       body: userAsync.when(
         data: (user) {
-          if (user == null) return const Center(child: Text('ব্যবহারকারী পাওয়া যায়নি'));
+          if (user == null) return Center(child: Text(ref.tr('user_not_found')));
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
@@ -85,15 +86,15 @@ class PersonalProfileScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      _buildRankCard(context, user),
+                      _buildRankCard(context, ref, user),
                       const SizedBox(height: 24),
                       if (user.lastDonationDate != null) ...[
-                        _buildEligibilityCard(user),
+                        _buildEligibilityCard(ref, user),
                         const SizedBox(height: 24),
                       ],
-                      _buildStatsGrid(user),
+                      _buildStatsGrid(ref, user),
                       const SizedBox(height: 24),
-                      _buildInfoSection(context, user), // Added context for nav
+                      _buildInfoSection(context, ref, user), // Added context for nav
                       const SizedBox(height: 24),
                       _buildReviewCard(context, user),
                       const SizedBox(height: 24),
@@ -124,14 +125,14 @@ class PersonalProfileScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ডেঞ্জার জোন',
+            ref.tr('danger_zone'),
             style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red.shade900),
           ),
           const SizedBox(height: 16),
           _buildInfoRow(
             Icons.delete_forever_rounded,
-            'অ্যাকাউন্ট মুছে ফেলুন',
-            'আপনার সকল তথ্য স্থায়ীভাবে মুছে যাবে',
+            ref.tr('delete_account'),
+            ref.tr('delete_account_desc'),
             Colors.red,
             onTap: () => _showDeleteAccountDialog(context, ref, user),
           ),
@@ -149,22 +150,22 @@ class PersonalProfileScreen extends ConsumerWidget {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('অ্যাকাউন্ট মুছে ফেলবেন?'),
+          title: Text(ref.tr('delete_account_title')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'নিরাপত্তার স্বার্থে আপনার পাসওয়ার্ডটি পুনরায় প্রদান করুন। আপনার সকল তথ্য চিরতরে মুছে যাবে।',
-                style: TextStyle(fontSize: 14),
+              Text(
+                ref.tr('delete_account_confirm'),
+                style: const TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  labelText: 'আপনার পাসওয়ার্ড',
-                  hintText: 'পাসওয়ার্ড লিখুন',
+                  labelText: ref.tr('your_password'),
+                  hintText: ref.tr('enter_password'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                 ),
@@ -174,12 +175,12 @@ class PersonalProfileScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: isLoading ? null : () => Navigator.pop(context),
-              child: const Text('না'),
+              child: Text(ref.tr('no')),
             ),
             ElevatedButton(
               onPressed: isLoading ? null : () async {
                 if (passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('পাসওয়ার্ড প্রয়োজন')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('password_required'))));
                   return;
                 }
 
@@ -207,24 +208,24 @@ class PersonalProfileScreen extends ConsumerWidget {
                     if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('অ্যাকাউন্টটি সফলভাবে মুছে ফেলা হয়েছে')),
+                        SnackBar(content: Text(ref.tr('account_deleted_success'))),
                       );
                     }
                   }
                 } on FirebaseAuthException catch (e) {
                   setState(() => isLoading = false);
-                  String message = 'কিছু ভুল হয়েছে';
-                  if (e.code == 'wrong-password') message = 'ভুল পাসওয়ার্ড!';
+                  String message = ref.tr('something_went_wrong');
+                  if (e.code == 'wrong-password') message = ref.tr('wrong_password');
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
                 } catch (e) {
                   setState(() => isLoading = false);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('error_try_again'))));
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
               child: isLoading 
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('হ্যাঁ, মুছে ফেলুন'),
+                : Text(ref.tr('yes')),
             ),
           ],
         ),
@@ -272,7 +273,7 @@ class PersonalProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEligibilityCard(UserModel user) {
+  Widget _buildEligibilityCard(WidgetRef ref, UserModel user) {
     final nextDate = user.lastDonationDate!.add(const Duration(days: 90));
     final remainingDays = nextDate.difference(DateTime.now()).inDays;
     final isEligible = remainingDays <= 0;
@@ -297,10 +298,10 @@ class PersonalProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isEligible ? 'আপনি এখন রক্ত দান করতে পারবেন' : 'পরবর্তী রক্তদানের জন্য অপেক্ষা করুন',
+                  isEligible ? ref.tr('eligible_to_donate') : ref.tr('wait_for_next_donation'),
                   style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: isEligible ? Colors.green.shade900 : Colors.orange.shade900),
                 ),
-                if (!isEligible) Text('আরও $remainingDays দিন বাকি আছে।', style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade700)),
+                if (!isEligible) Text('$remainingDays ${ref.tr('days_remaining')}', style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade700)),
               ],
             ),
           ),
@@ -309,7 +310,7 @@ class PersonalProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRankCard(BuildContext context, UserModel user) {
+  Widget _buildRankCard(BuildContext context, WidgetRef ref, UserModel user) {
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RankProgressScreen(user: user))),
       borderRadius: BorderRadius.circular(24),
@@ -328,7 +329,7 @@ class PersonalProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('আপনার র‍্যাঙ্ক', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(ref.tr('your_rank'), style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.bold)),
                   Text(user.rank.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 ],
               ),
@@ -340,12 +341,12 @@ class PersonalProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsGrid(UserModel user) {
+  Widget _buildStatsGrid(WidgetRef ref, UserModel user) {
     return Row(
       children: [
-        _buildStatItem('রক্ত দান', '${user.totalDonations} ব্যাগ', Icons.bloodtype, Colors.red),
+        _buildStatItem(ref.tr('blood_donation'), '${user.totalDonations} ${ref.tr('bags')}', Icons.bloodtype, Colors.red),
         const SizedBox(width: 16),
-        _buildStatItem('রক্ত গ্রহণ', '${user.totalReceivedBags} ব্যাগ', Icons.volunteer_activism, Colors.green),
+        _buildStatItem(ref.tr('blood_received'), '${user.totalReceivedBags} ${ref.tr('bags')}', Icons.volunteer_activism, Colors.green),
       ],
     );
   }
@@ -372,8 +373,8 @@ class PersonalProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoSection(BuildContext context, UserModel user) {
-    final location = "${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}";
+  Widget _buildInfoSection(BuildContext context, WidgetRef ref, UserModel user) {
+    final location = "${user.address?['thana'] ?? ref.tr('unknown')}, ${user.address?['district'] ?? ''}";
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -383,11 +384,11 @@ class PersonalProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _buildInfoRow(Icons.bloodtype_outlined, 'রক্তের গ্রুপ', user.bloodGroup ?? 'অজানা', Colors.red),
+          _buildInfoRow(Icons.bloodtype_outlined, ref.tr('blood_group'), user.bloodGroup ?? ref.tr('unknown'), Colors.red),
           const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(Icons.person_outline_rounded, 'লিঙ্গ', user.gender ?? 'অজানা', Colors.blue),
+          _buildInfoRow(Icons.person_outline_rounded, ref.tr('gender'), user.gender ?? ref.tr('unknown'), Colors.blue),
           const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', location, Colors.green),
+          _buildInfoRow(Icons.location_on_outlined, ref.tr('location'), location, Colors.green),
         ],
       ),
     );
@@ -416,34 +417,39 @@ class PersonalProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildReviewCard(BuildContext context, UserModel user) {
-    return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: user.uid, userName: user.name))),
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey.shade100)),
-        child: Row(
-          children: [
-            const Icon(Icons.rate_review_outlined, color: Colors.blue, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('ইউজার রিভিউ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
-                      const SizedBox(width: 4),
-                      Text(user.averageRating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(' (${user.totalReviews} টি রিভিউ)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                    ],
-                  ),
-                ],
+    // Need ref here for translation, but it's a stateless widget's method called from build where ref is available.
+    // However, _buildReviewCard definition in this file doesn't have ref. 
+    // I should add WidgetRef ref to the parameters if I want to use ref.tr
+    return Consumer(
+      builder: (context, ref, child) => InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: user.uid, userName: user.name))),
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.grey.shade100)),
+          child: Row(
+            children: [
+              const Icon(Icons.rate_review_outlined, color: Colors.blue, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(ref.tr('user_reviews'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
+                        const SizedBox(width: 4),
+                        Text(user.averageRating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(' (${user.totalReviews} ${ref.tr('reviews_count')})', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 14),
-          ],
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 14),
+            ],
+          ),
         ),
       ),
     );
