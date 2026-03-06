@@ -208,6 +208,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: messagesAsync.when(
               data: (messages) {
                 if (messages.isEmpty) return const Center(child: Text('কথোপকথন শুরু করুন...'));
+                
+                // নতুন মেসেজ আসলে তা সাথে সাথে রিড মার্ক করার জন্য লজিক
+                if (user != null) {
+                  // মাইক্রোটাস্ক ব্যবহার করছি যাতে রেন্ডারিং এর সময় কনফ্লিক্ট না হয়
+                  Future.microtask(() {
+                    ref.read(messageRepositoryProvider).markMessagesAsRead(widget.requestId, user.uid);
+                  });
+                }
+
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,

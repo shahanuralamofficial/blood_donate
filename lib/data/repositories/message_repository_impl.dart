@@ -44,7 +44,7 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<void> markMessagesAsRead(String chatId, String userId) async {
     try {
-      // শুধুমাত্র অপঠিত মেসেজগুলো নিচ্ছি
+      // শুধুমাত্র অপঠিত মেসেজগুলো নিচ্ছি যা অন্য কেউ পাঠিয়েছে
       final unreadMessages = await _firestore
           .collection('direct_chats')
           .doc(chatId)
@@ -52,23 +52,23 @@ class MessageRepositoryImpl implements MessageRepository {
           .where('isRead', isEqualTo: false)
           .get();
 
-      if (unreadMessages.docs.isNotEmpty) {
-        final batch = _firestore.batch();
-        bool hasUpdates = false;
-        
-        for (var doc in unreadMessages.docs) {
-          final data = doc.data();
-          // যদি মেসেজটি অন্য কেউ পাঠিয়ে থাকে (আমি না), তবেই রিড মার্ক করব
-          if (data['senderId'] != userId) {
-            batch.update(doc.reference, {'isRead': true});
-            hasUpdates = true;
-          }
+      if (unreadMessages.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      bool hasUpdates = false;
+      
+      for (var doc in unreadMessages.docs) {
+        final data = doc.data();
+        // যদি মেসেজটি অন্য কেউ পাঠিয়ে থাকে (আমি না), তবেই রিড মার্ক করব
+        if (data['senderId'] != userId) {
+          batch.update(doc.reference, {'isRead': true});
+          hasUpdates = true;
         }
-        
-        if (hasUpdates) {
-          await batch.commit();
-          debugPrint('Messages marked as read for chat: $chatId');
-        }
+      }
+      
+      if (hasUpdates) {
+        await batch.commit();
+        debugPrint('--- Messages marked as read in Firestore for chat: $chatId ---');
       }
     } catch (e) {
       debugPrint('Error marking messages as read: $e');
