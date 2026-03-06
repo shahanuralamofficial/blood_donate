@@ -40,6 +40,9 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
 
+    // ইমেইল ভেরিফিকেশন লিঙ্ক পাঠানো
+    await userCredential.user?.sendEmailVerification();
+
     final newUser = UserModel(
       uid: userCredential.user!.uid,
       name: user.name,
@@ -66,5 +69,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  @override
+  Future<void> sendVerificationEmail() async {
+    await _auth.currentUser?.sendEmailVerification();
   }
 }

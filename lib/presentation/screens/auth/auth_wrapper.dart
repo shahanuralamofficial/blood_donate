@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../home/root_screen.dart';
 import 'login_screen.dart';
+import 'verify_email_screen.dart';
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
@@ -14,7 +15,10 @@ class AuthWrapper extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user != null) {
-          return const RootScreen();
+          if (user.emailVerified) {
+            return const RootScreen();
+          }
+          return const VerifyEmailScreen();
         }
         return const LoginScreen();
       },
