@@ -16,17 +16,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Firebase Initialize
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  try {
-    final notificationService = NotificationService();
-    await notificationService.init();
-  } catch (e) {
-    debugPrint("Notification Initialization Error: $e");
-  }
-
+  // Background Handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
@@ -48,6 +44,16 @@ class _BloodDonateAppState extends ConsumerState<BloodDonateApp> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // অ্যাপ চালু হওয়ার পর ব্যাকগ্রাউন্ডে নোটিফিকেশন সার্ভিস চালু করা
+    Future.microtask(() async {
+      try {
+        await NotificationService().init();
+      } catch (e) {
+        debugPrint("Notification Init Error: $e");
+      }
+    });
+
     _updateStatus(true);
   }
 
