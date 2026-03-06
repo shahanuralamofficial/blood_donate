@@ -79,20 +79,29 @@ class NotificationService {
   }
 
   void _navigateBasedOnData(Map<String, dynamic> data) {
-    if (data['type'] == 'chat') {
+    final type = data['type'];
+    final requestId = data['requestId'];
+
+    if (type == 'chat') {
       final chatId = data['chatId'];
       final senderName = data['senderName'] ?? 'বার্তা';
-      final senderId = data['senderId']; // senderId যোগ করা হলো
+      final senderId = data['senderId'];
       
       navigatorKey.currentState?.pushNamed('/chat', arguments: {
         'chatId': chatId,
         'otherUserName': senderName,
         'otherUserId': senderId,
       });
-    } else if (data['type'] == 'blood_request' || data['type'] == 'emergency') {
-      if (data['requestId'] != null) {
-        navigatorKey.currentState?.pushNamed('/request_details', arguments: data['requestId']);
+    } else if (type == 'blood_request' || type == 'emergency' || type == 'request' || type == 'donation_confirm') {
+      // যদি রক্ত দিয়েছে এমন নোটিফিকেশন হয় বা সাধারণ রিকোয়েস্ট হয়, তবে ডিটেইলস পেজে যাবে
+      if (requestId != null) {
+        navigatorKey.currentState?.pushNamed('/request_details', arguments: requestId);
+      } else {
+        navigatorKey.currentState?.pushNamed('/notifications');
       }
+    } else {
+      // অন্য সব সাধারণ নোটিফিকেশনের ক্ষেত্রে নোটিফিকেশন স্ক্রিনে যাবে
+      navigatorKey.currentState?.pushNamed('/notifications');
     }
   }
 

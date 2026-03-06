@@ -14,9 +14,10 @@ import '../chat/chat_screen.dart';
 import '../donors/donor_public_profile_screen.dart';
 
 class RequestDetailsScreen extends ConsumerStatefulWidget {
-  final BloodRequestModel request;
+  final BloodRequestModel? request;
+  final String? requestId;
 
-  const RequestDetailsScreen({super.key, required this.request});
+  const RequestDetailsScreen({super.key, this.request, this.requestId});
 
   @override
   ConsumerState<RequestDetailsScreen> createState() => _RequestDetailsScreenState();
@@ -79,8 +80,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String targetId = widget.requestId ?? widget.request?.requestId ?? '';
     final liveRequestAsync = ref.watch(
-      requestStreamByIdProvider(widget.request.requestId),
+      requestStreamByIdProvider(targetId),
     );
     final userAsync = ref.watch(currentUserDataProvider);
     final user = userAsync.value;
@@ -365,6 +367,10 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 title: 'রক্তদান আপডেট',
                 body:
                     '${donor?.name ?? 'রক্তদাতা'} জানিয়েছেন তিনি রক্ত দিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।',
+                data: {
+                  'type': 'donation_confirm',
+                  'requestId': req.requestId,
+                },
               );
 
               if (context.mounted) {

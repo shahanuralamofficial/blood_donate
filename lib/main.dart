@@ -7,6 +7,8 @@ import 'core/theme/app_theme.dart';
 import 'presentation/screens/auth/auth_wrapper.dart';
 import 'core/services/notification_service.dart';
 import 'presentation/screens/chat/chat_screen.dart';
+import 'presentation/screens/requests/request_details_screen.dart';
+import 'presentation/screens/home/notification_screen.dart';
 import 'presentation/providers/auth_provider.dart';
 
 @pragma('vm:entry-point')
@@ -97,6 +99,17 @@ class _BloodDonateAppState extends ConsumerState<BloodDonateApp> with WidgetsBin
               otherUserName: args['otherUserName'],
               otherUserId: args['otherUserId'],
             ),
+          );
+        }
+        if (settings.name == '/request_details') {
+          final requestId = settings.arguments as String;
+          return MaterialPageRoute(
+            builder: (context) => RequestDetailsScreen(requestId: requestId),
+          );
+        }
+        if (settings.name == '/notifications') {
+          return MaterialPageRoute(
+            builder: (context) => const NotificationScreen(),
           );
         }
         return null;

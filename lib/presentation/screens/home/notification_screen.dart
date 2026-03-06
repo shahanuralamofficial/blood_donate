@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../../core/services/notification_service.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -18,82 +19,56 @@ class NotificationScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        centerTitle: true,
         actions: [
           if (userId != null)
-            TextButton(
+            IconButton(
               onPressed: () => _markAllAsRead(userId),
-              child: Text('সবগুলো পড়া হয়েছে', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold, fontSize: 13)),
+              icon: const Icon(Icons.done_all_rounded, color: Colors.red),
+              tooltip: 'সবগুলো পড়া হয়েছে',
             ),
           const SizedBox(width: 8),
         ],
       ),
       body: userId == null 
           ? const Center(child: Text('লগইন প্রয়োজন'))
-          : FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
-              builder: (context, userSnapshot) {
-                if (!userSnapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.red));
-                
-                final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
-                final userThana = userData?['address']?['thana']?.toString().toLowerCase();
-                final userDistrict = userData?['address']?['district']?.toString().toLowerCase();
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(userId)
+                  .collection('notifications')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.red));
+                }
 
-                return StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(userId)
-                      .collection('notifications')
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Colors.red));
-                    }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
+                }
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return _buildEmptyState();
-                    }
+                // চ্যাট বাদে সব নোটিফিকেশন ফিল্টার করা
+                final notifications = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final type = data['data']?['type'] ?? 'general';
+                  return type != 'chat';
+                }).toList();
 
-                    // স্মার্ট ফিল্টারিং লজিক
-                    final notifications = snapshot.data!.docs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final type = data['data']?['type'] ?? 'general';
-                      
-                      // ১. চ্যাট নোটিফিকেশন লিস্টে দেখাবে না
-                      if (type == 'chat') return false;
+                if (notifications.isEmpty) {
+                  return _buildEmptyState();
+                }
 
-                      // ২. র‍্যাঙ্ক আপডেট সংক্রান্ত হলে দেখাবে
-                      if (type == 'rank_up' || (data['title']?.toString().contains('র‍্যাঙ্ক') ?? false)) return true;
-
-                      // ৩. ব্লাড রিকোয়েস্ট হলে নিজ থানা/জেলা চেক করবে
-                      if (type == 'emergency' || (data['title']?.toString().contains('রক্ত') ?? false)) {
-                        final reqThana = data['data']?['thana']?.toString().toLowerCase();
-                        final reqDistrict = data['data']?['district']?.toString().toLowerCase();
-                        
-                        // যদি থানা বা জেলা মিলে যায় তবে দেখাবে
-                        return (reqThana != null && reqThana == userThana) || 
-                               (reqDistrict != null && reqDistrict == userDistrict);
-                      }
-
-                      return true; // অন্যান্য সাধারণ নোটিফিকেশন দেখাবে
-                    }).toList();
-
-                    if (notifications.isEmpty) {
-                      return _buildEmptyState();
-                    }
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      itemCount: notifications.length,
-                      itemBuilder: (context, index) {
-                        final doc = notifications[index];
-                        final data = doc.data() as Map<String, dynamic>;
-                        return _buildNotificationCard(context, doc.id, userId, data);
-                      },
-                    );
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  itemCount: notifications.length,
+                  itemBuilder: (context, index) {
+                    final doc = notifications[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    return _buildNotificationCard(context, doc.id, userId, data);
                   },
                 );
-              }
+              },
             ),
     );
   }
@@ -115,21 +90,22 @@ class NotificationScreen extends StatelessWidget {
 
   Widget _buildNotificationCard(BuildContext context, String docId, String userId, Map<String, dynamic> data) {
     final bool isRead = data['isRead'] ?? false;
-    final String type = data['data']?['type'] ?? 'general';
+    final Map<String, dynamic> extraData = data['data'] ?? {};
+    final String type = extraData['type'] ?? 'general';
     final DateTime? time = (data['createdAt'] as Timestamp?)?.toDate();
 
     IconData icon = Icons.notifications_rounded;
     Color iconColor = Colors.blue;
 
-    if (type == 'emergency') {
+    if (type == 'emergency' || type == 'blood_request') {
       icon = Icons.bloodtype_rounded;
       iconColor = Colors.red;
-    } else if (type == 'chat') {
-      icon = Icons.chat_bubble_rounded;
+    } else if (type == 'donation_confirm' || data['title'].toString().contains('রক্ত দিয়েছে')) {
+      icon = Icons.volunteer_activism_rounded;
       iconColor = Colors.green;
-    } else if (data['title'].toString().contains('ধন্যবাদ') || data['title'].toString().contains('সফল')) {
-      icon = Icons.favorite_rounded;
-      iconColor = Colors.pink;
+    } else if (type == 'rank_up' || data['title'].toString().contains('র‍্যাঙ্ক')) {
+      icon = Icons.stars_rounded;
+      iconColor = Colors.orange;
     }
 
     return Dismissible(
@@ -147,25 +123,31 @@ class NotificationScreen extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: isRead ? Colors.white : const Color(0xFFFFEBEE).withValues(alpha: 0.3),
+          color: isRead ? Colors.white : Colors.red.withOpacity(0.03),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isRead ? Colors.grey.shade100 : Colors.red.shade100,
             width: isRead ? 1 : 1.5,
           ),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
+              // Read মার্ক করা
               FirebaseFirestore.instance.collection('users').doc(userId).collection('notifications').doc(docId).update({'isRead': true});
+              
+              // নেভিগেশন হ্যান্ডেল করা
+              if (extraData['requestId'] != null) {
+                Navigator.pushNamed(
+                  context, 
+                  '/request_details', 
+                  arguments: extraData['requestId']
+                );
+              }
             },
             borderRadius: BorderRadius.circular(20),
             child: Padding(
@@ -175,10 +157,7 @@ class NotificationScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
                     child: Icon(icon, color: iconColor, size: 22),
                   ),
                   const SizedBox(width: 16),
@@ -200,24 +179,13 @@ class NotificationScreen extends StatelessWidget {
                               ),
                             ),
                             if (!isRead)
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
+                              Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
                           data['body'] ?? '',
-                          style: GoogleFonts.notoSansBengali(
-                            color: Colors.grey.shade600,
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
+                          style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 13, height: 1.4),
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -226,10 +194,7 @@ class NotificationScreen extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               time != null ? DateFormat('hh:mm a, dd MMM').format(time) : '',
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey.shade400,
-                                fontSize: 11,
-                              ),
+                              style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 11),
                             ),
                           ],
                         ),
