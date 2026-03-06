@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/services/notification_service.dart';
 import '../../providers/language_provider.dart';
 
 class NotificationScreen extends ConsumerWidget {
