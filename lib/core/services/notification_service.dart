@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../localization/app_translations.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -170,13 +171,36 @@ class NotificationService {
           }
 
           _showLocalNotification(
-            title: data['title'] ?? (data['data']?['type'] == 'blood_request' ? 'জরুরি রক্তের আবেদন' : 'নতুন বার্তা'),
-            body: data['body'] ?? '',
+            title: _localizeStatic(data['title'], notificationData),
+            body: _localizeStatic(data['body'], notificationData),
             payload: jsonEncode(data['data'] ?? {}),
           );
         }
       }
     }, onError: (e) => debugPrint('Notification Listener Error: $e'));
+  }
+
+  // স্ট্যাটিক লোকালইজেশন (নোটিফিকেশন সার্ভিসের জন্য)
+  String _localizeStatic(String? key, Map<String, dynamic>? data) {
+    if (key == null) return '';
+    
+    // বর্তমান ল্যাঙ্গুয়েজ কোড ডিফল্ট হিসেবে 'bn' নিচ্ছি (যেহেতু এটিই প্রাইমারি)
+    // বাস্তব ক্ষেত্রে এটি SharedPreferences থেকে নেওয়া যেতে পারে
+    const String lang = 'bn'; 
+    final translations = AppTranslations.translations[lang];
+    
+    if (translations != null && translations.containsKey(key)) {
+      String text = translations[key]!;
+      if (data != null) {
+        if (key == 'emergency_blood_req' || key == 'blood_req_district' || key == 'blood_req_division') {
+          text = text.replaceFirst('{}', data['bloodGroup'] ?? '');
+        } else if (key == 'blood_req_nearby') {
+          text = text.replaceFirst('{}', data['thana'] ?? '').replaceFirst('{}', data['district'] ?? '');
+        }
+      }
+      return text;
+    }
+    return key;
   }
 
   // যখন ইউজার কোনো চ্যাট ওপেন করবে, তখন ওই চ্যাটের জন্য নতুন নোটিফিকেশন এলাউ করতে হবে
@@ -264,13 +288,14 @@ class NotificationService {
         if (doc.id != currentUserId) {
           await sendNotificationToUser(
             receiverId: doc.id,
-            title: 'জরুরি $bloodGroup রক্ত প্রয়োজন!',
-            body: '$thana, $district-এ আপনার গ্রুপের রক্তের আবেদন করা হয়েছে।',
+            title: 'emergency_blood_req', // Key
+            body: 'blood_req_nearby', // Key
             data: {
               'requestId': requestId, 
               'type': 'blood_request',
               'thana': thana,
               'district': district,
+              'bloodGroup': bloodGroup, // For dynamic replacement in translation
             },
           );
           notifiedUserIds.add(doc.id);
@@ -292,14 +317,15 @@ class NotificationService {
           if (doc.id != currentUserId && !notifiedUserIds.contains(doc.id)) {
             await sendNotificationToUser(
               receiverId: doc.id,
-              title: 'আপনার জেলায় $bloodGroup রক্ত প্রয়োজন!',
-              body: '$district-এ রক্তের জরুরি আবেদন করা হয়েছে। দয়া করে দেখুন।',
+              title: 'blood_req_district', // Key
+              body: 'blood_req_district', // Key
               data: {
                 'requestId': requestId, 
                 'type': 'blood_request',
                 'thana': thana,
                 'district': district,
                 'division': division,
+                'bloodGroup': bloodGroup,
               },
             );
             notifiedUserIds.add(doc.id);
@@ -321,14 +347,15 @@ class NotificationService {
           if (doc.id != currentUserId && !notifiedUserIds.contains(doc.id)) {
             await sendNotificationToUser(
               receiverId: doc.id,
-              title: 'আপনার বিভাগে $bloodGroup রক্ত প্রয়োজন!',
-              body: '$division বিভাগে রক্তের জরুরি আবেদন করা হয়েছে।',
+              title: 'blood_req_division', // Key
+              body: 'blood_req_division', // Key
               data: {
                 'requestId': requestId, 
                 'type': 'blood_request',
                 'thana': thana,
                 'district': district,
                 'division': division,
+                'bloodGroup': bloodGroup,
               },
             );
             notifiedUserIds.add(doc.id);
@@ -354,8 +381,8 @@ class NotificationService {
         if (doc.id != currentUserId) {
           await sendNotificationToUser(
             receiverId: doc.id,
-            title: 'জরুরি রক্তের প্রয়োজন!',
-            body: 'আপনার গ্রুপের রক্তের একটি নতুন আবেদন করা হয়েছে। দ্রুত চেক করুন।',
+            title: 'emergency_blood_needed', // Key
+            body: 'new_blood_req_msg', // Key
             data: {
               'requestId': requestId, 
               'type': 'blood_request',

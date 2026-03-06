@@ -7,6 +7,8 @@ import '../../providers/blood_request_provider.dart';
 import '../requests/request_details_screen.dart';
 import '../../../core/services/report_service.dart';
 
+import '../../../presentation/providers/language_provider.dart';
+
 class HistoryScreen extends ConsumerWidget {
   final int initialIndex;
   const HistoryScreen({super.key, this.initialIndex = 0});
@@ -14,7 +16,7 @@ class HistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserDataProvider).value;
-    if (user == null) return const Scaffold(body: Center(child: Text('লগইন প্রয়োজন')));
+    if (user == null) return Scaffold(body: Center(child: Text(ref.tr('login_required'))));
 
     final myRequestsAsync = ref.watch(myRequestsProvider);
     final myDonationsAsync = ref.watch(myDonationsProvider);
@@ -26,7 +28,7 @@ class HistoryScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text('ইতিহাস',
+          title: Text(ref.tr('history'),
               style: GoogleFonts.notoSansBengali(
                   fontWeight: FontWeight.bold, color: Colors.white)),
           backgroundColor: const Color(0xFFE53935),
@@ -40,7 +42,7 @@ class HistoryScreen extends ConsumerWidget {
                   final myDonations = myDonationsAsync.value ?? [];
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('রিপোর্ট তৈরি হচ্ছে...')),
+                    SnackBar(content: Text(ref.tr('report_generating'))),
                   );
 
                   await ReportService().generateDonationReport(
@@ -50,7 +52,7 @@ class HistoryScreen extends ConsumerWidget {
                     myDonations: myDonations,
                   );
                 },
-                tooltip: 'রিপোর্ট ডাউনলোড',
+                tooltip: ref.tr('download_report'),
               ),
             ),
             const SizedBox(width: 8),
@@ -62,32 +64,33 @@ class HistoryScreen extends ConsumerWidget {
             indicatorColor: Colors.white,
             indicatorWeight: 3,
             labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+            unselectedLabelColor: Colors.white.withOpacity(0.7),
             labelStyle: GoogleFonts.notoSansBengali(
                 fontWeight: FontWeight.bold, fontSize: 15),
             unselectedLabelStyle: GoogleFonts.notoSansBengali(
                 fontWeight: FontWeight.normal, fontSize: 14),
-            tabs: const [
-              Tab(text: 'রক্তের আবেদন'),
-              Tab(text: 'রক্ত পেয়েছি'),
-              Tab(text: 'আমার রক্তদান'),
-              Tab(text: 'বাতিল'),
+            tabs: [
+              Tab(text: ref.tr('blood_request')),
+              Tab(text: ref.tr('received_blood')),
+              Tab(text: ref.tr('my_donations')),
+              Tab(text: ref.tr('cancelled')),
             ],
           ),
         ),
         body: TabBarView(
           children: [
             _buildFilteredRequestList(
+                ref,
                 myRequestsAsync,
                 (req) =>
                     req.status == 'pending' ||
                     req.status == 'accepted' ||
                     req.status == 'donated'),
             _buildFilteredRequestList(
-                myRequestsAsync, (req) => req.status == 'completed'),
-            _buildRequestList(myDonationsAsync),
+                ref, myRequestsAsync, (req) => req.status == 'completed'),
+            _buildRequestList(ref, myDonationsAsync),
             _buildFilteredRequestList(
-                myRequestsAsync, (req) => req.status == 'cancelled'),
+                ref, myRequestsAsync, (req) => req.status == 'cancelled'),
           ],
         ),
       ),
@@ -95,47 +98,47 @@ class HistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildFilteredRequestList(
-      AsyncValue myRequests, bool Function(dynamic) filter) {
+      WidgetRef ref, AsyncValue myRequests, bool Function(dynamic) filter) {
     return myRequests.when(
       data: (requests) {
         final filteredList = requests.where(filter).toList();
         if (filteredList.isEmpty) {
-          return _buildEmptyState(Icons.history_rounded, 'কোন তথ্য পাওয়া যায়নি');
+          return _buildEmptyState(ref, Icons.history_rounded, ref.tr('no_data_found'));
         }
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           itemCount: filteredList.length,
           itemBuilder: (context, index) =>
-              _buildRequestCard(context, filteredList[index]),
+              _buildRequestCard(context, ref, filteredList[index]),
         );
       },
       loading: () =>
           const Center(child: CircularProgressIndicator(color: Colors.red)),
-      error: (e, s) => Center(child: Text('এরর: $e')),
+      error: (e, s) => Center(child: Text('${ref.tr('error')}: $e')),
     );
   }
 
-  Widget _buildRequestList(AsyncValue myRequests) {
+  Widget _buildRequestList(WidgetRef ref, AsyncValue myRequests) {
     return myRequests.when(
       data: (requests) {
         if (requests.isEmpty) {
-          return _buildEmptyState(
-              Icons.volunteer_activism_outlined, 'আপনি এখনো কোন রক্তদান করেননি');
+          return _buildEmptyState(ref,
+              Icons.volunteer_activism_outlined, ref.tr('no_donations_yet'));
         }
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
           itemCount: requests.length,
           itemBuilder: (context, index) =>
-              _buildRequestCard(context, requests[index]),
+              _buildRequestCard(context, ref, requests[index]),
         );
       },
       loading: () =>
           const Center(child: CircularProgressIndicator(color: Colors.red)),
-      error: (e, s) => Center(child: Text('এরর: $e')),
+      error: (e, s) => Center(child: Text('${ref.tr('error')}: $e')),
     );
   }
 
-  Widget _buildEmptyState(IconData icon, String message) {
+  Widget _buildEmptyState(WidgetRef ref, IconData icon, String message) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +162,7 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRequestCard(BuildContext context, dynamic req) {
+  Widget _buildRequestCard(BuildContext context, WidgetRef ref, dynamic req) {
     bool isCompleted = req.status == 'completed';
     bool isCancelled = req.status == 'cancelled';
     bool isUrgent = req.isEmergency ?? false;
@@ -171,7 +174,7 @@ class HistoryScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -258,7 +261,7 @@ class HistoryScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    'জরুরি',
+                                    ref.tr('emergency'),
                                     style: GoogleFonts.notoSansBengali(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -282,7 +285,7 @@ class HistoryScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    _buildStatusBadge(req.status),
+                    _buildStatusBadge(ref, req.status),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -297,7 +300,7 @@ class HistoryScreen extends ConsumerWidget {
                             size: 14, color: Colors.grey.shade400),
                         const SizedBox(width: 6),
                         Text(
-                          DateFormat('dd MMM yyyy')
+                          DateFormat('dd MMM yyyy', ref.watch(languageProvider).languageCode)
                               .format(req.requiredDate ?? DateTime.now()),
                           style: GoogleFonts.notoSansBengali(
                             color: Colors.grey.shade600,
@@ -330,30 +333,25 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(WidgetRef ref, String status) {
     Color color = Colors.orange;
-    String text = status;
+    String text = ref.tr(status);
 
     switch (status) {
       case 'completed':
         color = Colors.green;
-        text = 'সম্পন্ন';
         break;
       case 'accepted':
         color = Colors.blue;
-        text = 'গৃহীত';
         break;
       case 'donated':
         color = Colors.purple;
-        text = 'দান করেছেন';
         break;
       case 'pending':
         color = Colors.orange;
-        text = 'অপেক্ষমান';
         break;
       case 'cancelled':
         color = Colors.red;
-        text = 'বাতিল';
         break;
     }
 

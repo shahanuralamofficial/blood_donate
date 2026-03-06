@@ -5,14 +5,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../data/models/blood_request_model.dart';
 
-class ReviewsListScreen extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/language_provider.dart';
+
+class ReviewsListScreen extends ConsumerWidget {
   final String userId;
   final String userName;
 
   const ReviewsListScreen({super.key, required this.userId, required this.userName});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // চেক করা হচ্ছে এটি কি বর্তমান ইউজারের নিজের প্রোফাইল কি না
     final bool isOwnProfile = FirebaseAuth.instance.currentUser?.uid == userId;
 
@@ -22,7 +25,7 @@ class ReviewsListScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFFAFAFB),
         appBar: AppBar(
           title: Text(
-            isOwnProfile ? 'আমার রিভিউ ও বার্তা' : '$userName-র রিভিউসমূহ',
+            isOwnProfile ? ref.tr('my_reviews_and_notes') : ref.tr('user_reviews_title').replaceFirst('{}', userName),
             style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           elevation: 0,
@@ -34,8 +37,8 @@ class ReviewsListScreen extends StatelessWidget {
             indicatorColor: Colors.red,
             labelStyle: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14),
             tabs: [
-              const Tab(text: 'রিভিউ ও রেটিং'),
-              if (isOwnProfile) const Tab(text: 'ধন্যবাদ বার্তা'),
+              Tab(text: ref.tr('reviews_and_ratings')),
+              if (isOwnProfile) Tab(text: ref.tr('thank_you_notes')),
             ],
           ),
         ),
@@ -53,8 +56,8 @@ class ReviewsListScreen extends StatelessWidget {
             
             return TabBarView(
               children: [
-                _buildReviewsTab(docs),
-                if (isOwnProfile) _buildThanksTab(docs),
+                _buildReviewsTab(ref, docs),
+                if (isOwnProfile) _buildThanksTab(ref, docs),
               ],
             );
           },
@@ -63,14 +66,14 @@ class ReviewsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReviewsTab(List<QueryDocumentSnapshot> docs) {
+  Widget _buildReviewsTab(WidgetRef ref, List<QueryDocumentSnapshot> docs) {
     final reviews = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       return data['donorExperience'] != null && (data['donorExperience'] as String).trim().isNotEmpty;
     }).toList();
 
     if (reviews.isEmpty) {
-      return _buildEmptyState(Icons.star_outline_rounded, 'কোনো রিভিউ পাওয়া যায়নি');
+      return _buildEmptyState(ref, Icons.star_outline_rounded, ref.tr('no_reviews_found'));
     }
 
     return ListView.builder(
@@ -111,7 +114,7 @@ class ReviewsListScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildFooter(req),
+              _buildFooter(ref, req),
             ],
           ),
         );
@@ -119,14 +122,14 @@ class ReviewsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildThanksTab(List<QueryDocumentSnapshot> docs) {
+  Widget _buildThanksTab(WidgetRef ref, List<QueryDocumentSnapshot> docs) {
     final thanks = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       return data['thankYouNote'] != null && (data['thankYouNote'] as String).trim().isNotEmpty;
     }).toList();
 
     if (thanks.isEmpty) {
-      return _buildEmptyState(Icons.favorite_border_rounded, 'কোনো ধন্যবাদ বার্তা নেই');
+      return _buildEmptyState(ref, Icons.favorite_border_rounded, ref.tr('no_thanks_found'));
     }
 
     return ListView.builder(
@@ -161,7 +164,7 @@ class ReviewsListScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildFooter(req),
+              _buildFooter(ref, req),
             ],
           ),
         );
@@ -188,7 +191,7 @@ class ReviewsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(BloodRequestModel req) {
+  Widget _buildFooter(WidgetRef ref, BloodRequestModel req) {
     return Column(
       children: [
         Divider(color: Colors.grey.shade100),
@@ -199,7 +202,7 @@ class ReviewsListScreen extends StatelessWidget {
             const SizedBox(width: 4),
             Expanded(
               child: Text(
-                '${req.relationWithPatient} (${req.patientName}-র জন্য)', 
+                '${req.relationWithPatient}${ref.tr('patient_for_suffix').replaceFirst('{}', req.patientName)}', 
                 style: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: 11,
@@ -213,7 +216,7 @@ class ReviewsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(IconData icon, String message) {
+  Widget _buildEmptyState(WidgetRef ref, IconData icon, String message) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

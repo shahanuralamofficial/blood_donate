@@ -11,6 +11,8 @@ import '../../providers/message_provider.dart';
 import '../../../core/services/notification_service.dart';
 import '../donors/donor_public_profile_screen.dart';
 
+import '../../providers/language_provider.dart';
+
 class ChatScreen extends ConsumerStatefulWidget {
   final String requestId; // This is now the chatId (direct_uidA_uidB)
   final String otherUserName;
@@ -86,7 +88,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         // চ্যাট নোটিফিকেশন ডাটাবেসে পাঠানো
         await NotificationService().sendNotificationToUser(
           receiverId: _receiverId!,
-          title: '${user.name} একটি মেসেজ পাঠিয়েছেন',
+          title: '${user.name} ${ref.tr('message_sent_notification')}',
           body: text,
           data: {
             'type': 'chat',
@@ -158,7 +160,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         children: [
                           Text(otherUser?.name ?? widget.otherUserName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           Text(
-                            isOnline ? 'অনলাইন' : 'অফলাইন', 
+                            isOnline ? ref.tr('online') : ref.tr('offline'), 
                             style: TextStyle(
                               fontSize: 10, 
                               color: isOnline ? Colors.greenAccent : Colors.white70,
@@ -196,7 +198,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'প্রসঙ্গ: ${widget.requestMention}',
+                      '${ref.tr('context')}: ${widget.requestMention}',
                       style: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.blue.shade800, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -207,7 +209,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: messagesAsync.when(
               data: (messages) {
-                if (messages.isEmpty) return const Center(child: Text('কথোপকথন শুরু করুন...'));
+                if (messages.isEmpty) return Center(child: Text(ref.tr('start_conversation')));
                 
                 // নতুন মেসেজ আসলে তা সাথে সাথে রিড মার্ক করার জন্য লজিক
                 if (user != null) {
@@ -264,7 +266,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  DateFormat('hh:mm a').format(msg.timestamp), 
+                  DateFormat('hh:mm a', ref.watch(languageProvider).languageCode).format(msg.timestamp),
                   style: TextStyle(fontSize: 9, color: Colors.grey.shade600)
                 ),
                 if (isMe) ...[
@@ -300,7 +302,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(24)),
                 child: TextField(
                   controller: _messageController,
-                  decoration: const InputDecoration(hintText: 'মেসেজ লিখুন...', border: InputBorder.none),
+                  decoration: InputDecoration(hintText: ref.tr('type_message'), border: InputBorder.none),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),

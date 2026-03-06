@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../../data/models/user_model.dart';
@@ -14,13 +13,6 @@ import 'rank_progress_screen.dart';
 
 class PersonalProfileScreen extends ConsumerWidget {
   const PersonalProfileScreen({super.key});
-
-  Future<void> _launchUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -108,7 +100,7 @@ class PersonalProfileScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${ref.tr('error')}: $e')),
       ),
     );
   }
@@ -311,6 +303,7 @@ class PersonalProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildRankCard(BuildContext context, WidgetRef ref, UserModel user) {
+    final localizedRank = ref.tr('rank_${user.rank.toLowerCase()}');
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RankProgressScreen(user: user))),
       borderRadius: BorderRadius.circular(24),
@@ -330,7 +323,7 @@ class PersonalProfileScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(ref.tr('your_rank'), style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text(user.rank.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  Text(localizedRank.toUpperCase(), style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 ],
               ),
             ),
@@ -374,7 +367,12 @@ class PersonalProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildInfoSection(BuildContext context, WidgetRef ref, UserModel user) {
-    final location = "${user.address?['thana'] ?? ref.tr('unknown')}, ${user.address?['district'] ?? ''}";
+    final district = user.address?['district'];
+    final thana = user.address?['thana'] ?? ref.tr('unknown');
+    final location = district != null ? "$thana, $district" : thana;
+    final bloodGroup = user.bloodGroup ?? ref.tr('unknown');
+    final gender = user.gender != null ? ref.tr(user.gender!.toLowerCase()) : ref.tr('unknown');
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -384,9 +382,9 @@ class PersonalProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _buildInfoRow(Icons.bloodtype_outlined, ref.tr('blood_group'), user.bloodGroup ?? ref.tr('unknown'), Colors.red),
+          _buildInfoRow(Icons.bloodtype_outlined, ref.tr('blood_group'), bloodGroup, Colors.red),
           const Divider(height: 32, thickness: 0.5),
-          _buildInfoRow(Icons.person_outline_rounded, ref.tr('gender'), user.gender ?? ref.tr('unknown'), Colors.blue),
+          _buildInfoRow(Icons.person_outline_rounded, ref.tr('gender'), gender, Colors.blue),
           const Divider(height: 32, thickness: 0.5),
           _buildInfoRow(Icons.location_on_outlined, ref.tr('location'), location, Colors.green),
         ],

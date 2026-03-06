@@ -10,6 +10,7 @@ import '../../../data/models/user_model.dart';
 import '../../../core/services/notification_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/blood_request_provider.dart';
+import '../../providers/language_provider.dart';
 import '../chat/chat_screen.dart';
 import '../donors/donor_public_profile_screen.dart';
 
@@ -106,7 +107,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
         title: Text(
-          'আবেদনের বিবরণ',
+          ref.tr('request_details'),
           style: GoogleFonts.notoSansBengali(
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -155,9 +156,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'রক্তদানে রাজি হোন',
-                      style: TextStyle(
+                    child: Text(
+                      ref.tr('accept_donation'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -181,9 +182,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'আমি রক্ত দিয়েছি',
-                      style: TextStyle(
+                    child: Text(
+                      ref.tr('i_donated'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -198,7 +199,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                     children: [
                       if (liveRequest.status == 'donated')
                         _buildStatusAlert(
-                          'রক্তদাতা জানিয়েছেন তিনি রক্ত দিয়েছেন।',
+                          ref.tr('donor_reported_donated'),
                         ),
                       ElevatedButton(
                         onPressed: () => _showConfirmBloodDialog(
@@ -215,9 +216,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'রক্ত পেয়েছি',
-                          style: TextStyle(
+                        child: Text(
+                          ref.tr('i_received'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -236,9 +237,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text(
-                          'রক্ত পাইনি',
-                          style: TextStyle(
+                        child: Text(
+                          ref.tr('i_didnt_receive'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -260,9 +261,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                           liveRequest.requestId,
                           liveRequest.requesterId,
                         ),
-                        child: const Text(
-                          'আবেদনটি বাতিল করুন',
-                          style: TextStyle(
+                        child: Text(
+                          ref.tr('cancel_request'),
+                          style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
                           ),
@@ -295,15 +296,15 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'অভিনন্দন!',
+              ref.tr('congratulations'),
               style: GoogleFonts.notoSansBengali(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'আপনার রক্তদান সফলভাবে সম্পন্ন হয়েছে ❤️',
+            Text(
+              ref.tr('rank_update_message'),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -314,7 +315,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'র‍্যাঙ্ক: $rank',
+                '${ref.tr('rank')}: $rank',
                 style: const TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.bold,
@@ -327,7 +328,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ঠিক আছে'),
+            child: Text(ref.tr('ok')),
           ),
         ],
       ),
@@ -344,14 +345,14 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('রক্তদান নিশ্চিত করুন'),
-        content: const Text(
-          'আপনি কি নিশ্চিত যে আপনি রক্ত দিয়েছেন? এটি গ্রহীতাকে রক্তদান নিশ্চিত করতে অনুরোধ করবে।',
+        title: Text(ref.tr('confirm_donation_title')),
+        content: Text(
+          ref.tr('confirm_donation_msg'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('না'),
+            child: Text(ref.tr('no')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -364,9 +365,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
 
               NotificationService().sendNotificationToUser(
                 receiverId: req.requesterId,
-                title: 'রক্তদান আপডেট',
-                body:
-                    '${donor?.name ?? 'রক্তদাতা'} জানিয়েছেন তিনি রক্ত দিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।',
+                title: ref.tr('donation_update'),
+                body: ref.tr('donor_reported_donated_msg')
+                    .replaceFirst('{}', donor?.name ?? ref.tr('donor')),
                 data: {
                   'type': 'donation_confirm',
                   'requestId': req.requestId,
@@ -376,15 +377,15 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               if (context.mounted) {
                 Navigator.pop(context); // Close dialog
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('রক্ত দিয়েছেন নিশ্চিত করার জন্য ধন্যবাদ!'),
+                  SnackBar(
+                    content: Text(ref.tr('thank_you_donating')),
                   ),
                 );
                 Navigator.pop(context); // Go back
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('হ্যাঁ, দিয়েছি', style: TextStyle(color: Colors.white)),
+            child: Text(ref.tr('yes_donated'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -407,13 +408,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('রক্তদানে রাজি হোন'),
+        title: Text(ref.tr('accept_donation')),
         content: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('আপনি ${req.patientName}-কে কয় ব্যাগ রক্ত দিতে পারবেন?'),
+              Text(ref.tr('how_many_bags_donate').replaceFirst('{}', req.patientName)),
               const SizedBox(height: 12),
               DropdownButton<int>(
                 value: bagsToDonate,
@@ -421,25 +422,25 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 items: List.generate(remainingBags, (index) => index + 1)
                     .map(
                       (e) =>
-                          DropdownMenuItem(value: e, child: Text('$e ব্যাগ')),
+                          DropdownMenuItem(value: e, child: Text('$e ${ref.tr('bag_count')}')),
                     )
                     .toList(),
                 onChanged: (v) => setState(() => bagsToDonate = v!),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'রক্তদানের ধরণ:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                ref.tr('donation_type'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               RadioListTile<String>(
-                title: const Text('আমি নিজে দেব'),
+                title: Text(ref.tr('will_donate_myself')),
                 value: 'self',
                 groupValue: donationType,
                 contentPadding: EdgeInsets.zero,
                 onChanged: (v) => setState(() => donationType = v!),
               ),
               RadioListTile<String>(
-                title: const Text('আমি ম্যানেজ করে দেব'),
+                title: Text(ref.tr('will_manage_donor')),
                 value: 'arranged',
                 groupValue: donationType,
                 contentPadding: EdgeInsets.zero,
@@ -451,7 +452,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('বাতিল'),
+            child: Text(ref.tr('cancel')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -467,21 +468,27 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
 
               NotificationService().sendNotificationToUser(
                 receiverId: req.requesterId,
-                title: 'রক্তদাতা পাওয়া গেছে!',
+                title: ref.tr('donor_found'),
                 body: donationType == 'self'
-                    ? '$donorName নিজে $bagsToDonate ব্যাগ রক্ত দিতে রাজি হয়েছেন।'
-                    : '$donorName $bagsToDonate ব্যাগ রক্ত ম্যানেজ করে দিতে রাজি হয়েছেন।',
+                    ? ref.tr('donor_accepted_msg')
+                        .replaceFirst('{}', donorName)
+                        .replaceFirst('{}', bagsToDonate.toString())
+                        .replaceFirst('{}', ref.tr('personally'))
+                    : ref.tr('donor_accepted_msg')
+                        .replaceFirst('{}', donorName)
+                        .replaceFirst('{}', bagsToDonate.toString())
+                        .replaceFirst('{}', ref.tr('by_managing')),
               );
               if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('রক্তদানে রাজি হওয়ার জন্য ধন্যবাদ!'),
+                  SnackBar(
+                    content: Text(ref.tr('thank_you_donating')),
                   ),
                 );
               }
             },
-            child: const Text('আমি রাজি'),
+            child: Text(ref.tr('yes')),
           ),
         ],
       ),
@@ -505,7 +512,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          'রক্তদান নিশ্চিত করুন',
+          ref.tr('confirm_donation_title'),
           style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold),
         ),
         content: StatefulBuilder(
@@ -514,9 +521,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'কয় ব্যাগ রক্ত পেয়েছেন?',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                Text(
+                  ref.tr('how_many_bags_received'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 DropdownButton<int>(
                   value: receivedBags,
@@ -524,25 +531,25 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   items: List.generate(maxCanReceive, (index) => index + 1)
                       .map(
                         (e) =>
-                            DropdownMenuItem(value: e, child: Text('$e ব্যাগ')),
+                            DropdownMenuItem(value: e, child: Text('$e ${ref.tr('bag_count')}')),
                       )
                       .toList(),
                   onChanged: (v) => setState(() => receivedBags = v!),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'রক্তদাতা কি নিজে রক্ত দিয়েছেন?',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                Text(
+                  ref.tr('did_donor_donate_self'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 RadioListTile<String>(
-                  title: const Text('নিজে দিয়েছেন'),
+                  title: Text(ref.tr('donated_self')),
                   value: 'self',
                   groupValue: donationType,
                   contentPadding: EdgeInsets.zero,
                   onChanged: (v) => setState(() => donationType = v!),
                 ),
                 RadioListTile<String>(
-                  title: const Text('ম্যানেজ করে দিয়েছেন'),
+                  title: Text(ref.tr('donated_managed')),
                   value: 'arranged',
                   groupValue: donationType,
                   contentPadding: EdgeInsets.zero,
@@ -552,8 +559,8 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 TextField(
                   controller: thankYouController,
                   decoration: InputDecoration(
-                    labelText: 'রক্তদাতার জন্য ধন্যবাদ বার্তা',
-                    hintText: 'একটি সুন্দর বার্তা লিখুন...',
+                    labelText: ref.tr('write_thank_you'),
+                    hintText: '...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -569,7 +576,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('পরে করব'),
+            child: Text(ref.tr('later')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -632,8 +639,10 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
 
                 NotificationService().sendNotificationToUser(
                   receiverId: req.donorId!,
-                  title: 'রক্তদান সম্পন্ন হয়েছে! ❤️',
-                  body: '$requesterName নিশ্চিত করেছেন যে তারা $receivedBags ব্যাগ রক্ত পেয়েছেন।',
+                  title: ref.tr('donation_completed_title'),
+                  body: ref.tr('recipient_confirmed_msg')
+                      .replaceFirst('{}', requesterName)
+                      .replaceFirst('{}', receivedBags.toString()),
                 );
               }
 
@@ -654,12 +663,12 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   _showReviewDialog(context, req.donorId!, req.requestId);
                 } else {
                    ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('রক্তদান সম্পন্ন হয়েছে! ধন্যবাদ।')),
+                    SnackBar(content: Text(ref.tr('completed'))),
                   );
                 }
               }
             },
-            child: const Text('নিশ্চিত করুন'),
+            child: Text(ref.tr('yes')),
           ),
         ],
       ),
@@ -677,17 +686,17 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         scrollable: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          'রক্তদাতাকে রেটিং দিন ⭐',
+          ref.tr('rate_donor_title'),
           style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'আপনার অভিজ্ঞতা কেমন ছিল? এটি অন্য রোগীদের সাহায্য করবে।',
+            Text(
+              ref.tr('rate_donor_msg'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 16),
             StatefulBuilder(
@@ -710,8 +719,8 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
             TextField(
               controller: commentController,
               decoration: InputDecoration(
-                labelText: 'অভিজ্ঞতা লিখুন',
-                hintText: 'রক্তদাতা কেমন ছিল?',
+                labelText: ref.tr('write_experience'),
+                hintText: ref.tr('donor_hint'),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.grey.shade50,
@@ -723,7 +732,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('বাদ দিন'),
+            child: Text(ref.tr('cancel')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -753,7 +762,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('ধন্যবাদ! আপনার রিভিউটি সফলভাবে সেভ হয়েছে।')),
+                  SnackBar(content: Text(ref.tr('review_save_success'))),
                 );
               }
             },
@@ -762,7 +771,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('সাবমিট করুন'),
+            child: Text(ref.tr('submit')),
           ),
         ],
       ),
@@ -777,12 +786,12 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('রক্ত না পাওয়ার কারণ'),
-        content: const Text('আপনি কি নিশ্চিত যে রক্ত পাননি?'),
+        title: Text(ref.tr('not_received_title')),
+        content: Text(ref.tr('not_received_msg')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('বাতিল'),
+            child: Text(ref.tr('cancel')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -793,13 +802,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               if (req.donorId != null) {
                 NotificationService().sendNotificationToUser(
                   receiverId: req.donorId!,
-                  title: 'আবেদন আপডেট',
-                  body: 'গ্রহীতা জানিয়েছেন তারা আপনার থেকে রক্ত পাননি।',
+                  title: ref.tr('donation_update'),
+                  body: ref.tr('recipient_reported_not_received_msg'),
                 );
               }
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('নিশ্চিত করুন'),
+            child: Text(ref.tr('yes')),
           ),
         ],
       ),
@@ -813,39 +822,45 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
     String requesterId,
   ) {
     String? selectedReason;
-    final reasons = ['রক্ত পেয়েছি', 'রোগী মারা গেছেন', 'অন্যান্য'];
+    final reasons = [
+      ref.tr('reason_received'),
+      ref.tr('reason_patient_passed'),
+      ref.tr('reason_other')
+    ];
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('আবেদন বাতিলের কারণ'),
+        title: Text(ref.tr('cancel_request_title')),
         content: StatefulBuilder(
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
-            children: reasons
-                .map(
-                  (r) => RadioListTile<String>(
-                    title: Text(r),
-                    value: r,
-                    groupValue: selectedReason,
-                    onChanged: (v) => setState(() => selectedReason = v),
-                  ),
-                )
-                .toList(),
+            children: [
+              Text(ref.tr('cancel_request_msg')),
+              const SizedBox(height: 16),
+              ...reasons.map(
+                (r) => RadioListTile<String>(
+                  title: Text(r),
+                  value: r,
+                  groupValue: selectedReason,
+                  onChanged: (v) => setState(() => selectedReason = v),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('না'),
+            child: Text(ref.tr('no')),
           ),
           TextButton(
             onPressed: () async {
               if (selectedReason == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('অনুগ্রহ করে একটি কারণ নির্বাচন করুন'),
+                  SnackBar(
+                    content: Text(ref.tr('select_info')),
                   ),
                 );
                 return;
@@ -866,9 +881,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text(
-              'নিশ্চিত করুন',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            child: Text(
+              ref.tr('yes'),
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -920,12 +935,12 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'রক্তের প্রগ্রেস',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                ref.tr('rank_progress'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
-                '${req.donatedBags}/${req.bloodBags} ব্যাগ',
+                '${req.donatedBags}/${req.bloodBags} ${ref.tr('bag_count')}',
                 style: const TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.bold,
@@ -960,23 +975,24 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       ),
       child: Column(
         children: [
-          _buildRow('রোগীর নাম', req.patientName, isBold: true),
+          _buildRow(ref.tr('patient_name_opt'), req.patientName, isBold: true),
           const Divider(height: 24),
           _buildRow(
-            'রক্তের গ্রুপ',
+            ref.tr('blood_group'),
             req.bloodGroup,
             isBold: true,
             color: Colors.red,
           ),
           const Divider(height: 24),
-          _buildRow('হাসপাতাল', req.hospitalName),
+          _buildRow(ref.tr('hospital_name'), req.hospitalName),
           const SizedBox(height: 12),
-          _buildRow('জেলা', req.district),
+          _buildRow(ref.tr('district'), req.district),
           const SizedBox(height: 12),
           _buildRow(
-            'তারিখ',
+            ref.tr('date'),
             DateFormat(
               'dd MMM yyyy',
+              ref.watch(languageProvider).languageCode,
             ).format(req.requiredDate ?? DateTime.now()),
           ),
         ],
@@ -1023,8 +1039,8 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   children: [
                     Text(
                       isRequester && req.donorId != null
-                          ? 'রক্তদাতার সাথে যোগাযোগ'
-                          : 'আবেদনকারীর সাথে যোগাযোগ',
+                          ? ref.tr('contact_donor')
+                          : ref.tr('contact_requester'),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -1038,7 +1054,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                           : null,
                       child: Text(
                         isRequester && req.donorId != null
-                            ? 'প্রোফাইল দেখুন'
+                            ? ref.tr('view_profile')
                             : req.phoneNumber,
                         style: TextStyle(
                           color: isRequester && req.donorId != null
@@ -1066,7 +1082,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 child: _buildContactButton(
                   onTap: () => _makePhoneCall(req.phoneNumber),
                   icon: Icons.call_rounded,
-                  label: 'কল',
+                  label: ref.tr('call'),
                   color: Colors.green,
                 ),
               ),
@@ -1093,7 +1109,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                         : req.requesterId;
                     
                     final String otherName = isRequester && req.donorId != null
-                        ? 'রক্তদাতা'
+                        ? ref.tr('donor')
                         : req.patientName;
 
                     // আইডি দুটিকে বর্ণানুক্রমিকভাবে সাজিয়ে ইউনিক চ্যাট আইডি তৈরি
@@ -1108,13 +1124,13 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                           requestId: chatId,
                           otherUserName: otherName,
                           otherUserId: otherId,
-                          requestMention: 'রোগী: ${req.patientName} (${req.bloodGroup})',
+                          requestMention: '${ref.tr('patient_name_unknown')}: ${req.patientName} (${req.bloodGroup})',
                         ),
                       ),
                     );
                   },
                   icon: Icons.chat_bubble_rounded,
-                  label: 'চ্যাট',
+                  label: ref.tr('chat'),
                   color: Colors.blue,
                 ),
               ),
@@ -1123,7 +1139,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 child: _buildContactButton(
                   onTap: () => _openMap(req.mapUrl ?? req.hospitalName),
                   icon: Icons.map_rounded,
-                  label: 'ম্যাপ',
+                  label: ref.tr('map'),
                   color: Colors.orange,
                 ),
               ),
@@ -1206,9 +1222,9 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data!.exists) {
           final donorData = snapshot.data!.data() as Map<String, dynamic>;
-          final donorName = donorData['name'] ?? 'একজন রক্তদাতা';
+          final donorName = donorData['name'] ?? ref.tr('a_donor');
           final acceptedBags = req.acceptedBags ?? 1;
-          final type = req.donationType == 'arranged' ? 'ম্যানেজ করে' : 'নিজে';
+          final type = req.donationType == 'arranged' ? ref.tr('by_managing') : ref.tr('personally');
           
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -1224,7 +1240,10 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '$donorName $acceptedBags ব্যাগ রক্ত $type দিতে রাজি হয়েছেন।',
+                    ref.tr('donor_accepted_msg')
+                        .replaceFirst('{}', donorName)
+                        .replaceFirst('{}', acceptedBags.toString())
+                        .replaceFirst('{}', type),
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 13),
                   ),
                 ),
@@ -1254,7 +1273,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
                   color: Colors.green, size: 60),
               const SizedBox(height: 16),
               Text(
-                'রক্তদান সফল হয়েছে! ❤️',
+                ref.tr('donation_success_title'),
                 style: GoogleFonts.notoSansBengali(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -1263,7 +1282,7 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'রক্তদাতা ও গ্রহীতা উভয়ের সহযোগিতায় একটি প্রাণ বেঁচে গেল।',
+                ref.tr('donation_success_msg'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansBengali(
                   fontSize: 13,
@@ -1275,12 +1294,12 @@ class _RequestDetailsScreenState extends ConsumerState<RequestDetailsScreen> {
         ),
         if (req.thankYouNote != null && req.thankYouNote!.trim().isNotEmpty) ...[
           const SizedBox(height: 20),
-          _buildNoteCard(req.thankYouNote!, 'গ্রহীতার পক্ষ থেকে (ধন্যবাদ বার্তা)'),
+          _buildNoteCard(req.thankYouNote!, ref.tr('from_recipient_thanks')),
         ],
         if (req.donorExperience != null &&
             req.donorExperience!.trim().isNotEmpty) ...[
           const SizedBox(height: 16),
-          _buildNoteCard(req.donorExperience!, 'রক্তদাতার পক্ষ থেকে (অভিজ্ঞতা)'),
+          _buildNoteCard(req.donorExperience!, ref.tr('from_donor_experience')),
         ],
       ],
     );

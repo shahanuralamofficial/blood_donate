@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/blood_request_provider.dart';
 import '../requests/request_details_screen.dart';
 
+import '../../providers/language_provider.dart';
+
 class AppreciationScreen extends ConsumerWidget {
   const AppreciationScreen({super.key});
 
@@ -14,7 +16,7 @@ class AppreciationScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: Text('প্রাপ্ত ধন্যবাদ বার্তা', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(ref.tr('thank_you_notes'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -30,7 +32,7 @@ class AppreciationScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.favorite_border_rounded, size: 80, color: Colors.grey.shade200),
                   const SizedBox(height: 16),
-                  Text('এখনো কোনো ধন্যবাদ বার্তা পাননি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                  Text(ref.tr('no_notes_yet'), style: GoogleFonts.notoSansBengali(color: Colors.grey)),
                 ],
               ),
             );
@@ -61,7 +63,7 @@ class AppreciationScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(req.patientName.isEmpty ? ref.tr('patient_name_unknown') : req.patientName, style: const TextStyle(fontWeight: FontWeight.bold)),
                               Text(req.hospitalName, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
                             ],
                           ),
@@ -76,7 +78,7 @@ class AppreciationScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     InkWell(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
-                      child: Text('আবেদনের বিস্তারিত দেখুন', style: TextStyle(color: Colors.pink.shade700, fontWeight: FontWeight.bold, fontSize: 12)),
+                      child: Text(ref.tr('view_details'), style: TextStyle(color: Colors.pink.shade700, fontWeight: FontWeight.bold, fontSize: 12)),
                     ),
                   ],
                 ),
@@ -85,7 +87,7 @@ class AppreciationScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-        error: (e, s) => Center(child: Text('Error: $e')),
+        error: (e, s) => Center(child: Text('${ref.tr('error')}: $e')),
       ),
     );
   }

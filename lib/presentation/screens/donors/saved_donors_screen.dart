@@ -7,6 +7,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../chat/chat_screen.dart';
 
+import '../../providers/language_provider.dart';
+
 class SavedDonorsScreen extends ConsumerWidget {
   const SavedDonorsScreen({super.key});
 
@@ -41,7 +43,7 @@ class SavedDonorsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: Text('সেভ করা দাতা', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(ref.tr('saved_donors_title'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFFE53935),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -53,7 +55,7 @@ class SavedDonorsScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  Text('এখনো কাউকে সেভ করেননি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                  Text(ref.tr('no_saved_donors'), style: GoogleFonts.notoSansBengali(color: Colors.grey)),
                 ],
               ),
             )
@@ -74,7 +76,7 @@ class SavedDonorsScreen extends ConsumerWidget {
                       children: [
                         Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
                         const SizedBox(height: 16),
-                        Text('এখনো কাউকে সেভ করেননি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                        Text(ref.tr('no_saved_donors'), style: GoogleFonts.notoSansBengali(color: Colors.grey)),
                       ],
                     ),
                   );
@@ -119,7 +121,7 @@ class SavedDonorsScreen extends ConsumerWidget {
                             ),
                           ),
                           title: Text(
-                            data['name'] ?? 'নাম নেই',
+                            data['name'] ?? ref.tr('unknown'),
                             style: GoogleFonts.notoSansBengali(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,

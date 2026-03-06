@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
 import 'register_screen.dart';
 
+import '../../providers/language_provider.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -19,7 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showErrorSnackBar('ইমেইল এবং পাসওয়ার্ড প্রদান করুন');
+      _showErrorSnackBar(ref.tr('enter_email_password'));
       return;
     }
 
@@ -30,15 +32,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text.trim(),
           );
     } on Exception catch (e) {
-      String errorMessage = 'একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।';
+      String errorMessage = ref.tr('something_went_wrong');
       final errorString = e.toString().toLowerCase();
       
       if (errorString.contains('user-not-found') || errorString.contains('invalid-credential')) {
-        errorMessage = 'ইমেইল অথবা পাসওয়ার্ড ভুল। আবার চেষ্টা করুন।';
+        errorMessage = ref.tr('wrong_password'); // Or a generic 'auth_error'
       } else if (errorString.contains('wrong-password')) {
-        errorMessage = 'ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।';
+        errorMessage = ref.tr('wrong_password');
       } else if (errorString.contains('too-many-requests')) {
-        errorMessage = 'অতিরিক্ত ভুল চেষ্টার কারণে সাময়িকভাবে বন্ধ। পরে চেষ্টা করুন।';
+        errorMessage = ref.tr('error_try_again');
       }
       
       _showErrorSnackBar(errorMessage);
@@ -48,6 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -61,6 +64,83 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(20),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message, style: GoogleFonts.notoSansBengali())),
+          ],
+        ),
+        backgroundColor: Colors.green.shade800,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(20),
+      ),
+    );
+  }
+
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          ref.tr('reset_password_title'),
+          style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ref.tr('reset_password_msg'),
+              style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: ref.tr('email_address'),
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(ref.tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) return;
+              
+              Navigator.pop(context);
+              try {
+                await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
+                _showSuccessSnackBar(ref.tr('reset_link_sent'));
+              } catch (e) {
+                _showErrorSnackBar(ref.tr('something_went_wrong'));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              minimumSize: const Size(100, 40),
+            ),
+            child: Text(ref.tr('send_link')),
+          ),
+        ],
       ),
     );
   }
@@ -105,7 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'রক্তদান',
+                  ref.tr('app_title'),
                   style: GoogleFonts.notoSansBengali(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -113,7 +193,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 Text(
-                  'এক ব্যাগ রক্ত, একটি জীবন',
+                  ref.tr('tagline_text'),
                   style: GoogleFonts.notoSansBengali(
                     fontSize: 14,
                     color: Colors.grey.shade600,
@@ -137,21 +217,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'লগইন করুন',
-                        style: GoogleFonts.notoSansBengali(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                      Center(
+                        child: Text(
+                          ref.tr('login_title'),
+                          style: GoogleFonts.notoSansBengali(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 25),
                       
                       _buildTextField(
                         controller: _emailController,
-                        label: 'ইমেইল এড্রেস',
+                        label: ref.tr('email_address'),
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -159,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       
                       _buildTextField(
                         controller: _passwordController,
-                        label: 'পাসওয়ার্ড',
+                        label: ref.tr('password'),
                         icon: Icons.lock_outline_rounded,
                         isPassword: true,
                         obscureText: _obscurePassword,
@@ -170,9 +252,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {}, // Forgot Password Placeholder
+                          onPressed: _showForgotPasswordDialog,
                           child: Text(
-                            'পাসওয়ার্ড ভুলে গেছেন?',
+                            ref.tr('forgot_password'),
                             style: GoogleFonts.notoSansBengali(
                               fontSize: 12,
                               color: Colors.red.shade700,
@@ -197,7 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             shadowColor: Colors.red.withOpacity(0.3),
                           ),
                           child: Text(
-                            'লগইন করুন',
+                            ref.tr('login'),
                             style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -210,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'অ্যাকাউন্ট নেই? ',
+                      ref.tr('dont_have_account'),
                       style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600),
                     ),
                     GestureDetector(
@@ -218,7 +300,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
                       },
                       child: Text(
-                        'রেজিস্ট্রেশন করুন',
+                        ref.tr('register'),
                         style: GoogleFonts.notoSansBengali(
                           color: const Color(0xFFE53935),
                           fontWeight: FontWeight.bold,

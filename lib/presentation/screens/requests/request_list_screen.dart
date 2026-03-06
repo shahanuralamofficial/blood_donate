@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../providers/blood_request_provider.dart';
 import '../../../data/models/blood_request_model.dart';
 import '../../../data/models/user_model.dart';
+import '../../providers/language_provider.dart';
 import '../donors/donor_public_profile_screen.dart';
 import 'request_details_screen.dart';
 import 'create_request_screen.dart'; // Added
@@ -41,7 +42,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: Text('সকল রক্তের আবেদন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(ref.tr('all_requests_title'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -51,7 +52,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'হাসপাতাল বা জেলা দিয়ে খুঁজুন...',
+                hintText: ref.tr('search_hospital_district'),
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
                 fillColor: Colors.grey.shade100,
@@ -67,7 +68,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
         backgroundColor: const Color(0xFFE53935),
         elevation: 4,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('রক্তের আবেদন', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(ref.tr('blood_request'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
       ),
       body: RefreshIndicator(
@@ -102,7 +103,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-          error: (e, s) => Center(child: Text('এরর: $e')),
+          error: (e, s) => Center(child: Text('${ref.tr('error')}: $e')),
         ),
       ),
     );
@@ -149,7 +150,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                 GestureDetector(
                   onTap: () => _navigateToRequesterProfile(context, req.requesterId),
                   child: Text(
-                    'আবেদনকারী প্রোফাইল',
+                    ref.tr('requester_profile'),
                     style: GoogleFonts.notoSansBengali(
                       color: Colors.blue.shade700,
                       fontSize: 11,
@@ -159,7 +160,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  DateFormat('dd MMM, hh:mm a').format(req.createdAt ?? DateTime.now()),
+                  DateFormat('dd MMM, hh:mm a', ref.watch(languageProvider).languageCode).format(req.createdAt ?? DateTime.now()),
                   style: GoogleFonts.poppins(
                     color: Colors.grey.shade400,
                     fontSize: 10,
@@ -223,7 +224,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                req.patientName.isEmpty ? 'নামহীন রোগী' : req.patientName,
+                                req.patientName.isEmpty ? ref.tr('patient_name_unknown') : req.patientName,
                                 style: GoogleFonts.notoSansBengali(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -242,7 +243,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'জরুরি',
+                                  ref.tr('emergency'),
                                   style: GoogleFonts.notoSansBengali(
                                     color: Colors.white,
                                     fontSize: 10,
@@ -283,7 +284,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
                             GestureDetector(
                               onTap: () => _launchMapUrl(req.mapUrl ?? req.hospitalName),
                               child: Text(
-                                'ম্যাপ দেখুন',
+                                ref.tr('view_map'),
                                 style: GoogleFonts.notoSansBengali(
                                   color: Colors.blue.shade700,
                                   fontSize: 12,
@@ -325,7 +326,7 @@ class _RequestListScreenState extends ConsumerState<RequestListScreen> {
         children: [
           Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade200),
           const SizedBox(height: 16),
-          Text('কোন আবেদন পাওয়া যায়নি', style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
+          Text(ref.tr('no_requests_found'), style: GoogleFonts.notoSansBengali(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

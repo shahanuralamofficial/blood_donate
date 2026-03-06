@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/auth/auth_wrapper.dart';
@@ -24,6 +26,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Intl Initialize
+  await initializeDateFormatting('bn', null);
   
   // Background Handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -93,6 +98,15 @@ class _BloodDonateAppState extends ConsumerState<BloodDonateApp> with WidgetsBin
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       locale: locale,
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('bn', 'BD'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       navigatorKey: NotificationService.navigatorKey, // নেভিগেটর কি সেট করা হলো
       onGenerateRoute: (settings) {
         if (settings.name == '/chat') {

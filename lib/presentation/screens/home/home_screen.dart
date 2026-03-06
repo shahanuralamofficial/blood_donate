@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -30,9 +29,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _celebrationShown = false;
-  String _dailyFact = 'রক্তদান করুন, জীবন বাঁচান। ❤️';
+  String _dailyFact = '';
   List<String> _donationFacts = [];
 
   @override
@@ -53,11 +50,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     } catch (e) {
       debugPrint("Error loading donation facts: $e");
+      if (mounted) {
+        setState(() {
+          _dailyFact = ref.tr('tagline');
+        });
+      }
     }
   }
 
   void _setDailyFact() {
-    if (_donationFacts.isEmpty) return;
+    if (_donationFacts.isEmpty) {
+      _dailyFact = ref.tr('tagline');
+      return;
+    }
     final now = DateTime.now();
     final index = now.day % _donationFacts.length;
     setState(() {
@@ -78,55 +83,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void _handleCelebration(UserModel user) {
-    if (_celebrationShown) return;
-    if (user.rankUpdatePending == true) {
-      _celebrationShown = true;
-      FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-        'rankUpdatePending': false,
-      });
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (mounted) _showCelebrationDialog(user.rank);
-      });
-    }
-  }
-
-  void _showCelebrationDialog(String rank) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Icon(Icons.stars_rounded, color: Colors.amber, size: 60),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('অভিনন্দন!', style: GoogleFonts.notoSansBengali(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            const Text('আপনার রক্তদান একটি জীবন বাঁচিয়েছে ❤️', textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
-              child: Text('র‍্যাঙ্ক: $rank', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 18)),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('ঠিক আছে')),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _launchUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint("URL Error: $e");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserDataProvider);
@@ -134,28 +90,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final myRequests = ref.watch(myRequestsProvider);
     final myDonations = ref.watch(myDonationsProvider);
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF8F9FA),
-      drawer: _buildDrawer(context, userAsync.value),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
-        backgroundColor: const Color(0xFFE53935),
-        icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-        label: Text(ref.tr('blood_request'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
-        elevation: 4,
-      ),
-      body: userAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-        error: (e, _) => Center(child: Text('ত্রুটি: $e')),
-        data: (user) {
-          if (user == null) return const Center(child: Text('ব্যবহারকারী পাওয়া যায়নি'));
-          
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _handleCelebration(user);
-          });
+    return userAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator(color: Colors.red))),
+      error: (e, _) => Scaffold(body: Center(child: Text('${ref.tr('error_try_again')}'))),
+      data: (user) {
+        if (user == null) return Scaffold(body: Center(child: Text(ref.tr('user_not_found'))));
 
-          return RefreshIndicator(
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8F9FA),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
+            backgroundColor: const Color(0xFFE53935),
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+            label: Text(ref.tr('blood_request'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
+            elevation: 4,
+          ),
+          body: RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(currentUserDataProvider);
               ref.invalidate(emergencyRequestsProvider);
@@ -193,446 +143,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  // --- UI Builder Methods ---
-
-  Widget _buildDrawer(BuildContext context, UserModel? user) {
-    return Drawer(
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topRight: Radius.circular(30), bottomRight: Radius.circular(30)),
-      ),
-      child: Column(
-        children: [
-          _buildDrawerHeader(user),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  _buildDrawerSectionTitle(ref.tr('general')),
-                  _buildDrawerItem(
-                    icon: Icons.language_rounded,
-                    title: ref.tr('language'),
-                    color: Colors.purple.shade700,
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        ref.watch(languageProvider).languageCode == 'bn' ? 'বাংলা' : 'English',
-                        style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                    ),
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                        ),
-                        builder: (context) => Container(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                ref.tr('language'),
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 20),
-                              ListTile(
-                                leading: const Text('🇧🇩', style: TextStyle(fontSize: 24)),
-                                title: const Text('বাংলা', style: TextStyle(fontWeight: FontWeight.bold)),
-                                trailing: ref.watch(languageProvider).languageCode == 'bn' 
-                                    ? const Icon(Icons.check_circle, color: Colors.green) 
-                                    : null,
-                                onTap: () {
-                                  ref.read(languageProvider.notifier).changeLanguage('bn');
-                                  Navigator.pop(context);
-                                },
-                              ),
-                              ListTile(
-                                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
-                                title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
-                                trailing: ref.watch(languageProvider).languageCode == 'en' 
-                                    ? const Icon(Icons.check_circle, color: Colors.green) 
-                                    : null,
-                                onTap: () {
-                                  ref.read(languageProvider.notifier).changeLanguage('en');
-                                  Navigator.pop(context);
-                                },
-                              ),
-                              const SizedBox(height: 20),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.settings_suggest_rounded,
-                    title: ref.tr('settings_profile'),
-                    color: Colors.blue.shade700,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.favorite_rounded,
-                    title: ref.tr('saved_donors'),
-                    color: Colors.red.shade600,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedDonorsScreen()));
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.history_rounded,
-                    title: ref.tr('activity_history'),
-                    color: Colors.orange.shade700,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
-                    },
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Divider(thickness: 0.5),
-                  ),
-                  _buildDrawerSectionTitle(ref.tr('others')),
-                  _buildDrawerItem(
-                    icon: Icons.local_hospital_rounded,
-                    title: ref.tr('hospitals'),
-                    subtitle: ref.tr('coming_soon'),
-                    color: Colors.teal,
-                    onTap: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('coming_soon_msg'))));
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.headset_mic_rounded,
-                    title: ref.tr('support_feedback'),
-                    color: Colors.indigo,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showSupportDialog();
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.info_outline_rounded,
-                    title: ref.tr('about_us'),
-                    color: Colors.grey.shade700,
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                ],
-              ),
-            ),
           ),
-          _buildDrawerFooter(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerHeader(UserModel? user) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
+        );
       },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-        decoration: const BoxDecoration(
-          color: Color(0xFFB71C1C),
-          image: DecorationImage(
-            image: NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'),
-            opacity: 0.1,
-            repeat: ImageRepeat.repeat,
-          ),
-          borderRadius: BorderRadius.only(bottomRight: Radius.circular(50)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: CircleAvatar(
-                radius: 38,
-                backgroundColor: Colors.grey.shade100,
-                backgroundImage: user?.profileImageUrl != null ? NetworkImage(user!.profileImageUrl!) : null,
-                child: user?.profileImageUrl == null ? const Icon(Icons.person, size: 45, color: Color(0xFFE53935)) : null,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Text(
-              user?.name ?? ref.tr('guest'),
-              style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 5),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.bloodtype, color: Colors.white, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${ref.tr('group')}: ${user?.bloodGroup ?? "N/A"}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (user?.rank != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.stars, color: Colors.amber, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          user!.rank.toUpperCase(),
-                          style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawerSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, bottom: 8, top: 12),
-      child: Text(
-        title,
-        style: GoogleFonts.notoSansBengali(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey.shade500,
-          letterSpacing: 1,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required Color color,
-    required VoidCallback onTap,
-    Widget? trailing,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      child: ListTile(
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 22),
-        ),
-        title: Text(
-          title,
-          style: GoogleFonts.notoSansBengali(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade900),
-        ),
-        subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.red, fontSize: 11)) : null,
-        trailing: trailing ?? Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey.shade400),
-      ),
-    );
-  }
-
-  Widget _buildDrawerFooter() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Blood Donate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFB71C1C))),
-              Text('Version 1.0.0', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
-            ],
-          ),
-          IconButton(
-            onPressed: () async {
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  title: Text('লগআউট', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
-                  content: Text('আপনি কি নিশ্চিতভাবে লগআউট করতে চান?', style: GoogleFonts.notoSansBengali()),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text('না', style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600)),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('হ্যাঁ, লগআউট করুন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              );
-
-              if (shouldLogout == true) {
-                // ১. প্রথমে অফলাইন স্ট্যাটাস আপডেট করা
-                await ref.read(userStatusProvider).updateStatus(false);
-                
-                // ২. রিভারপড প্রোভাইডারগুলো রিসেট করা যাতে নতুন ইউজার লগইন করলে পুরনো ডাটা না থাকে
-                ref.invalidate(currentUserDataProvider);
-                ref.invalidate(emergencyRequestsProvider);
-                ref.invalidate(myRequestsProvider);
-                ref.invalidate(myDonationsProvider);
-                
-                // ৩. তারপর লগআউট করা
-                await FirebaseAuth.instance.signOut();
-                
-                // ৪. লগইন পেজে বা রুট পেজে পাঠিয়ে দেওয়া (যদি অটোমেটিক না যায়)
-                if (context.mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                }
-              }
-            },
-            icon: const Icon(Icons.logout_rounded, color: Colors.grey),
-            tooltip: 'Log Out',
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSupportDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-        title: Text('সহযোগিতা ও মতামত', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'যেকোনো সমস্যায় বা আপনার মূল্যবান মতামত জানাতে আমাদের সাথে যোগাযোগ করুন।',
-              style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.blueGrey.shade700),
-            ),
-            const SizedBox(height: 24),
-            _buildSupportOption(
-              icon: Icons.facebook_rounded,
-              title: 'ফেসবুক পেজ',
-              subtitle: 'আমাদের ফেসবুক কমিউনিটি',
-              color: const Color(0xFF1877F2),
-              onTap: () {
-                Navigator.pop(context);
-                _launchUrl('https://www.facebook.com/blooddonate');
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildSupportOption(
-              icon: Icons.telegram_rounded,
-              title: 'টেলিগ্রাম সাপোর্ট',
-              subtitle: 'নম্বর গোপন রেখে মেসেজ দিন',
-              color: const Color(0xFF0088cc),
-              onTap: () {
-                Navigator.pop(context);
-                _launchUrl('https://t.me/sn_alam');
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('বন্ধ করুন', style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSupportOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
-                  Text(subtitle, style: GoogleFonts.notoSansBengali(fontSize: 11, color: Colors.blueGrey.shade600)),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color.withOpacity(0.5)),
-          ],
-        ),
-      ),
     );
   }
 
@@ -647,7 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.menu_rounded, color: Colors.white),
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        onPressed: () => Scaffold.of(context).openDrawer(),
       ),
       title: Text('${ref.tr('hello')}, $firstName', style: GoogleFonts.notoSansBengali(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
       flexibleSpace: FlexibleSpaceBar(
@@ -761,6 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildRankBadge(String rank) {
+    final localizedRank = ref.tr('rank_${rank.toLowerCase()}');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
@@ -773,7 +287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           const Icon(Icons.stars_rounded, color: Colors.white, size: 14),
           const SizedBox(width: 6),
-          Text(rank.toUpperCase(), style: GoogleFonts.notoSans(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+          Text(localizedRank.toUpperCase(), style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -845,9 +359,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final others = donActive.where((d) => d.status != 'completed').toList();
             if (reqActive.isEmpty && others.isEmpty) return const SizedBox.shrink();
             return Column(children: [
-              ...reqActive.map((req) => _buildActivityCard(req, 'আপনার রক্ত প্রয়োজন', Colors.blue)),
+              ...reqActive.map((req) => _buildActivityCard(req, ref.tr('you_need_blood'), Colors.blue)),
               if (reqActive.isNotEmpty && others.isNotEmpty) const SizedBox(height: 8),
-              ...others.map((req) => _buildActivityCard(req, 'আপনি রক্ত দিচ্ছেন', Colors.green)),
+              ...others.map((req) => _buildActivityCard(req, ref.tr('you_are_donating'), Colors.green)),
               const SizedBox(height: 24),
             ]);
           },
@@ -861,11 +375,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActivityCard(BloodRequestModel req, String title, Color color) {
+    final isReceiving = title == ref.tr('you_need_blood');
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.1))),
       child: ListTile(
-        leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(title.contains('নিচ্ছেন') ? Icons.volunteer_activism : Icons.history_edu, color: color, size: 22)),
+        leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(isReceiving ? Icons.volunteer_activism : Icons.history_edu, color: color, size: 22)),
         title: Text(title, style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
         subtitle: Text(req.hospitalName, style: GoogleFonts.notoSansBengali(fontSize: 12, color: Colors.grey.shade700), maxLines: 1, overflow: TextOverflow.ellipsis),
         trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: color.withOpacity(0.5)),
@@ -887,8 +402,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Icon(canDonate ? Icons.check_circle_rounded : Icons.timer_rounded, color: canDonate ? Colors.green : Colors.orange, size: 28),
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(canDonate ? 'আপনি এখন রক্তদান করতে পারবেন' : 'পরবর্তী রক্তদানের সময়', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: canDonate ? Colors.green.shade900 : Colors.orange.shade900)),
-          Text(canDonate ? 'আপনার শেষ রক্তদানের পর ৩ মাস অতিবাহিত হয়েছে।' : 'আর মাত্র $daysLeft দিন পর আপনি আবার রক্তদান করতে পারবেন।', style: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.blueGrey.shade700)),
+          Text(canDonate ? ref.tr('eligible_to_donate') : ref.tr('next_donation_time'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 16, color: canDonate ? Colors.green.shade900 : Colors.orange.shade900)),
+          Text(canDonate ? ref.tr('can_donate_msg') : ref.tr('days_left_msg').replaceFirst('{}', daysLeft.toString()), style: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.blueGrey.shade700)),
         ])),
       ]),
     );
@@ -902,7 +417,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Icon(Icons.auto_awesome_rounded, color: Colors.blue.shade600, size: 24),
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('রক্তদানের টিপস', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue.shade900)),
+          Text(ref.tr('tips'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue.shade900)),
           Text(_dailyFact, style: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.blueGrey.shade700, height: 1.4)),
         ])),
       ]),

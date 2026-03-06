@@ -11,6 +11,8 @@ import '../profile/reviews_list_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../providers/language_provider.dart';
+
 class DonorPublicProfileScreen extends ConsumerWidget {
   final UserModel donor;
 
@@ -70,7 +72,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: const Text('রক্তদাতার প্রোফাইল'),
+        title: Text(ref.tr('donor_profile')),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -94,18 +96,18 @@ class DonorPublicProfileScreen extends ConsumerWidget {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(ref),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  _buildStatsRow(),
+                  _buildStatsRow(ref),
                   const SizedBox(height: 24),
-                  _buildInfoSection(),
+                  _buildInfoSection(ref),
                   const SizedBox(height: 24),
-                  _buildReviewCard(context), // Added Review Card
+                  _buildReviewCard(context, ref), // Added Review Card
                   const SizedBox(height: 32),
-                  _buildActionButtons(context, isMe: isMe),
+                  _buildActionButtons(context, ref, isMe: isMe),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -116,7 +118,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(WidgetRef ref) {
     final bool canDonate = donor.isAvailable && (donor.lastDonationDate == null || DateTime.now().difference(donor.lastDonationDate!).inDays >= 90);
     
     return Container(
@@ -161,11 +163,11 @@ class DonorPublicProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
               child: Text(
-                donor.isAvailable ? 'এখন রক্ত দিতে পারবেন না' : 'বর্তমানে রক্ত দিতে ইচ্ছুক নন',
+                donor.isAvailable ? ref.tr('not_available_to_donate') : ref.tr('not_willing_to_donate'),
                 style: TextStyle(color: Colors.red.shade700, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
-          _buildRankBadge(donor.rank),
+          _buildRankBadge(ref.tr('rank_${donor.rank.toLowerCase()}')),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -173,7 +175,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
               const Icon(Icons.star_rounded, color: Colors.orange, size: 24),
               const SizedBox(width: 4),
               Text(donor.averageRating.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(' (${donor.totalReviews} টি রিভিউ)', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+              Text(' (${donor.totalReviews} ${ref.tr('reviews_count')})', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
             ],
           ),
         ],
@@ -192,12 +194,12 @@ class DonorPublicProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(WidgetRef ref) {
     return Row(
       children: [
-        _buildStatItem('রক্ত দিয়েছেন', '${donor.totalDonations} বার', Icons.bloodtype, Colors.red),
+        _buildStatItem(ref.tr('donation_count'), '${donor.totalDonations} ${ref.tr('times')}', Icons.bloodtype, Colors.red),
         const SizedBox(width: 16),
-        _buildStatItem('র‍্যাঙ্ক', donor.rank, Icons.workspace_premium, Colors.amber.shade700),
+        _buildStatItem(ref.tr('rank'), ref.tr('rank_${donor.rank.toLowerCase()}'), Icons.workspace_premium, Colors.amber.shade700),
       ],
     );
   }
@@ -219,8 +221,8 @@ class DonorPublicProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoSection() {
-    final location = "${donor.address?['thana'] ?? 'অজানা'}, ${donor.address?['district'] ?? ''}";
+  Widget _buildInfoSection(WidgetRef ref) {
+    final location = "${donor.address?['thana'] ?? ref.tr('unknown')}, ${donor.address?['district'] ?? ''}";
     final lastDonation = donor.lastDonationDate;
     final daysSinceLastDonation = lastDonation != null ? DateTime.now().difference(lastDonation).inDays : 999;
     final daysRemaining = 90 - daysSinceLastDonation;
@@ -232,26 +234,26 @@ class DonorPublicProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow(Icons.bloodtype_outlined, 'রক্তের গ্রুপ', donor.bloodGroup ?? 'অজানা', Colors.red),
+          _buildInfoRow(Icons.bloodtype_outlined, ref.tr('blood_group'), donor.bloodGroup ?? ref.tr('unknown'), Colors.red),
           const Divider(height: 32),
-          _buildInfoRow(Icons.location_on_outlined, 'বর্তমান ঠিকানা', location, Colors.blue),
+          _buildInfoRow(Icons.location_on_outlined, ref.tr('location'), location, Colors.blue),
           const Divider(height: 32),
           _buildInfoRow(
             Icons.calendar_month_outlined,
-            'সর্বশেষ রক্তদান',
-            lastDonation != null ? DateFormat('dd MMM yyyy').format(lastDonation) : 'এখনো রক্ত দেননি',
+            ref.tr('last_donation'),
+            lastDonation != null ? DateFormat('dd MMM yyyy', ref.watch(languageProvider).languageCode).format(lastDonation) : ref.tr('never_donated'),
             Colors.orange,
             trailing: lastDonation != null && daysRemaining > 0
                 ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-                    child: Text('$daysRemaining দিন বাকি', style: TextStyle(color: Colors.red.shade700, fontSize: 10, fontWeight: FontWeight.bold)),
+                    child: Text('$daysRemaining ${ref.tr('days_left')}', style: TextStyle(color: Colors.red.shade700, fontSize: 10, fontWeight: FontWeight.bold)),
                   )
                 : null,
           ),
           if (donor.isAvailable == false) ...[
             const Divider(height: 32),
-            _buildInfoRow(Icons.do_not_disturb_on_outlined, 'স্ট্যাটাস', 'বর্তমানে রক্ত দিতে ইচ্ছুক নন', Colors.red.shade400),
+            _buildInfoRow(Icons.do_not_disturb_on_outlined, ref.tr('status'), ref.tr('not_willing_to_donate'), Colors.red.shade400),
           ]
         ],
       ),
@@ -277,7 +279,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildReviewCard(BuildContext context) {
+  Widget _buildReviewCard(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: donor.uid, userName: donor.name))),
       borderRadius: BorderRadius.circular(24),
@@ -292,13 +294,13 @@ class DonorPublicProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ইউজার রিভিউ', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(ref.tr('user_reviews'), style: const TextStyle(fontWeight: FontWeight.bold)),
                   Row(
                     children: [
                       const Icon(Icons.star_rounded, color: Colors.orange, size: 16),
                       const SizedBox(width: 4),
                       Text(donor.averageRating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(' (${donor.totalReviews} টি রিভিউ)', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                      Text(' (${donor.totalReviews} ${ref.tr('reviews_count')})', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                     ],
                   ),
                 ],
@@ -311,7 +313,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, {bool isMe = false}) {
+  Widget _buildActionButtons(BuildContext context, WidgetRef ref, {bool isMe = false}) {
     if (isMe) return const SizedBox.shrink();
     return Column(
       children: [
@@ -321,7 +323,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _makeCall(donor.phone),
                 icon: const Icon(Icons.call_rounded),
-                label: const Text('কল করুন'),
+                label: Text(ref.tr('call_now')),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
               ),
             ),
@@ -348,7 +350,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
                   }
                 },
                 icon: const Icon(Icons.chat_bubble_rounded),
-                label: const Text('মেসেজ দিন'),
+                label: Text(ref.tr('send_message')),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, minimumSize: const Size(0, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
               ),
             ),
@@ -358,7 +360,7 @@ class DonorPublicProfileScreen extends ConsumerWidget {
         ElevatedButton.icon(
           onPressed: () => _openWhatsApp(donor.whatsappNumber ?? donor.phone),
           icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.white),
-          label: const Text('হোয়াটসঅ্যাপে মেসেজ দিন'),
+          label: Text(ref.tr('whatsapp_message')),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF25D366),
             foregroundColor: Colors.white,

@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../data/models/user_model.dart';
 import '../../providers/auth_provider.dart';
 
+import '../../providers/language_provider.dart';
+
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -27,7 +29,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBloodGroup == null) {
-      _showErrorSnackBar('রক্তের গ্রুপ নির্বাচন করুন');
+      _showErrorSnackBar(ref.tr('blood_group_select'));
       return;
     }
 
@@ -50,8 +52,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('রেজিস্ট্রেশন সফল হয়েছে। এখন লগইন করুন।'),
+          SnackBar(
+            content: Text(ref.tr('registration_success')),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -97,29 +99,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'নতুন অ্যাকাউন্ট',
+                  ref.tr('register_title'),
                   style: GoogleFonts.notoSansBengali(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 Text(
-                  'নিচের তথ্যগুলো দিয়ে রেজিস্ট্রেশন সম্পন্ন করুন',
+                  ref.tr('registration_info'),
                   style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 30),
                 
                 _buildInputField(
                   controller: _nameController,
-                  label: 'পুরো নাম',
+                  label: ref.tr('full_name'),
                   icon: Icons.person_outline_rounded,
-                  validator: (v) => v!.isEmpty ? 'আপনার নাম লিখুন' : null,
+                  validator: (v) => v!.isEmpty ? ref.tr('enter_name') : null,
                 ),
                 const SizedBox(height: 16),
                 
                 _buildInputField(
                   controller: _emailController,
-                  label: 'ইমেইল এড্রেস',
+                  label: ref.tr('email_address'),
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
-                  validator: (v) => v!.isEmpty ? 'ইমেইল লিখুন' : null,
+                  validator: (v) => v!.isEmpty ? ref.tr('enter_email') : null,
                 ),
                 const SizedBox(height: 16),
                 
@@ -128,10 +130,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Expanded(
                       child: _buildInputField(
                         controller: _phoneController,
-                        label: 'ফোন নম্বর',
+                        label: ref.tr('phone_number'),
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
-                        validator: (v) => v!.isEmpty ? 'ফোন নম্বর লিখুন' : null,
+                        validator: (v) => v!.isEmpty ? ref.tr('enter_phone') : null,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -144,7 +146,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 
                 _buildInputField(
                   controller: _whatsappController,
-                  label: 'হোয়াটসঅ্যাপ নম্বর (ঐচ্ছিক)',
+                  label: ref.tr('whatsapp_number'),
                   icon: Icons.chat_bubble_outline_rounded,
                   keyboardType: TextInputType.phone,
                 ),
@@ -152,12 +154,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 
                 _buildInputField(
                   controller: _passwordController,
-                  label: 'পাসওয়ার্ড',
+                  label: ref.tr('password'),
                   icon: Icons.lock_outline_rounded,
                   isPassword: true,
                   obscureText: _obscurePassword,
                   onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
-                  validator: (v) => v!.length < 6 ? 'কমপক্ষে ৬ ডিজিট দিন' : null,
+                  validator: (v) => v!.length < 6 ? ref.tr('min_password_length') : null,
                 ),
                 
                 const SizedBox(height: 40),
@@ -174,17 +176,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
                     ),
-                    child: Text('রেজিস্ট্রেশন সম্পন্ন করুন', style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: Text(ref.tr('register'), style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('ইতিমধ্যে অ্যাকাউন্ট আছে? ', style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600)),
+                    Text(ref.tr('already_have_account'), style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600)),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: Text('লগইন করুন', style: GoogleFonts.notoSansBengali(color: const Color(0xFFE53935), fontWeight: FontWeight.bold)),
+                      child: Text(ref.tr('login_title'), style: GoogleFonts.notoSansBengali(color: const Color(0xFFE53935), fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -243,13 +245,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('ব্লাড গ্রুপ', style: GoogleFonts.notoSansBengali(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade700)),
+        Text(ref.tr('blood_group'), style: GoogleFonts.notoSansBengali(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade700)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: _selectedBloodGroup,
           items: _bloodGroups.map((bg) => DropdownMenuItem(value: bg, child: Text(bg))).toList(),
           onChanged: (v) => setState(() => _selectedBloodGroup = v),
-          validator: (v) => v == null ? 'নির্বাচন করুন' : null,
+          validator: (v) => v == null ? ref.tr('blood_group_select') : null,
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.bloodtype_outlined, color: Colors.red.shade400, size: 20),
             filled: true,

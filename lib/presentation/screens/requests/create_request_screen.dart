@@ -9,6 +9,7 @@ import '../../../data/models/blood_request_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/blood_request_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../providers/language_provider.dart';
 
 class CreateRequestScreen extends ConsumerStatefulWidget {
   const CreateRequestScreen({super.key});
@@ -67,11 +68,11 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBloodGroup == null) {
-      _showErrorSnackBar('রক্তের গ্রুপ নির্বাচন করুন');
+      _showErrorSnackBar(ref.tr('select_blood_group'));
       return;
     }
     if (_selectedDivision == null || _selectedDistrict == null || _selectedThana == null) {
-      _showErrorSnackBar('বিভাগ, জেলা এবং থানা নির্বাচন করুন');
+      _showErrorSnackBar(ref.tr('select_div_dist_thana'));
       return;
     }
 
@@ -128,14 +129,14 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('আবেদনটি সফলভাবে পোস্ট করা হয়েছে', style: GoogleFonts.notoSansBengali()),
+            content: Text(ref.tr('request_submit_success'), style: GoogleFonts.notoSansBengali()),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      _showErrorSnackBar('ত্রুটি: $e');
+      _showErrorSnackBar('${ref.tr('error')}: $e');
     } finally {
       if (mounted) setState(() => _isLoadingData = false);
     }
@@ -156,7 +157,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text('রক্তের আবেদন করুন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(ref.tr('blood_request_form'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -172,7 +173,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildFormCard(
-                      title: 'রক্তের তথ্য',
+                      title: ref.tr('blood_info'),
                       icon: Icons.bloodtype_outlined,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,7 +182,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                           const SizedBox(height: 20),
                           _buildInputField(
                             controller: _bagsController,
-                            label: 'রক্তের পরিমাণ (ব্যাগ)',
+                            label: ref.tr('blood_bags_count'),
                             icon: Icons.shopping_bag_outlined,
                             keyboardType: TextInputType.number,
                           ),
@@ -191,37 +192,37 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                     const SizedBox(height: 20),
                     
                     _buildFormCard(
-                      title: 'রোগী ও যোগাযোগ',
+                      title: ref.tr('patient_contact'),
                       icon: Icons.person_search_outlined,
                       child: Column(
                         children: [
                           _buildInputField(
                             controller: _patientNameController,
-                            label: 'রোগীর নাম (ঐচ্ছিক)',
+                            label: ref.tr('patient_name_opt'),
                             icon: Icons.person_outline,
                             isRequired: false,
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
                             controller: _relationController,
-                            label: 'রোগীর সাথে আপনার সম্পর্ক',
+                            label: ref.tr('relation_with_patient'),
                             icon: Icons.people_outline,
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
                             controller: _phoneController,
-                            label: 'যোগাযোগের মোবাইল নম্বর',
+                            label: ref.tr('contact_phone'),
                             icon: Icons.phone_android_outlined,
                             keyboardType: TextInputType.phone,
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
                             controller: _whatsappController,
-                            label: 'হোয়াটসঅ্যাপ নম্বর (ঐচ্ছিক)',
+                            label: ref.tr('whatsapp_num_opt'),
                             icon: Icons.chat_bubble_outline,
                             keyboardType: TextInputType.phone,
                             isRequired: false,
-                            hintText: 'খালি রাখলে ফোন নম্বরটিই ব্যবহৃত হবে',
+                            hintText: ref.tr('whatsapp_hint'),
                           ),
                         ],
                       ),
@@ -229,19 +230,19 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                     const SizedBox(height: 20),
 
                     _buildFormCard(
-                      title: 'হাসপাতালের তথ্য ও ঠিকানা',
+                      title: ref.tr('hospital_info_address'),
                       icon: Icons.local_hospital_outlined,
                       child: Column(
                         children: [
                           _buildInputField(
                             controller: _hospitalController,
-                            label: 'হাসপাতাল/ক্লিনিকের নাম',
+                            label: ref.tr('hospital_name'),
                             icon: Icons.apartment_outlined,
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
                             controller: _problemController,
-                            label: 'রোগীর সমস্যা (রোগ)',
+                            label: ref.tr('patient_problem'),
                             icon: Icons.healing_outlined,
                           ),
                           const SizedBox(height: 20),
@@ -249,14 +250,14 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                           const SizedBox(height: 20),
                           _buildInputField(
                             controller: _mapUrlController,
-                            label: 'গুগল ম্যাপ লিঙ্ক বা অ্যাড্রেস (ঐচ্ছিক)',
+                            label: ref.tr('map_url_opt'),
                             icon: Icons.location_on_outlined,
                             isRequired: false,
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
                             controller: _descriptionController,
-                            label: 'বিস্তারিত বিবরণ (ঐচ্ছিক)',
+                            label: ref.tr('detailed_description'),
                             icon: Icons.description_outlined,
                             maxLines: 3,
                             isRequired: false,
@@ -267,7 +268,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                     const SizedBox(height: 20),
 
                     _buildFormCard(
-                      title: 'তারিখ ও গুরুত্ব',
+                      title: ref.tr('date_and_urgency'),
                       icon: Icons.event_available_outlined,
                       child: Column(
                         children: [
@@ -293,7 +294,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                           shadowColor: Colors.red.withOpacity(0.4),
                         ),
                         child: Text(
-                          'আবেদন সম্পন্ন করুন',
+                          ref.tr('submit_request'),
                           style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -364,7 +365,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1)),
         errorStyle: const TextStyle(fontSize: 11),
       ),
-      validator: isRequired ? (v) => v!.isEmpty ? '$label লিখুন' : null : null,
+      validator: isRequired ? (v) => v!.isEmpty ? ref.tr('enter_value').replaceFirst('{}', label) : null : null,
     );
   }
 
@@ -395,19 +396,19 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
 
     return Column(
       children: [
-        _buildDropdown(value: _selectedDivision, hint: 'বিভাগ নির্বাচন করুন', items: divisions, onChanged: (v) => setState(() {
+        _buildDropdown(value: _selectedDivision, hint: ref.tr('select_division'), items: divisions, onChanged: (v) => setState(() {
           _selectedDivision = v; _selectedDistrict = null; _selectedThana = null; _selectedUnion = null;
         })),
         const SizedBox(height: 12),
-        _buildDropdown(value: _selectedDistrict, hint: 'জেলা নির্বাচন করুন', items: districts, onChanged: (v) => setState(() {
+        _buildDropdown(value: _selectedDistrict, hint: ref.tr('select_district'), items: districts, onChanged: (v) => setState(() {
           _selectedDistrict = v; _selectedThana = null; _selectedUnion = null;
         })),
         const SizedBox(height: 12),
-        _buildDropdown(value: _selectedThana, hint: 'থানা নির্বাচন করুন', items: thanas, onChanged: (v) => setState(() {
+        _buildDropdown(value: _selectedThana, hint: ref.tr('select_thana'), items: thanas, onChanged: (v) => setState(() {
           _selectedThana = v; _selectedUnion = null;
         })),
         const SizedBox(height: 12),
-        _buildDropdown(value: _selectedUnion, hint: 'ইউনিয়ন (ঐচ্ছিক)', items: unions, onChanged: (v) => setState(() => _selectedUnion = v), isRequired: false),
+        _buildDropdown(value: _selectedUnion, hint: ref.tr('union_opt'), items: unions, onChanged: (v) => setState(() => _selectedUnion = v), isRequired: false),
       ],
     );
   }
@@ -417,7 +418,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       value: value,
       items: items.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 14)))).toList(),
       onChanged: onChanged,
-      validator: isRequired ? (v) => v == null ? 'নির্বাচন করুন' : null : null,
+      validator: isRequired ? (v) => v == null ? ref.tr('select_info') : null : null,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: const Icon(Icons.location_city_outlined, color: Colors.redAccent, size: 20),
@@ -454,7 +455,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                 const Icon(Icons.calendar_month_rounded, color: Colors.redAccent, size: 20),
                 const SizedBox(width: 12),
                 Text(
-                  _selectedDate == null ? 'রক্তদানের সম্ভাব্য তারিখ' : DateFormat('dd MMMM yyyy').format(_selectedDate!),
+                  _selectedDate == null ? ref.tr('probable_donation_date') : DateFormat('dd MMMM yyyy', ref.watch(languageProvider).languageCode).format(_selectedDate!),
                   style: TextStyle(color: _selectedDate == null ? Colors.grey.shade600 : Colors.black87, fontSize: 15),
                 ),
               ],
@@ -475,7 +476,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         border: Border.all(color: _isEmergency ? Colors.red.shade300 : Colors.grey.shade200, width: 1),
       ),
       child: SwitchListTile(
-        title: Text('এটি কি জরুরি (Emergency)?', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: _isEmergency ? Colors.red.shade900 : Colors.black87)),
+        title: Text(ref.tr('is_emergency_question'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: _isEmergency ? Colors.red.shade900 : Colors.black87)),
         secondary: Icon(Icons.warning_amber_rounded, color: _isEmergency ? Colors.red : Colors.grey),
         activeColor: Colors.red,
         value: _isEmergency,
@@ -488,7 +489,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('রক্তের গ্রুপ বাছাই করুন', style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+        Text(ref.tr('blood_group_select'), style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 10, runSpacing: 10,

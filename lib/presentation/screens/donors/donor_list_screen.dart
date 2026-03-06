@@ -13,6 +13,8 @@ import '../../../core/services/location_service.dart';
 import '../chat/chat_screen.dart';
 import 'donor_public_profile_screen.dart';
 
+import '../../providers/language_provider.dart';
+
 class DonorListScreen extends ConsumerStatefulWidget {
   const DonorListScreen({super.key});
 
@@ -98,7 +100,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       appBar: AppBar(
-        title: Text('রক্তদাতা খুঁজুন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(ref.tr('find_donor'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFFE53935),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -142,7 +144,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                           children: [
                             Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
                             const SizedBox(height: 16),
-                            Text('কোন দাতা পাওয়া যায়নি', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                            Text(ref.tr('no_donor_found'), style: GoogleFonts.notoSansBengali(color: Colors.grey)),
                           ],
                         ),
                       ),
@@ -169,12 +171,12 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                       final isSaved = savedDonors.contains(user.uid);
                       final rating = user.averageRating;
 
-                      return _buildDonorCard(user, donor, distance, isSaved, rating, userData);
+                      return _buildDonorCard(user, donor, distance, isSaved, rating, userData, ref);
                     },
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-                error: (e, s) => Center(child: Text('ত্রুটি: $e')),
+                error: (e, s) => Center(child: Text('${ref.tr('error')}: $e')),
               ),
             ),
           ),
@@ -191,7 +193,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
         controller: _searchController,
         style: const TextStyle(color: Colors.black87),
         decoration: InputDecoration(
-          hintText: 'নাম বা ব্লাড গ্রুপ দিয়ে খুঁজুন...',
+          hintText: ref.tr('search_hint'),
           hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           prefixIcon: const Icon(Icons.search, color: Colors.grey),
           filled: true,
@@ -204,7 +206,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
     );
   }
 
-  Widget _buildDonorCard(user, donor, distance, isSaved, rating, UserModel? userData) {
+  Widget _buildDonorCard(user, donor, distance, isSaved, rating, UserModel? userData, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -212,7 +214,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -239,7 +241,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildBloodGroupBadge(user.bloodGroup ?? '?'),
+                      _buildBloodGroupBadge(user.bloodGroup ?? '?', ref),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -269,14 +271,14 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                                       );
                                     } else {
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('আপনি নিজেকে সেভ করতে পারবেন না')),
+                                        SnackBar(content: Text(ref.tr('cannot_save_self'))),
                                       );
                                     }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.1),
+                                      color: Colors.orange.withOpacity(0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -299,7 +301,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    '${user.address?['thana'] ?? 'অজানা'}, ${user.address?['district'] ?? ''}',
+                                    '${user.address?['thana'] ?? ref.tr('unknown')}, ${user.address?['district'] ?? ''}',
                                     style: GoogleFonts.notoSansBengali(
                                       color: Colors.grey.shade600,
                                       fontSize: 13,
@@ -320,13 +322,13 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                                 const SizedBox(width: 8),
                                 _buildInfoChip(
                                   icon: Icons.workspace_premium_rounded,
-                                  label: user.rank,
+                                  label: ref.tr('rank_${user.rank.toLowerCase()}').toUpperCase(),
                                   color: Colors.amber.shade800,
                                 ),
                                 if (distance != null && distance > 0) ...[
                                   const SizedBox(width: 8),
                                   Text(
-                                    '• ${distance.toStringAsFixed(1)} কিমি',
+                                    '• ${distance.toStringAsFixed(1)} ${ref.watch(languageProvider).languageCode == 'bn' ? 'কিমি' : 'km'}',
                                     style: GoogleFonts.poppins(
                                       color: Colors.red.shade400,
                                       fontSize: 11,
@@ -349,7 +351,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                       Expanded(
                         child: _buildActionBtn(
                           icon: Icons.call_rounded,
-                          label: 'কল',
+                          label: ref.tr('call'),
                           color: Colors.green,
                           onTap: () => _makeCall(user.phone),
                         ),
@@ -368,7 +370,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                       Expanded(
                         child: _buildActionBtn(
                           icon: Icons.chat_bubble_rounded,
-                          label: 'মেসেজ',
+                          label: ref.tr('chat'),
                           color: Colors.blue,
                           onTap: () {
                             final currentUid = FirebaseAuth.instance.currentUser?.uid;
@@ -403,7 +405,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
     );
   }
 
-  Widget _buildBloodGroupBadge(String bg) {
+  Widget _buildBloodGroupBadge(String bg, WidgetRef ref) {
     return Container(
       width: 56,
       height: 56,
@@ -416,7 +418,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withValues(alpha: 0.2),
+            color: Colors.red.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -434,9 +436,9 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                 fontSize: 18,
               ),
             ),
-            const Text(
-              'গ্রুপ',
-              style: TextStyle(color: Colors.white70, fontSize: 10),
+            Text(
+              ref.tr('group'),
+              style: const TextStyle(color: Colors.white70, fontSize: 10),
             ),
           ],
         ),

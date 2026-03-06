@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/blood_request_provider.dart';
+import '../../providers/language_provider.dart';
 import 'request_details_screen.dart';
 
 class MyCancelledRequestsScreen extends ConsumerWidget {
@@ -14,7 +15,7 @@ class MyCancelledRequestsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFB),
       appBar: AppBar(
-        title: Text('বাতিলকৃত আবেদন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(ref.tr('my_cancelled_requests'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -30,7 +31,7 @@ class MyCancelledRequestsScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.cancel_outlined, size: 80, color: Colors.grey.shade200),
                   const SizedBox(height: 16),
-                  Text('কোন বাতিলকৃত আবেদন নেই', style: GoogleFonts.notoSansBengali(color: Colors.grey)),
+                  Text(ref.tr('no_cancelled_requests_msg'), style: GoogleFonts.notoSansBengali(color: Colors.grey)),
                 ],
               ),
             );
@@ -57,7 +58,7 @@ class MyCancelledRequestsScreen extends ConsumerWidget {
                     child: const Icon(Icons.close_rounded, color: Colors.red),
                   ),
                   title: Text(req.hospitalName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('রক্তের গ্রুপ: ${req.bloodGroup}', style: TextStyle(color: Colors.grey.shade600)),
+                  subtitle: Text(ref.tr('blood_req_group').replaceFirst('{}', req.bloodGroup), style: TextStyle(color: Colors.grey.shade600)),
                   trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RequestDetailsScreen(request: req))),
                 ),
@@ -66,7 +67,7 @@ class MyCancelledRequestsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-        error: (e, s) => Center(child: Text('Error: $e')),
+        error: (e, s) => Center(child: Text('${ref.tr('error')}: $e')),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../../data/models/user_model.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -32,7 +33,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Map<String, dynamic> _allLocationData = {};
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
-  final List<String> _genders = ['পুরুষ', 'মহিলা', 'অন্যান্য'];
+  final List<String> _genderIds = ['male', 'female', 'others'];
 
   @override
   void initState() {
@@ -105,7 +106,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ref.invalidate(currentUserDataProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('প্রোফাইল আপডেট সফল হয়েছে!', style: GoogleFonts.notoSansBengali()), 
+            content: Text(ref.tr('profile_update_success'), style: GoogleFonts.notoSansBengali()), 
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           )
@@ -115,7 +116,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('এরর: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${ref.tr('error')}: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -141,7 +142,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text('প্রোফাইল এডিট', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(ref.tr('edit_profile'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -157,58 +158,58 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionCard(
-                title: 'ব্যক্তিগত তথ্য',
+                title: ref.tr('personal_info'),
                 icon: Icons.person_outline_rounded,
                 child: Column(
                   children: [
-                    _buildTextField('পুরো নাম', _nameController, Icons.person_outline),
+                    _buildTextField(ref.tr('full_name'), _nameController, Icons.person_outline),
                     const SizedBox(height: 16),
-                    _buildTextField('ইমেইল', _emailController, Icons.email_outlined),
+                    _buildTextField(ref.tr('email_address'), _emailController, Icons.email_outlined),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               
               _buildSectionCard(
-                title: 'যোগাযোগ',
+                title: ref.tr('contact'),
                 icon: Icons.contact_phone_outlined,
                 child: Column(
                   children: [
-                    _buildTextField('মোবাইল নম্বর', _phoneController, Icons.phone_outlined, isPhone: true),
+                    _buildTextField(ref.tr('phone_number'), _phoneController, Icons.phone_outlined, isPhone: true),
                     const SizedBox(height: 16),
-                    _buildTextField('হোয়াটসঅ্যাপ নম্বর', _whatsappController, Icons.chat_bubble_outline, isPhone: true),
+                    _buildTextField(ref.tr('whatsapp_number'), _whatsappController, Icons.chat_bubble_outline, isPhone: true),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
               _buildSectionCard(
-                title: 'রক্তের গ্রুপ ও লিঙ্গ',
+                title: '${ref.tr('blood_group')} & ${ref.tr('gender')}',
                 icon: Icons.info_outline_rounded,
                 child: Row(
                   children: [
-                    Expanded(child: _buildDropdown('গ্রুপ', _bloodGroups, _selectedBloodGroup, (v) => setState(() => _selectedBloodGroup = v))),
+                    Expanded(child: _buildDropdown(ref.tr('group'), _bloodGroups, _selectedBloodGroup, (v) => setState(() => _selectedBloodGroup = v))),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildDropdown('লিঙ্গ', _genders, _selectedGender, (v) => setState(() => _selectedGender = v))),
+                    Expanded(child: _buildDropdown(ref.tr('gender'), _genderIds, _selectedGender, (v) => setState(() => _selectedGender = v), isGender: true)),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
               _buildSectionCard(
-                title: 'ঠিকানা',
+                title: ref.tr('address'),
                 icon: Icons.location_on_outlined,
                 child: Column(
                   children: [
-                    _buildDropdown('বিভাগ', divisions, _selectedDivision, (v) => setState(() {
+                    _buildDropdown(ref.tr('division'), divisions, _selectedDivision, (v) => setState(() {
                       _selectedDivision = v; _selectedDistrict = null; _selectedThana = null;
                     })),
                     const SizedBox(height: 12),
-                    _buildDropdown('জেলা', districts, _selectedDistrict, (v) => setState(() {
+                    _buildDropdown(ref.tr('district'), districts, _selectedDistrict, (v) => setState(() {
                       _selectedDistrict = v; _selectedThana = null;
                     })),
                     const SizedBox(height: 12),
-                    _buildDropdown('থানা', thanas, _selectedThana, (v) => setState(() => _selectedThana = v)),
+                    _buildDropdown(ref.tr('thana'), thanas, _selectedThana, (v) => setState(() => _selectedThana = v)),
                   ],
                 ),
               ),
@@ -221,8 +222,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   border: Border.all(color: _isAvailable ? Colors.green.shade200 : Colors.red.shade200),
                 ),
                 child: SwitchListTile(
-                  title: Text('আমি রক্ত দিতে ইচ্ছুক', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Text(_isAvailable ? 'আপনার প্রোফাইল রক্তদাতা হিসেবে প্রদর্শিত হবে' : 'আপনার প্রোফাইল বর্তমানে প্রদর্শিত হবে না', style: const TextStyle(fontSize: 12)),
+                  title: Text(ref.tr('willing_to_donate'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Text(_isAvailable ? ref.tr('profile_visible_msg') : ref.tr('profile_hidden_msg'), style: const TextStyle(fontSize: 12)),
                   value: _isAvailable,
                   activeColor: Colors.green,
                   onChanged: (v) => setState(() => _isAvailable = v),
@@ -240,7 +241,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   elevation: 2,
                   shadowColor: Colors.red.withOpacity(0.3),
                 ),
-                child: Text('পরিবর্তন সংরক্ষণ করুন', style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(ref.tr('save_changes'), style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 30),
             ],
@@ -296,13 +297,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.5)),
             errorStyle: const TextStyle(fontSize: 11),
           ),
-          validator: (v) => (v == null || v.isEmpty) && label != 'ইমেইল' ? 'তথ্য দিন' : null,
+          validator: (v) => (v == null || v.isEmpty) && label != ref.tr('email_address') ? ref.tr('enter_info') : null,
         ),
       ],
     );
   }
 
-  Widget _buildDropdown(String label, List<String> items, String? selected, Function(String?) onChanged) {
+  Widget _buildDropdown(String label, List<String> items, String? selected, Function(String?) onChanged, {bool isGender = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -320,9 +321,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935))),
           ),
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(isGender ? ref.tr(e) : e, style: const TextStyle(fontSize: 14)))).toList(),
           onChanged: onChanged,
-          validator: (v) => v == null ? 'নির্বাচন করুন' : null,
+          validator: (v) => v == null ? ref.tr('select_info') : null,
         ),
       ],
     );

@@ -6,28 +6,31 @@ import 'package:intl/intl.dart';
 import '../../../data/models/user_model.dart';
 import '../chat/chat_screen.dart';
 
-class ChatListScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/language_provider.dart';
+
+class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
   @override
-  State<ChatListScreen> createState() => _ChatListScreenState();
+  ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
+class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      return const Scaffold(body: Center(child: Text('লগইন প্রয়োজন')));
+      return Scaffold(body: Center(child: Text(ref.tr('login_required'))));
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Text(
-          'মেসেজ লিস্ট',
+          ref.tr('chat_list_title'),
           style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.white,
@@ -214,7 +217,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ),
             ),
             subtitle: Text(
-              chatData['lastMessage'] ?? 'মেসেজ শুরু করুন',
+              chatData['lastMessage'] ?? ref.tr('start_conversation'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -266,7 +269,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       color: Colors.white,
       child: TextField(
         decoration: InputDecoration(
-          hintText: 'নাম দিয়ে খুঁজুন...',
+          hintText: ref.tr('search_by_name'),
           prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
           filled: true,
           fillColor: Colors.grey.shade100,
@@ -288,7 +291,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (difference.inDays == 0) {
       return DateFormat('hh:mm a').format(date);
     } else if (difference.inDays == 1) {
-      return 'গতকাল';
+      return ref.tr('yesterday');
     } else if (difference.inDays < 7) {
       return DateFormat('EEEE').format(date); // সপ্তাহের নাম
     } else {
@@ -308,7 +311,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'এখনো কোনো মেসেজ নেই',
+            ref.tr('no_messages'),
             style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 16),
           ),
         ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../providers/language_provider.dart';
 
 class NotificationScreen extends ConsumerWidget {
@@ -25,7 +26,7 @@ class NotificationScreen extends ConsumerWidget {
           if (userId != null)
             IconButton(
               onPressed: () => _markAllAsRead(userId),
-              icon: const Icon(Icons.done_all_rounded, color: Colors.red),
+              icon: const Icon(Icons.done_all_rounded, color: AppTheme.primaryRed),
               tooltip: ref.tr('mark_all_as_read'),
             ),
           const SizedBox(width: 8),
@@ -42,7 +43,7 @@ class NotificationScreen extends ConsumerWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.red));
+                  return const Center(child: CircularProgressIndicator(color: AppTheme.primaryRed));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -74,6 +75,38 @@ class NotificationScreen extends ConsumerWidget {
     );
   }
 
+  String _getLocalizedTitle(WidgetRef ref, String? title, Map<String, dynamic> extraData) {
+    if (title == null) return ref.tr('new_notification');
+    
+    // Check if title is a key
+    final translated = ref.tr(title);
+    if (translated != title) {
+      if (title == 'emergency_blood_req') {
+        return translated.replaceFirst('{}', extraData['bloodGroup'] ?? '');
+      }
+      if (title == 'blood_req_district' || title == 'blood_req_division') {
+        return translated.replaceFirst('{}', extraData['bloodGroup'] ?? '');
+      }
+      return translated;
+    }
+    return title;
+  }
+
+  String _getLocalizedBody(WidgetRef ref, String? body, Map<String, dynamic> extraData) {
+    if (body == null) return '';
+    
+    final translated = ref.tr(body);
+    if (translated != body) {
+      if (body == 'blood_req_nearby') {
+        return translated
+          .replaceFirst('{}', extraData['thana'] ?? '')
+          .replaceFirst('{}', extraData['district'] ?? '');
+      }
+      return translated;
+    }
+    return body;
+  }
+
   void _markAllAsRead(String userId) async {
     final batch = FirebaseFirestore.instance.batch();
     final query = await FirebaseFirestore.instance
@@ -101,10 +134,10 @@ class NotificationScreen extends ConsumerWidget {
     if (type == 'emergency' || type == 'blood_request') {
       icon = Icons.bloodtype_rounded;
       iconColor = Colors.red;
-    } else if (type == 'donation_confirm' || data['title'].toString().contains('রক্ত দিয়েছে')) {
+    } else if (type == 'donation_confirm' || type == 'donation_success') {
       icon = Icons.volunteer_activism_rounded;
       iconColor = Colors.green;
-    } else if (type == 'rank_up' || data['title'].toString().contains('র‍্যাঙ্ক')) {
+    } else if (type == 'rank_up') {
       icon = Icons.stars_rounded;
       iconColor = Colors.orange;
     }
@@ -118,16 +151,19 @@ class NotificationScreen extends ConsumerWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(16)),
-        child: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryRed.withValues(alpha: 0.1), 
+          borderRadius: BorderRadius.circular(16)
+        ),
+        child: const Icon(Icons.delete_sweep_rounded, color: AppTheme.primaryRed),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: isRead ? Colors.white : Colors.red.withValues(alpha: 0.03),
+          color: isRead ? Colors.white : AppTheme.primaryRed.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isRead ? Colors.grey.shade100 : Colors.red.shade100,
+            color: isRead ? Colors.grey.shade100 : AppTheme.primaryRed.withValues(alpha: 0.2),
             width: isRead ? 1 : 1.5,
           ),
           boxShadow: [
@@ -171,7 +207,7 @@ class NotificationScreen extends ConsumerWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                data['title'] ?? ref.tr('new_notification'),
+                                _getLocalizedTitle(ref, data['title'], extraData),
                                 style: GoogleFonts.notoSansBengali(
                                   fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
                                   fontSize: 15,
@@ -180,12 +216,12 @@ class NotificationScreen extends ConsumerWidget {
                               ),
                             ),
                             if (!isRead)
-                              Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                              Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          data['body'] ?? '',
+                          _getLocalizedBody(ref, data['body'], extraData),
                           style: GoogleFonts.notoSansBengali(color: Colors.grey.shade600, fontSize: 13, height: 1.4),
                         ),
                         const SizedBox(height: 8),
@@ -194,7 +230,7 @@ class NotificationScreen extends ConsumerWidget {
                             Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade400),
                             const SizedBox(width: 4),
                             Text(
-                              time != null ? DateFormat('hh:mm a, dd MMM').format(time) : '',
+                              time != null ? DateFormat('hh:mm a, dd MMM', ref.watch(languageProvider).languageCode).format(time) : '',
                               style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 11),
                             ),
                           ],
