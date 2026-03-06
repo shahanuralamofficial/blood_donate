@@ -26,6 +26,8 @@ class MessageRepositoryImpl implements MessageRepository {
     await _firestore.collection('direct_chats').doc(chatId).set({
       'participants': participants,
       'lastMessage': message.text,
+      'lastMessageSenderId': message.senderId,
+      'unread': true,
       'lastMessageTime': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -68,6 +70,10 @@ class MessageRepositoryImpl implements MessageRepository {
       
       if (hasUpdates) {
         await batch.commit();
+        // চ্যাট মেটাডাটাতেও unread false করে দেওয়া
+        await _firestore.collection('direct_chats').doc(chatId).update({
+          'unread': false,
+        });
         debugPrint('--- Messages marked as read in Firestore for chat: $chatId ---');
       }
     } catch (e) {

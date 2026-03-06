@@ -728,15 +728,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           },
         ),
-        IconButton(
-          icon: const Icon(
-            Icons.chat_bubble_outline_rounded,
-            color: Colors.white,
-          ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatListScreen()),
-          ),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('direct_chats')
+              .where('participants', arrayContains: user.uid)
+              .where('unread', isEqualTo: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            int unreadChatCount = 0;
+            if (snapshot.hasData) {
+              // শুধুমাত্র সেই চ্যাটগুলো গুনব যেগুলোতে লাস্ট মেসেজ আমি পাঠাইনি
+              unreadChatCount = snapshot.data!.docs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return data['lastMessageSenderId'] != user.uid;
+              }).length;
+            }
+
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ChatListScreen()),
+                  ),
+                ),
+                if (unreadChatCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.yellow.shade700,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.red.shade900, width: 1.5),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        unreadChatCount > 9 ? '9+' : '$unreadChatCount',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         const SizedBox(width: 8),
       ],

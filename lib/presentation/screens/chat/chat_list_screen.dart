@@ -131,11 +131,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
           return const SizedBox.shrink();
         }
 
+        final bool isUnread = chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true;
+
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 6), // মার্জিন কিছুটা কমানো হলো
+          margin: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isUnread ? Colors.red.shade50.withOpacity(0.5) : Colors.white,
             borderRadius: BorderRadius.circular(16),
+            border: isUnread ? Border.all(color: Colors.red.shade100) : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.02),
@@ -187,9 +190,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             title: Text(
               otherUser.name,
               style: GoogleFonts.notoSansBengali(
-                fontWeight: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
-                    ? FontWeight.bold 
-                    : FontWeight.w600,
+                fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
                 fontSize: 16,
               ),
             ),
@@ -198,13 +199,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
-                    ? Colors.black87 
-                    : Colors.grey.shade600,
+                color: isUnread ? Colors.black87 : Colors.grey.shade600,
                 fontSize: 13,
-                fontWeight: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
-                    ? FontWeight.bold 
-                    : FontWeight.normal,
+                fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
               ),
             ),
             trailing: Column(
@@ -215,23 +212,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   Text(
                     _formatTime((chatData['lastMessageTime'] as Timestamp).toDate()),
                     style: TextStyle(
-                      color: (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true) 
-                          ? Colors.red.shade400 
-                          : Colors.grey.shade400, 
+                      color: isUnread ? Colors.red.shade400 : Colors.grey.shade400, 
                       fontSize: 11
                     ),
                   ),
                 const SizedBox(height: 6),
-                if (chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true)
+                if (isUnread)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
                       color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      'NEW',
-                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      shape: BoxShape.circle,
                     ),
                   ),
               ],
