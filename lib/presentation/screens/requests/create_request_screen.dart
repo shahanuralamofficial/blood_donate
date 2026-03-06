@@ -14,8 +14,7 @@ class CreateRequestScreen extends ConsumerStatefulWidget {
   const CreateRequestScreen({super.key});
 
   @override
-  ConsumerState<CreateRequestScreen> createState() =>
-      _CreateRequestScreenState();
+  ConsumerState<CreateRequestScreen> createState() => _CreateRequestScreenState();
 }
 
 class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
@@ -40,9 +39,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   String? _selectedUnion;
   bool _isLoadingData = true;
 
-  final List<String> _bloodGroups = [
-    'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-',
-  ];
+  final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
   @override
   void initState() {
@@ -69,11 +66,20 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
 
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedBloodGroup == null) return;
+    if (_selectedBloodGroup == null) {
+      _showErrorSnackBar('রক্তের গ্রুপ নির্বাচন করুন');
+      return;
+    }
+    if (_selectedDivision == null || _selectedDistrict == null || _selectedThana == null) {
+      _showErrorSnackBar('বিভাগ, জেলা এবং থানা নির্বাচন করুন');
+      return;
+    }
 
     final user = ref.read(currentUserDataProvider).value;
     if (user == null) return;
 
+    setState(() => _isLoadingData = true);
+    
     final request = BloodRequestModel(
       requestId: '',
       requesterId: user.uid,
@@ -86,27 +92,21 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       hospitalName: _hospitalController.text.trim(),
       patientProblem: _problemController.text.trim(),
       description: _descriptionController.text.trim(),
-      whatsappNumber: _whatsappController.text.trim().isEmpty
-          ? _phoneController.text.trim()
-          : _whatsappController.text.trim(),
+      whatsappNumber: _whatsappController.text.trim().isEmpty ? _phoneController.text.trim() : _whatsappController.text.trim(),
       division: _selectedDivision ?? '',
       district: _selectedDistrict ?? '',
       thana: _selectedThana ?? '',
       union: _selectedUnion ?? '',
       bloodBags: int.tryParse(_bagsController.text) ?? 1,
       donatedBags: 0,
-      mapUrl: _mapUrlController.text.trim().isEmpty
-          ? null
-          : _mapUrlController.text.trim(),
+      mapUrl: _mapUrlController.text.trim().isEmpty ? null : _mapUrlController.text.trim(),
       requiredDate: _selectedDate ?? DateTime.now(),
       createdAt: DateTime.now(),
     );
 
     try {
-      // আবেদন তৈরি
       final String requestId = await ref.read(bloodRequestRepositoryProvider).createRequest(request);
 
-      // নিকটস্থ দাতাদের নোটিফিকেশন পাঠানো
       NotificationService().notifyNearbyDonors(
         division: _selectedDivision ?? '',
         district: _selectedDistrict ?? '',
@@ -115,7 +115,6 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
         requestId: requestId,
       );
 
-      // ইউজারের মোট আবেদনের সংখ্যা বাড়ানো
       final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userRef);
@@ -128,142 +127,177 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('আবেদনটি সফলভাবে পোস্ট করা হয়েছে'),
+          SnackBar(
+            content: Text('আবেদনটি সফলভাবে পোস্ট করা হয়েছে', style: GoogleFonts.notoSansBengali()),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ত্রুটি: $e'), backgroundColor: Colors.red),
-        );
-      }
+      _showErrorSnackBar('ত্রুটি: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingData = false);
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.notoSansBengali()),
+        backgroundColor: Colors.red.shade800,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text(
-          'রক্তের আবেদন করুন',
-          style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold),
-        ),
+        title: Text('রক্তের আবেদন করুন', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.black87,
         elevation: 0,
+        centerTitle: true,
       ),
-      body: _isLoadingData
+      body: _isLoadingData && _allLocationData.isEmpty
           ? const Center(child: CircularProgressIndicator(color: Colors.red))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionTitle('রক্তের তথ্য'),
-                    const SizedBox(height: 8),
-                    _buildBloodGroupSelector(),
+                    _buildFormCard(
+                      title: 'রক্তের তথ্য',
+                      icon: Icons.bloodtype_outlined,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildBloodGroupSelector(),
+                          const SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _bagsController,
+                            label: 'রক্তের পরিমাণ (ব্যাগ)',
+                            icon: Icons.shopping_bag_outlined,
+                            keyboardType: TextInputType.number,
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 20),
-                    _buildTextField(
-                      _bagsController,
-                      'রক্তের পরিমাণ (ব্যাগ)',
-                      Icons.shopping_bag_outlined,
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('রোগী ও যোগাযোগ'),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      _patientNameController,
-                      'রোগীর নাম (ঐচ্ছিক)',
-                      Icons.person_outline,
-                      isRequired: false,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      _relationController,
-                      'রোগীর সাথে আপনার সম্পর্ক',
-                      Icons.people_outline,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      _phoneController,
-                      'যোগাযোগের মোবাইল নম্বর',
-                      Icons.phone_android_outlined,
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      _whatsappController,
-                      'হোয়াটসঅ্যাপ নম্বর (ঐচ্ছিক)',
-                      Icons.chat_bubble_outline,
-                      keyboardType: TextInputType.phone,
-                      isRequired: false,
-                      hintText: 'খালি রাখলে ফোন নম্বরটিই ব্যবহৃত হবে',
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('হাসপাতালের তথ্য ও ঠিকানা'),
-                    const SizedBox(height: 12),
-                    _buildTextField(
-                      _hospitalController,
-                      'হাসপাতাল/ক্লিনিকের নাম',
-                      Icons.local_hospital_outlined,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      _problemController,
-                      'রোগীর সমস্যা (রোগ)',
-                      Icons.healing_outlined,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      _mapUrlController,
-                      'গুগল ম্যাপ লিঙ্ক বা অ্যাড্রেস (ঐচ্ছিক)',
-                      Icons.location_on_outlined,
-                      isRequired: false,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      _descriptionController,
-                      'বিস্তারিত বিবরণ (ঐচ্ছিক)',
-                      Icons.description_outlined,
-                      maxLines: 3,
-                      isRequired: false,
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('অবস্থান নির্বাচন (Address)'),
-                    const SizedBox(height: 12),
-                    _buildLocationDropdowns(),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('তারিখ ও গুরুত্ব'),
-                    const SizedBox(height: 12),
-                    _buildDatePicker(),
-                    const SizedBox(height: 16),
-                    _buildEmergencySwitch(),
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: _submitRequest,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE53935),
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        'আবেদন সম্পন্ন করুন',
-                        style: GoogleFonts.notoSansBengali(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    
+                    _buildFormCard(
+                      title: 'রোগী ও যোগাযোগ',
+                      icon: Icons.person_search_outlined,
+                      child: Column(
+                        children: [
+                          _buildInputField(
+                            controller: _patientNameController,
+                            label: 'রোগীর নাম (ঐচ্ছিক)',
+                            icon: Icons.person_outline,
+                            isRequired: false,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _relationController,
+                            label: 'রোগীর সাথে আপনার সম্পর্ক',
+                            icon: Icons.people_outline,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _phoneController,
+                            label: 'যোগাযোগের মোবাইল নম্বর',
+                            icon: Icons.phone_android_outlined,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _whatsappController,
+                            label: 'হোয়াটসঅ্যাপ নম্বর (ঐচ্ছিক)',
+                            icon: Icons.chat_bubble_outline,
+                            keyboardType: TextInputType.phone,
+                            isRequired: false,
+                            hintText: 'খালি রাখলে ফোন নম্বরটিই ব্যবহৃত হবে',
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 20),
+
+                    _buildFormCard(
+                      title: 'হাসপাতালের তথ্য ও ঠিকানা',
+                      icon: Icons.local_hospital_outlined,
+                      child: Column(
+                        children: [
+                          _buildInputField(
+                            controller: _hospitalController,
+                            label: 'হাসপাতাল/ক্লিনিকের নাম',
+                            icon: Icons.apartment_outlined,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _problemController,
+                            label: 'রোগীর সমস্যা (রোগ)',
+                            icon: Icons.healing_outlined,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildLocationDropdowns(),
+                          const SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _mapUrlController,
+                            label: 'গুগল ম্যাপ লিঙ্ক বা অ্যাড্রেস (ঐচ্ছিক)',
+                            icon: Icons.location_on_outlined,
+                            isRequired: false,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _descriptionController,
+                            label: 'বিস্তারিত বিবরণ (ঐচ্ছিক)',
+                            icon: Icons.description_outlined,
+                            maxLines: 3,
+                            isRequired: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildFormCard(
+                      title: 'তারিখ ও গুরুত্ব',
+                      icon: Icons.event_available_outlined,
+                      child: Column(
+                        children: [
+                          _buildDatePicker(),
+                          const SizedBox(height: 16),
+                          _buildEmergencySwitch(),
+                        ],
+                      ),
+                    ),
+                    
                     const SizedBox(height: 40),
+                    if (_isLoadingData)
+                      const Center(child: CircularProgressIndicator(color: Colors.red))
+                    else
+                      ElevatedButton(
+                        onPressed: _submitRequest,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE53935),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 58),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          elevation: 2,
+                          shadowColor: Colors.red.withOpacity(0.4),
+                        ),
+                        child: Text(
+                          'আবেদন সম্পন্ন করুন',
+                          style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),
@@ -271,10 +305,41 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     );
   }
 
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
+  Widget _buildFormCard({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFFE53935), size: 22),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: GoogleFonts.notoSansBengali(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade800),
+              ),
+            ],
+          ),
+          const Divider(height: 25, thickness: 0.5),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
     int maxLines = 1,
     bool isRequired = true,
     TextInputType keyboardType = TextInputType.text,
@@ -284,11 +349,20 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
-        prefixIcon: Icon(icon),
-        alignLabelWithHint: true,
+        hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+        prefixIcon: Icon(icon, color: Colors.red.shade400, size: 20),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1)),
+        errorStyle: const TextStyle(fontSize: 11),
       ),
       validator: isRequired ? (v) => v!.isEmpty ? '$label লিখুন' : null : null,
     );
@@ -304,10 +378,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     List<String> thanas = [];
     if (_selectedDistrict != null) {
       var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
-      var districtData = districtsList.firstWhere(
-        (e) => e['name'] == _selectedDistrict,
-        orElse: () => null,
-      );
+      var districtData = districtsList.firstWhere((e) => e['name'] == _selectedDistrict, orElse: () => null);
       if (districtData != null) {
         var thanasList = districtData['thanas'] as List;
         thanas = thanasList.map((e) => e['name'].toString()).toList();
@@ -316,61 +387,47 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     List<String> unions = [];
     if (_selectedThana != null) {
       var districtsList = _allLocationData[_selectedDivision]['districts'] as List;
-      var districtData = districtsList.firstWhere(
-        (e) => e['name'] == _selectedDistrict,
-        orElse: () => null,
-      );
+      var districtData = districtsList.firstWhere((e) => e['name'] == _selectedDistrict, orElse: () => null);
       var thanasList = districtData['thanas'] as List;
-      var thanaData = thanasList.firstWhere(
-        (e) => e['name'] == _selectedThana,
-        orElse: () => null,
-      );
-      if (thanaData != null) {
-        unions = List<String>.from(thanaData['unions']);
-      }
+      var thanaData = thanasList.firstWhere((e) => e['name'] == _selectedThana, orElse: () => null);
+      if (thanaData != null) unions = List<String>.from(thanaData['unions']);
     }
+
     return Column(
       children: [
-        DropdownButtonFormField<String>(
-          value: _selectedDivision,
-          hint: const Text('বিভাগ'),
-          items: divisions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-          onChanged: (v) => setState(() {
-            _selectedDivision = v;
-            _selectedDistrict = null;
-            _selectedThana = null;
-            _selectedUnion = null;
-          }),
-        ),
+        _buildDropdown(value: _selectedDivision, hint: 'বিভাগ নির্বাচন করুন', items: divisions, onChanged: (v) => setState(() {
+          _selectedDivision = v; _selectedDistrict = null; _selectedThana = null; _selectedUnion = null;
+        })),
         const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _selectedDistrict,
-          hint: const Text('জেলা'),
-          items: districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-          onChanged: (v) => setState(() {
-            _selectedDistrict = v;
-            _selectedThana = null;
-            _selectedUnion = null;
-          }),
-        ),
+        _buildDropdown(value: _selectedDistrict, hint: 'জেলা নির্বাচন করুন', items: districts, onChanged: (v) => setState(() {
+          _selectedDistrict = v; _selectedThana = null; _selectedUnion = null;
+        })),
         const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _selectedThana,
-          hint: const Text('থানা'),
-          items: thanas.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-          onChanged: (v) => setState(() {
-            _selectedThana = v;
-            _selectedUnion = null;
-          }),
-        ),
+        _buildDropdown(value: _selectedThana, hint: 'থানা নির্বাচন করুন', items: thanas, onChanged: (v) => setState(() {
+          _selectedThana = v; _selectedUnion = null;
+        })),
         const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _selectedUnion,
-          hint: const Text('ইউনিয়ন (ঐচ্ছিক)'),
-          items: unions.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
-          onChanged: (v) => setState(() => _selectedUnion = v),
-        ),
+        _buildDropdown(value: _selectedUnion, hint: 'ইউনিয়ন (ঐচ্ছিক)', items: unions, onChanged: (v) => setState(() => _selectedUnion = v), isRequired: false),
       ],
+    );
+  }
+
+  Widget _buildDropdown({required String? value, required String hint, required List<String> items, required Function(String?) onChanged, bool isRequired = true}) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items: items.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 14)))).toList(),
+      onChanged: onChanged,
+      validator: isRequired ? (v) => v == null ? 'নির্বাচন করুন' : null : null,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: const Icon(Icons.location_city_outlined, color: Colors.redAccent, size: 20),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935))),
+      ),
     );
   }
 
@@ -378,32 +435,31 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     return InkWell(
       onTap: () async {
         final date = await showDatePicker(
-          context: context,
-          initialDate: DateTime.now(),
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(const Duration(days: 30)),
+          context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 30)),
+          builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: Colors.red)), child: child!),
         );
         if (date != null) setState(() => _selectedDate = date);
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade200),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              _selectedDate == null
-                  ? 'রক্তদানের সম্ভাব্য তারিখ'
-                  : DateFormat('dd MMMM yyyy').format(_selectedDate!),
-              style: TextStyle(
-                color: _selectedDate == null ? Colors.grey.shade600 : Colors.black87,
-              ),
+            Row(
+              children: [
+                const Icon(Icons.calendar_month_rounded, color: Colors.redAccent, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  _selectedDate == null ? 'রক্তদানের সম্ভাব্য তারিখ' : DateFormat('dd MMMM yyyy').format(_selectedDate!),
+                  style: TextStyle(color: _selectedDate == null ? Colors.grey.shade600 : Colors.black87, fontSize: 15),
+                ),
+              ],
             ),
-            const Icon(Icons.calendar_month_rounded, color: Color(0xFFE53935)),
+            const Icon(Icons.arrow_drop_down, color: Colors.grey),
           ],
         ),
       ),
@@ -411,19 +467,16 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   }
 
   Widget _buildEmergencySwitch() {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
         color: _isEmergency ? Colors.red.shade50 : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _isEmergency ? Colors.red.shade200 : Colors.grey.shade200,
-        ),
+        border: Border.all(color: _isEmergency ? Colors.red.shade300 : Colors.grey.shade200, width: 1),
       ),
       child: SwitchListTile(
-        title: const Text(
-          'এটি কি জরুরি (Emergency)?',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text('এটি কি জরুরি (Emergency)?', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 14, color: _isEmergency ? Colors.red.shade900 : Colors.black87)),
+        secondary: Icon(Icons.warning_amber_rounded, color: _isEmergency ? Colors.red : Colors.grey),
         activeColor: Colors.red,
         value: _isEmergency,
         onChanged: (v) => setState(() => _isEmergency = v),
@@ -432,46 +485,34 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   }
 
   Widget _buildBloodGroupSelector() {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: _bloodGroups.map((bg) {
-        bool isSelected = _selectedBloodGroup == bg;
-        return InkWell(
-          onTap: () => setState(() => _selectedBloodGroup = bg),
-          child: Container(
-            width: 70,
-            height: 45,
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFE53935) : Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected ? const Color(0xFFE53935) : Colors.grey.shade300,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                bg,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.bold,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('রক্তের গ্রুপ বাছাই করুন', style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10, runSpacing: 10,
+          children: _bloodGroups.map((bg) {
+            bool isSelected = _selectedBloodGroup == bg;
+            return InkWell(
+              onTap: () => setState(() => _selectedBloodGroup = bg),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 65, height: 45,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFE53935) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isSelected ? const Color(0xFFE53935) : Colors.grey.shade300),
+                  boxShadow: isSelected ? [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))] : [],
+                ),
+                child: Center(
+                  child: Text(bg, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.notoSansBengali(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.blueGrey.shade700,
-      ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

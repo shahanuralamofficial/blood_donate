@@ -103,7 +103,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (mounted) {
         Navigator.pop(context); // Close loading
         ref.invalidate(currentUserDataProvider);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('প্রোফাইল আপডেট সফল হয়েছে!'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('প্রোফাইল আপডেট সফল হয়েছে!', style: GoogleFonts.notoSansBengali()), 
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          )
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -133,83 +139,110 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text('প্রোফাইল এডিট', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        centerTitle: true,
       ),
       body: _isLoadingData 
         ? const Center(child: CircularProgressIndicator(color: Colors.red))
         : SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTextField('পুরো নাম', _nameController, Icons.person_outline),
-              const SizedBox(height: 20),
-              _buildTextField('মোবাইল নম্বর', _phoneController, Icons.phone_outlined, isPhone: true),
-              const SizedBox(height: 20),
-              _buildTextField('হোয়াটসঅ্যাপ নম্বর', _whatsappController, Icons.chat_bubble_outline, isPhone: true),
-              const SizedBox(height: 20),
-              _buildTextField('ইমেইল', _emailController, Icons.email_outlined),
-              const SizedBox(height: 24),
-              Text('রক্তের গ্রুপ ও লিঙ্গ', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _buildDropdown('গ্রুপ', _bloodGroups, _selectedBloodGroup, (v) => setState(() => _selectedBloodGroup = v))),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildDropdown('লিঙ্গ', _genders, _selectedGender, (v) => setState(() => _selectedGender = v))),
-                ],
+              _buildSectionCard(
+                title: 'ব্যক্তিগত তথ্য',
+                icon: Icons.person_outline_rounded,
+                child: Column(
+                  children: [
+                    _buildTextField('পুরো নাম', _nameController, Icons.person_outline),
+                    const SizedBox(height: 16),
+                    _buildTextField('ইমেইল', _emailController, Icons.email_outlined),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-              Text('ঠিকানা (বিভাগ, জেলা ও থানা)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
-              const SizedBox(height: 12),
-              _buildDropdown('বিভাগ', divisions, _selectedDivision, (v) => setState(() {
-                _selectedDivision = v;
-                _selectedDistrict = null;
-                _selectedThana = null;
-              })),
               const SizedBox(height: 16),
-              _buildDropdown('জেলা', districts, _selectedDistrict, (v) => setState(() {
-                _selectedDistrict = v;
-                _selectedThana = null;
-              })),
+              
+              _buildSectionCard(
+                title: 'যোগাযোগ',
+                icon: Icons.contact_phone_outlined,
+                child: Column(
+                  children: [
+                    _buildTextField('মোবাইল নম্বর', _phoneController, Icons.phone_outlined, isPhone: true),
+                    const SizedBox(height: 16),
+                    _buildTextField('হোয়াটসঅ্যাপ নম্বর', _whatsappController, Icons.chat_bubble_outline, isPhone: true),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
-              _buildDropdown('থানা', thanas, _selectedThana, (v) => setState(() => _selectedThana = v)),
-              const SizedBox(height: 24),
+
+              _buildSectionCard(
+                title: 'রক্তের গ্রুপ ও লিঙ্গ',
+                icon: Icons.info_outline_rounded,
+                child: Row(
+                  children: [
+                    Expanded(child: _buildDropdown('গ্রুপ', _bloodGroups, _selectedBloodGroup, (v) => setState(() => _selectedBloodGroup = v))),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildDropdown('লিঙ্গ', _genders, _selectedGender, (v) => setState(() => _selectedGender = v))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              _buildSectionCard(
+                title: 'ঠিকানা',
+                icon: Icons.location_on_outlined,
+                child: Column(
+                  children: [
+                    _buildDropdown('বিভাগ', divisions, _selectedDivision, (v) => setState(() {
+                      _selectedDivision = v; _selectedDistrict = null; _selectedThana = null;
+                    })),
+                    const SizedBox(height: 12),
+                    _buildDropdown('জেলা', districts, _selectedDistrict, (v) => setState(() {
+                      _selectedDistrict = v; _selectedThana = null;
+                    })),
+                    const SizedBox(height: 12),
+                    _buildDropdown('থানা', thanas, _selectedThana, (v) => setState(() => _selectedThana = v)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: _isAvailable ? Colors.green.shade50 : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _isAvailable ? Colors.green.shade100 : Colors.red.shade100),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _isAvailable ? Colors.green.shade200 : Colors.red.shade200),
                 ),
                 child: SwitchListTile(
                   title: Text('আমি রক্ত দিতে ইচ্ছুক', style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Text(_isAvailable ? 'আপনার প্রোফাইল রক্তদাতা হিসেবে প্রদর্শিত হবে' : 'আপনার প্রোফাইল বর্তমানে রক্তদাতা হিসেবে প্রদর্শিত হবে না', style: const TextStyle(fontSize: 12)),
+                  subtitle: Text(_isAvailable ? 'আপনার প্রোফাইল রক্তদাতা হিসেবে প্রদর্শিত হবে' : 'আপনার প্রোফাইল বর্তমানে প্রদর্শিত হবে না', style: const TextStyle(fontSize: 12)),
                   value: _isAvailable,
                   activeColor: Colors.green,
                   onChanged: (v) => setState(() => _isAvailable = v),
-                  contentPadding: EdgeInsets.zero,
                 ),
               ),
               const SizedBox(height: 40),
+
               ElevatedButton(
                 onPressed: _updateProfile,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: const Color(0xFFE53935),
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 56),
+                  minimumSize: const Size(double.infinity, 58),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
+                  elevation: 2,
+                  shadowColor: Colors.red.withOpacity(0.3),
                 ),
-                child: const Text('পরিবর্তন সংরক্ষণ করুন', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text('পরিবর্তন সংরক্ষণ করুন', style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -217,37 +250,81 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, IconData icon, {bool isPhone = false, Function(String)? onChanged}) {
-    return TextFormField(
-      controller: controller,
-      onChanged: onChanged,
-      keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        filled: true,
-        fillColor: Colors.grey.shade50,
+  Widget _buildSectionCard({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      validator: (v) => (v == null || v.isEmpty) && label != 'ইমেইল' ? 'তথ্য দিন' : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.redAccent, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: GoogleFonts.notoSansBengali(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade800)),
+            ],
+          ),
+          const Divider(height: 24, thickness: 0.5),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, IconData icon, {bool isPhone = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.notoSansBengali(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade700)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+          style: const TextStyle(fontSize: 15),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, size: 20, color: Colors.red.shade300),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.5)),
+            errorStyle: const TextStyle(fontSize: 11),
+          ),
+          validator: (v) => (v == null || v.isEmpty) && label != 'ইমেইল' ? 'তথ্য দিন' : null,
+        ),
+      ],
     );
   }
 
   Widget _buildDropdown(String label, List<String> items, String? selected, Function(String?) onChanged) {
-    return DropdownButtonFormField<String>(
-      value: (selected != null && items.contains(selected)) ? selected : null,
-      hint: Text(label),
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-      onChanged: onChanged,
-      validator: (v) => v == null ? 'নির্বাচন করুন' : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.notoSansBengali(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade700)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: (selected != null && items.contains(selected)) ? selected : null,
+          isExpanded: true,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 18, color: Colors.redAccent),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935))),
+          ),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
+          onChanged: onChanged,
+          validator: (v) => v == null ? 'নির্বাচন করুন' : null,
+        ),
+      ],
     );
   }
 }
