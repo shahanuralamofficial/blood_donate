@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -201,51 +202,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildDrawer(BuildContext context, UserModel? user) {
     return Drawer(
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(topRight: Radius.circular(30), bottomRight: Radius.circular(30)),
+      ),
       child: Column(
         children: [
           _buildDrawerHeader(user),
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildDrawerItem(
-                  icon: Icons.local_hospital_rounded,
-                  title: 'হাসপাতাল ও ক্লিনিক',
-                  subtitle: 'Coming Soon',
-                  onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('এই ফিচারটি শীঘ্রই আসছে!')));
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.settings_suggest_rounded,
-                  title: 'সেটিংস',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.headset_mic_rounded,
-                  title: 'সাপোর্ট ও ফিডব্যাক',
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showSupportDialog();
-                  },
-                ),
-                const Divider(),
-                _buildDrawerItem(
-                  icon: Icons.info_outline_rounded,
-                  title: 'আমাদের সম্পর্কে',
-                  onTap: () { Navigator.pop(context); },
-                ),
-              ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  _buildDrawerSectionTitle('সাধারণ'),
+                  _buildDrawerItem(
+                    icon: Icons.settings_suggest_rounded,
+                    title: 'সেটিংস ও প্রোফাইল',
+                    color: Colors.blue.shade700,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.favorite_rounded,
+                    title: 'সেভ করা ডোনার',
+                    color: Colors.red.shade600,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SavedDonorsScreen()));
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.history_rounded,
+                    title: 'অ্যাক্টিভিটি হিস্ট্রি',
+                    color: Colors.orange.shade700,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                    },
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Divider(thickness: 0.5),
+                  ),
+                  _buildDrawerSectionTitle('অন্যান্য'),
+                  _buildDrawerItem(
+                    icon: Icons.local_hospital_rounded,
+                    title: 'হাসপাতাল ও ক্লিনিক',
+                    subtitle: 'শীঘ্রই আসছে',
+                    color: Colors.teal,
+                    onTap: () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('এই ফিচারটি শীঘ্রই আসছে!')));
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.headset_mic_rounded,
+                    title: 'সাপোর্ট ও ফিডব্যাক',
+                    color: Colors.indigo,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showSupportDialog();
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.info_outline_rounded,
+                    title: 'আমাদের সম্পর্কে',
+                    color: Colors.grey.shade700,
+                    onTap: () { Navigator.pop(context); },
+                  ),
+                ],
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Text('Version 1.0.0', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
-          ),
+          _buildDrawerFooter(),
         ],
       ),
     );
@@ -254,42 +287,155 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildDrawerHeader(UserModel? user) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE53935), Color(0xFFB71C1C)],
+        color: Color(0xFFB71C1C),
+        image: DecorationImage(
+          image: NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'), // Subtle pattern overlay
+          opacity: 0.1,
+          repeat: ImageRepeat.repeat,
         ),
+        borderRadius: BorderRadius.only(bottomRight: Radius.circular(50)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 35,
-            backgroundColor: Colors.white,
-            backgroundImage: user?.profileImageUrl != null ? NetworkImage(user!.profileImageUrl!) : null,
-            child: user?.profileImageUrl == null ? const Icon(Icons.person, size: 40, color: Color(0xFFE53935)) : null,
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: CircleAvatar(
+              radius: 38,
+              backgroundColor: Colors.grey.shade100,
+              backgroundImage: user?.profileImageUrl != null ? NetworkImage(user!.profileImageUrl!) : null,
+              child: user?.profileImageUrl == null ? const Icon(Icons.person, size: 45, color: Color(0xFFE53935)) : null,
+            ),
           ),
           const SizedBox(height: 15),
-          Text(user?.name ?? 'অতিথি', style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-            child: Text('ব্লাড গ্রুপ: ${user?.bloodGroup ?? "N/A"}', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(
+            user?.name ?? 'অতিথি',
+            style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.bloodtype, color: Colors.white, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      'গ্রুপ: ${user?.bloodGroup ?? "N/A"}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (user?.rank != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.stars, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        user!.rank.toUpperCase(),
+                        style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDrawerItem({required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.grey.shade700),
-      title: Text(title, style: GoogleFonts.notoSansBengali(fontSize: 15, fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.red, fontSize: 11)) : null,
-      onTap: onTap,
+  Widget _buildDrawerSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, bottom: 8, top: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.notoSansBengali(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade500,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.notoSansBengali(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade900),
+        ),
+        subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.red, fontSize: 11)) : null,
+        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey.shade400),
+      ),
+    );
+  }
+
+  Widget _buildDrawerFooter() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Blood Donate', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFB71C1C))),
+              Text('Version 1.0.0', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+            ],
+          ),
+          IconButton(
+            onPressed: () async {
+              // Sign out logic
+              await ref.read(userStatusProvider).updateStatus(false);
+              await FirebaseAuth.instance.signOut();
+            },
+            icon: const Icon(Icons.logout_rounded, color: Colors.grey),
+            tooltip: 'Log Out',
+          ),
+        ],
+      ),
     );
   }
 
