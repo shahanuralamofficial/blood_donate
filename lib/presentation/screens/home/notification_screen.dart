@@ -123,14 +123,14 @@ class NotificationScreen extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: isRead ? Colors.white : Colors.red.withOpacity(0.03),
+          color: isRead ? Colors.white : Colors.red.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isRead ? Colors.grey.shade100 : Colors.red.shade100,
             width: isRead ? 1 : 1.5,
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Material(
@@ -157,7 +157,7 @@ class NotificationScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                     child: Icon(icon, color: iconColor, size: 22),
                   ),
                   const SizedBox(width: 16),

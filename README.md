@@ -1,117 +1,110 @@
-<p align="center">
-  <h1 align="center">Blood Donate 🩸</h1>
-</p>
+# Blood Donate 🩸 | জীবনের প্রয়োজনে রক্তদান
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg?style=for-the-badge&logo=flutter)](https://flutter.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth%20|%20Firestore%20|%20Cloud%20Messaging-orange.svg?style=for-the-badge&logo=firebase)](https://firebase.google.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+**Blood Donate** একটি আধুনিক এবং রিয়েল-টাইম মোবাইল অ্যাপ্লিকেশন যা রক্তদাতা এবং রক্তগ্রহীতাদের মধ্যে দূরত্ব কমিয়ে জীবন বাঁচাতে সাহায্য করে। এটি শুধুমাত্র একটি ব্লাড রিকোয়েস্ট অ্যাপ নয়, বরং এতে রয়েছে গ্যামিফিকেশন, প্রফেশনাল রিপোর্ট জেনারেশন এবং সিকিউর চ্যাটিং সিস্টেম।
+
+---
+
+## 📸 App Showcase
 
 <p align="center">
-  A comprehensive, professional, and full-featured Blood Donation Mobile Application built with Flutter and Firebase.
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
-  <img src="https://img.shields.io/badge/Flutter-3.x-blue.svg" alt="Flutter">
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green.svg" alt="Platform">
+  <img src="https://via.placeholder.com/200x400?text=Login+UI" width="22%" />
+  <img src="https://via.placeholder.com/200x400?text=Home+UI" width="22%" />
+  <img src="https://via.placeholder.com/200x400?text=Chat+UI" width="22%" />
+  <img src="https://via.placeholder.com/200x400?text=Profile+UI" width="22%" />
 </p>
 
 ---
 
-## 📜 Table of Contents
-- [About The Project](#about-the-project)
-- [✨ Key Features](#-key-features)
-- [🏅 Gamification & Ranks](#-gamification--ranks)
-- [🛠️ Tech Stack & Architecture](#️-tech-stack--architecture)
-- [🚀 Getting Started](#-getting-started)
-- [📄 License](#-license)
-
-## About The Project
-
-**Blood Donate** is a modern, real-time mobile application designed to bridge the gap between blood donors and recipients. It provides a seamless platform for users to request blood during emergencies and for donors to find nearby requests. With a gamified ranking system, integrated chat, and professional reporting, the app aims to build a reliable and engaged community of lifesavers.
-
 ## ✨ Key Features
 
-| Feature                       | Description                                                                                                                              |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Real-time Blood Requests**  | Create and view emergency requests that are instantly visible to nearby donors.                                                          |
-| **Smart Donor/Patient Search**| Find donors or active requests using filters for blood group and location.                                                                |
-| **In-App Messaging**          | Secure real-time chat between donors and patients with real user names and profile pictures.                                               |
-| **Push Notifications**        | A professional notification center with alerts for nearby requests, messages, and donation status updates.                                 |
-| **PDF Report Generation**     | Download a professional donation history report with **100% correct Bengali typography** (Jukto-borno) support using HTML rendering.      |
-| **Public Profiles & Reviews** | Donors have public profiles with their rank, donation stats, and ratings from patients to build trust.                                   |
-| **Donor Appreciation**        | A special celebration system that triggers a dialog and badges when a donor completes a donation and level up.                          |
-| **Privacy & Security**        | Only owners can see their "Thank You Notes," while "Reviews" are public to maintain a transparent and respectful community.               |
+### 🩸 Smart Blood Requests
+- **Location-Based Alerts**: বিভাগ, জেলা এবং থানা অনুযায়ী নোটিফিকেশন সিস্টেম।
+- **Urgent Filtering**: রক্তের গ্রুপ এবং এরিয়া অনুযায়ী দ্রুত ডোনার খুঁজে পাওয়ার সুবিধা।
+- **Real-time Updates**: আবেদনের বর্তমান অবস্থা (পেন্ডিং, একসেপ্টেড, কমপ্লিটেড) সাথে সাথে দেখা যায়।
 
-## 🏅 Gamification & Ranks
+### 🏅 Gamification & Donor Ranks
+ডোনারদের উৎসাহিত করতে আমরা একটি ডায়নামিক র‍্যাঙ্কিং সিস্টেম ব্যবহার করি:
+- 🌱 **Newbie**: ০ টি রক্তদান।
+- 🥉 **Bronze**: ১ টি রক্তদান।
+- 🥈 **Silver**: ৫ টি রক্তদান।
+- 🥇 **Gold**: ১৫ টি রক্তদান।
+- 💎 **Platinum**: ৩০ টি রক্তদান।
+- 👑 **Diamond**: ৫০ টি রক্তদান।
 
-The app motivates donors through a dynamic ranking system based on their self-donation count:
+### 💬 Seamless Communication
+- **In-App Chat**: ডোনার এবং রোগীর পরিবারের মধ্যে সরাসরি এবং নিরাপদ কথা বলার সুযোগ।
+- **Push Notifications**: নতুন মেসেজ বা ব্লাড রিকোয়েস্টের জন্য ইনস্ট্যান্ট অ্যালার্ট।
 
-- 🌱 **Newbie**: Starting point (0 donations)
-- 🥉 **Bronze**: 1+ Donations
-- 🥈 **Silver**: 5+ Donations
-- 🥇 **Gold**: 15+ Donations
-- 💎 **Platinum**: 30+ Donations
-- 👑 **Diamond**: 50+ Donations
+### 📄 Professional Reporting
+- **PDF Report**: আপনার করা সমস্ত রক্তদান এবং গ্রহণের হিস্ট্রি প্রফেশনাল PDF আকারে ডাউনলোড করার সুবিধা।
+- **Bengali Typography**: যুক্তবর্ণ এবং বাংলা ফন্ট সম্বলিত নিখুঁত বাংলা রিপোর্ট জেনারেশন।
+
+---
 
 ## 🛠️ Tech Stack & Architecture
 
-This project is built with a modern and scalable tech stack to ensure a high-quality user experience.
+এই অ্যাপটি আধুনিক **Clean Architecture** অনুসরণ করে তৈরি করা হয়েছে যা মেইনটেইন করা এবং স্কেল করা সহজ।
 
-| Category             | Technology                                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Framework**        | [Flutter](https://flutter.dev/)                                                                             |
-| **Backend**          | [Firebase](https://firebase.google.com/) (Auth, Firestore, Cloud Messaging, Storage)                         |
-| **State Management** | [Riverpod](https://riverpod.dev/)                                                                           |
-| **Typography**       | Google Fonts (Noto Sans Bengali) for professional report aesthetics.                                        |
-| **Reporting**        | [Printing](https://pub.dev/packages/printing) (HTML-to-PDF engine for perfect Bengali rendering)            |
+- **State Management**: [Riverpod](https://riverpod.dev/) (Scalable and testable state management)
+- **Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore) (Real-time NoSQL)
+- **Authentication**: Firebase Auth (Phone & Email)
+- **Typography**: Google Fonts (Noto Sans Bengali)
+- **Design Pattern**: Feature-driven Folder Structure
 
-### Project Structure
+### 📂 Project Structure
 ```text
 lib/
-├── core/
-│   ├── services/         # Notification, Location, Report (PDF) services
-│   └── theme/            # Professional App Theme
-├── data/
-│   ├── models/           # User, Request, Message models
-│   └── repositories/     # Firebase implementation logic
-└── presentation/
-    ├── providers/        # Riverpod state providers
-    └── screens/          # All UI screens (Home, Profile, Requests, etc.)
+├── core/             # থিম, রাউটিং, ইউটিলস এবং গ্লোবাল সার্ভিসেস
+├── data/             # মডেলস এবং ডাটা সোর্স (Firebase implementation)
+├── domain/           # বিজনেস লজিক এবং রিপোজিটরি ইন্টারফেস
+└── presentation/     # UI স্ক্রিন এবং রিভারপড প্রোভাইডার
 ```
 
-## 🚀 Getting Started
+---
 
-Follow these instructions to get a copy of the project up and running on your local machine.
+## 🚀 Installation & Setup
 
-### Prerequisites
-- Flutter SDK (latest version)
-- Firebase Account
-- Google Maps API Key (for location features)
-
-### Installation
-1. **Clone the repository:**
+১. আপনার কম্পিউটারে রিপোজিটরি ক্লোন করুন:
    ```bash
    git clone https://github.com/shahanuralamofficial/blood_donate.git
    ```
 
-2. **Install dependencies:**
+২. প্রয়োজনীয় প্যাকেজগুলো ইনস্টল করুন:
    ```bash
    flutter pub get
    ```
 
-3. **Firebase Setup:**
-   - Create a new Firebase project.
-   - Add Android/iOS apps in Firebase Console.
-   - Place `google-services.json` in `android/app/`.
-   - Enable **Email/Phone Auth**, **Firestore**, and **Storage**.
+৩. ফায়ারবেস কনফিগারেশন:
+   - [Firebase Console](https://console.firebase.google.com/) থেকে একটি নতুন প্রজেক্ট তৈরি করুন।
+   - `google-services.json` ফাইলটি `android/app/` ফোল্ডারে রাখুন।
 
-4. **Run the app:**
+৪. অ্যাপটি রান করুন:
    ```bash
    flutter run
    ```
 
-## 📄 License
+---
 
-Distributed under the MIT License.
+## 🎯 Upcoming Features (Roadmap)
+- [ ] গুগল ম্যাপ ইন্টিগ্রেশন (কাছের ডোনারদের ম্যাপে দেখা)।
+- [ ] ডার্ক মোড সাপোর্ট।
+- [ ] ডোনার রিভিউ এবং রেটিং সিস্টেমের আরও উন্নত ফিল্টারিং।
+- [ ] স্বেচ্ছাসেবী সংগঠনগুলোর জন্য আলাদা ড্যাশবোর্ড।
+
+---
+
+## 📄 License
+এই প্রজেক্টটি MIT লাইসেন্সের অধীনে প্রকাশিত। বিস্তারিত জানতে [LICENSE](LICENSE) ফাইলটি দেখুন।
+
+## 🤝 Contribution
+আপনি যদি এই প্রজেক্টে অবদান রাখতে চান, তবে নির্দ্বিধায় **Pull Request** পাঠান অথবা **Issues** সেকশনে আপনার মতামত জানান।
 
 ---
 <p align="center">
-  **Developed with ❤️ for saving lives.**
+  <b>Developed with ❤️ for the Community.</b><br>
+  <i>"রক্ত দিন, জীবন বাঁচান"</i>
 </p>
