@@ -732,15 +732,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           stream: FirebaseFirestore.instance
               .collection('direct_chats')
               .where('participants', arrayContains: user.uid)
-              .where('unread', isEqualTo: true)
               .snapshots(),
           builder: (context, snapshot) {
             int unreadChatCount = 0;
             if (snapshot.hasData) {
-              // শুধুমাত্র সেই চ্যাটগুলো গুনব যেগুলোতে লাস্ট মেসেজ আমি পাঠাইনি
               unreadChatCount = snapshot.data!.docs.where((doc) {
                 final data = doc.data() as Map<String, dynamic>;
-                return data['lastMessageSenderId'] != user.uid;
+                final bool isUnread = (data['unread'] ?? false) == true;
+                final String? lastSender = data['lastMessageSenderId']?.toString();
+                // আমি যদি লাস্ট মেসেজ সেন্ডার না হই এবং মেসেজটি অপঠিত হয়
+                return isUnread && lastSender != user.uid;
               }).length;
             }
 
@@ -751,6 +752,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   icon: const Icon(
                     Icons.chat_bubble_outline_rounded,
                     color: Colors.white,
+                    size: 26,
                   ),
                   onPressed: () => Navigator.push(
                     context,
@@ -759,24 +761,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 if (unreadChatCount > 0)
                   Positioned(
-                    right: 8,
-                    top: 12,
+                    right: 4,
+                    top: 6,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: Colors.yellow.shade700,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.red.shade900, width: 1.5),
+                        border: Border.all(color: Colors.red.shade900, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
                       ),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text(
-                        unreadChatCount > 9 ? '9+' : '$unreadChatCount',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
+                      constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                      child: Center(
+                        child: Text(
+                          unreadChatCount > 9 ? '9+' : '$unreadChatCount',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            height: 1,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),

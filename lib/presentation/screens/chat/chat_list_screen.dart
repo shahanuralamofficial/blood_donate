@@ -131,50 +131,68 @@ class _ChatListScreenState extends State<ChatListScreen> {
           return const SizedBox.shrink();
         }
 
-        final bool isUnread = chatData['lastMessageSenderId'] != currentUid && chatData['unread'] == true;
+        final String currentAuthUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+        final bool isUnread = (chatData['unread'] ?? false) == true && 
+                             chatData['lastMessageSenderId'] != currentAuthUid;
 
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           decoration: BoxDecoration(
-            color: isUnread ? Colors.red.shade50.withOpacity(0.5) : Colors.white,
+            // হাইলাইট কালার আরও গাঢ় করা হলো (red.shade50)
+            color: isUnread ? Colors.red.shade50 : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: isUnread ? Border.all(color: Colors.red.shade100) : null,
+            border: Border.all(
+              color: isUnread ? Colors.red.shade300 : Colors.grey.shade200,
+              width: isUnread ? 2 : 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: isUnread ? Colors.red.withOpacity(0.1) : Colors.black.withOpacity(0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               )
             ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChatScreen(
-                  requestId: chatId,
-                  otherUserName: otherUser.name,
-                  otherUserId: otherUser.uid,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    requestId: chatId,
+                    otherUserName: otherUser.name,
+                    otherUserId: otherUser.uid,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
             leading: Stack(
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.grey.shade100,
-                  backgroundImage: otherUser.profileImageUrl != null
-                      ? NetworkImage(otherUser.profileImageUrl!)
-                      : null,
-                  child: otherUser.profileImageUrl == null
-                      ? Icon(Icons.person, color: Colors.grey.shade400, size: 30)
-                      : null,
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isUnread ? Colors.red : Colors.transparent,
+                      width: 2.5,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 26,
+                    backgroundColor: Colors.grey.shade100,
+                    backgroundImage: otherUser.profileImageUrl != null
+                        ? NetworkImage(otherUser.profileImageUrl!)
+                        : null,
+                    child: otherUser.profileImageUrl == null
+                        ? Icon(Icons.person, color: Colors.grey.shade400, size: 28)
+                        : null,
+                  ),
                 ),
                 if (isOnline)
                   Positioned(
-                    right: 2,
-                    bottom: 2,
+                    right: 4,
+                    bottom: 4,
                     child: Container(
                       width: 12,
                       height: 12,
@@ -192,6 +210,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               style: GoogleFonts.notoSansBengali(
                 fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
                 fontSize: 16,
+                color: isUnread ? Colors.red.shade900 : Colors.black87,
               ),
             ),
             subtitle: Text(
@@ -199,7 +218,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isUnread ? Colors.black87 : Colors.grey.shade600,
+                color: isUnread ? Colors.black : Colors.grey.shade600,
                 fontSize: 13,
                 fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
               ),
@@ -212,18 +231,25 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   Text(
                     _formatTime((chatData['lastMessageTime'] as Timestamp).toDate()),
                     style: TextStyle(
-                      color: isUnread ? Colors.red.shade400 : Colors.grey.shade400, 
-                      fontSize: 11
+                      color: isUnread ? Colors.red.shade700 : Colors.grey.shade500, 
+                      fontSize: 11,
+                      fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 if (isUnread)
                   Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
                       color: Colors.red,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                      ],
+                    ),
+                    child: const Text(
+                      'NEW',
+                      style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],
