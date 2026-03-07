@@ -9,7 +9,6 @@ import '../history/history_screen.dart';
 import '../donors/donor_list_screen.dart';
 import '../requests/request_list_screen.dart';
 import '../profile/edit_profile_screen.dart';
-import '../home/notification_screen.dart';
 import '../../providers/language_provider.dart';
 import '../profile/personal_profile_screen.dart';
 import '../donors/saved_donors_screen.dart';
@@ -409,6 +408,27 @@ class _RootScreenState extends ConsumerState<RootScreen> {
                     ],
                   ),
                 ),
+                if (user?.rank != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.stars_rounded, color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          ref.tr('rank_${user!.rank.toLowerCase()}').toUpperCase(),
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ],

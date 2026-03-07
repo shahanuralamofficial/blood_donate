@@ -4,7 +4,6 @@ import '../../../data/models/user_model.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/language_provider.dart';
-import '../../../data/models/user_model.dart';
 
 class RankProgressScreen extends ConsumerWidget {
   final UserModel user;

@@ -17,6 +17,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(userId);
       allow update: if isSignedIn(); // অনলাইন স্ট্যাটাস বা রেটিং আপডেটের জন্য সবার অনুমতি দেওয়া হয়েছে
+      allow delete: if isSignedIn() && isOwner(userId);
 
       // নোটিফিকেশন সাব-কালেকশন
       match /notifications/{notificationId} {
