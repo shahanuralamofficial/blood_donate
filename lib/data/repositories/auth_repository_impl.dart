@@ -40,8 +40,8 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
 
-    // ইমেইল ভেরিফিকেশন লিঙ্ক পাঠানো
-    await userCredential.user?.sendEmailVerification();
+    // ইমেইল ভেরিফিকেশন লিঙ্ক পাঠানো (বন্ধ করা হয়েছে ইউজার এক্সপেরিয়েন্সের জন্য)
+    // await userCredential.user?.sendEmailVerification();
 
     final newUser = UserModel(
       uid: userCredential.user!.uid,
