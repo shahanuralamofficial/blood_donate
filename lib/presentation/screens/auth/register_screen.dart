@@ -20,9 +20,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _whatsappController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   String? _selectedBloodGroup;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -30,6 +32,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBloodGroup == null) {
       _showErrorSnackBar(ref.tr('blood_group_select'));
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showErrorSnackBar(ref.tr('password_mismatch'));
       return;
     }
 
@@ -113,6 +120,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildInputField(
                   controller: _nameController,
                   label: ref.tr('full_name'),
+                  hint: ref.tr('name_hint'),
                   icon: Icons.person_outline_rounded,
                   validator: (v) => v!.isEmpty ? ref.tr('enter_name') : null,
                 ),
@@ -121,6 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildInputField(
                   controller: _emailController,
                   label: ref.tr('email_address'),
+                  hint: ref.tr('email_hint'),
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) => v!.isEmpty ? ref.tr('enter_email') : null,
@@ -128,18 +137,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 16),
                 
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
+                      flex: 3,
                       child: _buildInputField(
                         controller: _phoneController,
                         label: ref.tr('phone_number'),
+                        hint: ref.tr('phone_hint'),
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
                         validator: (v) => v!.isEmpty ? ref.tr('enter_phone') : null,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
+                      flex: 2,
                       child: _buildBloodDropdown(),
                     ),
                   ],
@@ -149,6 +162,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildInputField(
                   controller: _whatsappController,
                   label: ref.tr('whatsapp_number'),
+                  hint: ref.tr('whatsapp_hint'),
                   icon: Icons.chat_bubble_outline_rounded,
                   keyboardType: TextInputType.phone,
                 ),
@@ -157,11 +171,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildInputField(
                   controller: _passwordController,
                   label: ref.tr('password'),
+                  hint: ref.tr('password_hint'),
                   icon: Icons.lock_outline_rounded,
                   isPassword: true,
                   obscureText: _obscurePassword,
                   onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
                   validator: (v) => v!.length < 6 ? ref.tr('min_password_length') : null,
+                ),
+                const SizedBox(height: 16),
+                
+                _buildInputField(
+                  controller: _confirmPasswordController,
+                  label: ref.tr('confirm_password'),
+                  hint: ref.tr('confirm_password_hint'),
+                  icon: Icons.lock_reset_rounded,
+                  isPassword: true,
+                  obscureText: _obscureConfirmPassword,
+                  onTogglePassword: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  validator: (v) {
+                    if (v!.isEmpty) return ref.tr('enter_confirm_password');
+                    if (v != _passwordController.text) return ref.tr('password_mismatch');
+                    return null;
+                  },
                 ),
                 
                 const SizedBox(height: 40),
@@ -205,6 +236,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    String? hint,
     bool isPassword = false,
     bool obscureText = false,
     VoidCallback? onTogglePassword,
@@ -222,6 +254,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           keyboardType: keyboardType,
           validator: validator,
           decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.grey.shade400),
             prefixIcon: Icon(icon, color: Colors.red.shade400, size: 20),
             suffixIcon: isPassword
                 ? IconButton(

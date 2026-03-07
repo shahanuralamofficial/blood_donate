@@ -234,6 +234,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _buildTextField(
                         controller: _emailController,
                         label: ref.tr('email_address'),
+                        hint: ref.tr('email_hint'),
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -242,6 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _buildTextField(
                         controller: _passwordController,
                         label: ref.tr('password'),
+                        hint: ref.tr('password_hint'),
                         icon: Icons.lock_outline_rounded,
                         isPassword: true,
                         obscureText: _obscurePassword,
@@ -322,6 +324,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    String? hint,
     bool isPassword = false,
     bool obscureText = false,
     VoidCallback? onTogglePassword,
@@ -345,6 +348,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           keyboardType: keyboardType,
           style: const TextStyle(fontSize: 16),
           decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.grey.shade400),
             prefixIcon: Icon(icon, color: Colors.red.shade400, size: 20),
             suffixIcon: isPassword
                 ? IconButton(
