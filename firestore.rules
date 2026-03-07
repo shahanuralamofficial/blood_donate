@@ -5,7 +5,8 @@ service cloud.firestore {
 
     // হেল্পার ফাংশন: ইউজার লগইন করা আছে কি না চেক করে
     function isSignedIn() {
-      return request.auth != null;    }
+      return request.auth != null;
+    }
 
     // হেল্পার ফাংশন: ইউজারের নিজের ডাটা কি না চেক করে
     function isOwner(userId) {
@@ -16,10 +17,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn(); // অনলাইন স্ট্যাটাস বা রেটিং আপডেটের জন্য সবার অনুমতি দেওয়া হয়েছে
+      allow update: if isSignedIn();
       allow delete: if isSignedIn() && isOwner(userId);
 
-      // নোটিফিকেশন সাব-কালেকশন
       match /notifications/{notificationId} {
         allow read: if isSignedIn() && isOwner(userId);
         allow create: if isSignedIn();
@@ -27,29 +27,34 @@ service cloud.firestore {
       }
     }
 
-    // --- ব্লাড রিকোয়েস্ট কালেকশন (চ্যাট পুরোপুরি বন্ধ) ---
+    // --- কল (Calls) কালেকশন ---
+    match /calls/{callId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // --- চ্যাট (Chats) কালেকশন ---
+    // কল স্ক্রিন থেকে মেসেজ সেভ করার জন্য এই পাথটি ওপেন রাখা প্রয়োজন
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn();
+
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    // --- ব্লাড রিকোয়েস্ট কালেকশন ---
     match /blood_requests/{requestId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && resource.data.requesterId == request.auth.uid;
-
-      // ব্লাড রিকোয়েস্টের ভেতরের মেসেজ পাথ পুরোপুরি ব্লক করা হয়েছে
-      match /messages/{messageId} {
-        allow read, write: if false;
-      }
     }
 
-    // --- ডাইরেক্ট চ্যাট কালেকশন (User-to-User) ---
+    // --- ডাইরেক্ট চ্যাট কালেকশন ---
     match /direct_chats/{chatId} {
-      // শুধুমাত্র চ্যাটের মেম্বাররা (participants) চ্যাটটি দেখতে পারবে
-      allow read: if isSignedIn() && (request.auth.uid in resource.data.participants);
-
-      // চ্যাট তৈরি বা আপডেট করার সময় চেক করা হচ্ছে ইউজার নিজে এর অংশ কি না
-      allow create, update: if isSignedIn() && (request.auth.uid in request.resource.data.participants);
+      allow read, write: if isSignedIn();
 
       match /messages/{messageId} {
-        // চ্যাট মেম্বাররা মেসেজ পড়তে এবং পাঠাতে পারবে
         allow read, write: if isSignedIn();
       }
     }
@@ -58,11 +63,6 @@ service cloud.firestore {
     match /donors/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && isOwner(userId);
-    }
-
-    // পুরনো বা অন্য কোনো ভুল পাথ ব্লক
-    match /chats/{chatId} {
-      allow read, write: if false;
     }
   }
 }
