@@ -2,6 +2,10 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+import '../../../data/models/message_model.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelId;
@@ -27,6 +31,11 @@ class _CallScreenState extends State<CallScreen> {
   bool _videoDisabled = false;
   late RtcEngine _engine;
 
+  // কল টাইম ট্র্যাকিং
+  Timer? _timer;
+  int _secondsElapsed = 0;
+  bool _isCallConnected = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,13 +43,11 @@ class _CallScreenState extends State<CallScreen> {
   }
 
   Future<void> initAgora() async {
-    // Permissions
     await [
       Permission.microphone,
       if (widget.isVideoCall) Permission.camera,
     ].request();
 
-    // Create the engine
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
       appId: appId,
@@ -57,16 +64,15 @@ class _CallScreenState extends State<CallScreen> {
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
           setState(() {
             _remoteUid = remoteUid;
+            _isCallConnected = true;
           });
+          _startTimer();
         },
         onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-          setState(() {
-            _remoteUid = null;
-          });
-          Navigator.pop(context);
+          _endCall();
         },
         onLeaveChannel: (RtcConnection connection, RtcStats stats) {
-          Navigator.pop(context);
+          if (mounted) Navigator.pop(context);
         },
       ),
     );
@@ -76,8 +82,7 @@ class _CallScreenState extends State<CallScreen> {
       await _engine.startPreview();
     } else {
       await _engine.enableAudio();
-      // ভয়েস কলের জন্য স্পিকারফোন অন করা এবং অডিও সিনারিও সেট করা
-      await _engine.setEnableSpeakerphone(true); 
+      await _engine.setEnableSpeakerphone(true);
       await _engine.setAudioProfile(
         profile: AudioProfileType.audioProfileDefault,
         scenario: AudioScenarioType.audioScenarioGameStreaming,
@@ -92,8 +97,53 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _secondsElapsed++;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _endCall() async {
+    _timer?.cancel();
+    
+    // কল লগ সেভ করা (যদি কল কানেক্ট হয়ে থাকে)
+    if (_isCallConnected && _secondsElapsed > 0) {
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUid != null) {
+        final durationStr = _formatDuration(_secondsElapsed);
+        final message = MessageModel(
+          senderId: currentUid,
+          text: widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে",
+          timestamp: DateTime.now(),
+          type: widget.isVideoCall ? 'video_call' : 'call',
+          duration: durationStr,
+        );
+
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(widget.channelId)
+            .collection('messages')
+            .add(message.toMap());
+      }
+    }
+
+    await _engine.leaveChannel();
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     _engine.leaveChannel();
     _engine.release();
     super.dispose();
@@ -105,10 +155,7 @@ class _CallScreenState extends State<CallScreen> {
       backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
         children: [
-          // Background / Video Views
           _buildVideoView(),
-          
-          // Overlay UI
           if (!widget.isVideoCall || _remoteUid == null)
             Center(
               child: Column(
@@ -130,14 +177,14 @@ class _CallScreenState extends State<CallScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _remoteUid == null ? "Calling..." : "Connected",
+                    _remoteUid == null 
+                        ? "Calling..." 
+                        : "Connected - ${_formatDuration(_secondsElapsed)}",
                     style: const TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                 ],
               ),
             ),
-          
-          // Call Controls
           Positioned(
             bottom: 50,
             left: 0,
@@ -155,14 +202,12 @@ class _CallScreenState extends State<CallScreen> {
                 ),
                 if (widget.isVideoCall)
                   _buildActionButton(
-                    onPressed: () {
-                      _engine.switchCamera();
-                    },
+                    onPressed: () => _engine.switchCamera(),
                     icon: Icons.switch_camera,
                     color: Colors.white24,
                   ),
                 _buildActionButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _endCall,
                   icon: Icons.call_end,
                   color: Colors.red,
                   isLarge: true,
@@ -186,7 +231,6 @@ class _CallScreenState extends State<CallScreen> {
 
   Widget _buildVideoView() {
     if (!widget.isVideoCall) return const SizedBox.shrink();
-
     return Stack(
       children: [
         Center(

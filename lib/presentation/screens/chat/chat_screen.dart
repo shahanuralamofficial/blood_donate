@@ -89,19 +89,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final user = ref.read(currentUserDataProvider).value;
     if (user == null || _receiverId == null) return;
 
-    // ১. আমি তাকে ব্লক করেছি কি না চেক
     if (user.blockedUsers.contains(_receiverId)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('unblock_to_call'))));
       return;
     }
 
-    // ২. আমি তাকে কল ব্লক করেছি কি না চেক
     if (user.callBlockedUsers.contains(_receiverId)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('unblock_call_to_call'))));
       return;
     }
 
-    // ৩. সে আমাকে ব্লক বা কল ব্লক করেছে কি না চেক
     final receiverDoc = await FirebaseFirestore.instance.collection('users').doc(_receiverId).get();
     final receiverData = receiverDoc.data();
     if (receiverData != null) {
@@ -183,8 +180,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         foregroundColor: Colors.white,
         actions: [
           if (_receiverId != null) ...[
-            IconButton(icon: const Icon(Icons.call), onPressed: () => _initiateCall(context, isVideo: false)),
-            IconButton(icon: const Icon(Icons.videocam), onPressed: () => _initiateCall(context, isVideo: true)),
+            IconButton(icon: const Icon(Icons.call, size: 22), onPressed: () => _initiateCall(context, isVideo: false)),
+            IconButton(icon: const Icon(Icons.videocam, size: 22), onPressed: () => _initiateCall(context, isVideo: true)),
             _buildPopupMenu(user),
           ]
         ],
@@ -194,23 +191,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildAppBarTitle() {
-    if (_receiverId == null) return Text(widget.otherUserName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+    if (_receiverId == null) return Text(widget.otherUserName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis);
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(_receiverId).snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || !snapshot.data!.exists) return Text(widget.otherUserName);
+        if (!snapshot.hasData || !snapshot.data!.exists) return Text(widget.otherUserName, overflow: TextOverflow.ellipsis);
         final userData = snapshot.data!.data() as Map<String, dynamic>?;
         final otherUser = userData != null ? UserModel.fromMap(userData) : null;
         final bool isOnline = userData?['isOnline'] ?? false;
         return InkWell(
           onTap: otherUser != null ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => DonorPublicProfileScreen(donor: otherUser))) : null,
-          child: Row(children: [
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
             CircleAvatar(radius: 18, backgroundImage: otherUser?.profileImageUrl != null ? NetworkImage(otherUser!.profileImageUrl!) : null, child: otherUser?.profileImageUrl == null ? const Icon(Icons.person, size: 20) : null),
-            const SizedBox(width: 10),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(otherUser?.name ?? widget.otherUserName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-              Text(isOnline ? ref.tr('online') : ref.tr('offline'), style: TextStyle(fontSize: 10, color: isOnline ? Colors.greenAccent : Colors.white70)),
-            ]),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(otherUser?.name ?? widget.otherUserName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                Text(isOnline ? ref.tr('online') : ref.tr('offline'), style: TextStyle(fontSize: 10, color: isOnline ? Colors.greenAccent : Colors.white70)),
+              ]),
+            ),
           ]),
         );
       },
@@ -227,51 +226,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
       itemBuilder: (context) => [
-        _buildPopupItem(
-          value: 'mute',
-          icon: isMuted ? Icons.notifications_active : Icons.notifications_off,
-          text: isMuted ? ref.tr('unmute_chat') : ref.tr('mute_chat'),
-          iconColor: isMuted ? Colors.green : Colors.grey,
-        ),
-        _buildPopupItem(
-          value: 'block_call',
-          icon: isCallBlocked ? Icons.phone_callback : Icons.phone_disabled,
-          text: isCallBlocked ? ref.tr('unblock_call') : ref.tr('block_call'),
-          iconColor: isCallBlocked ? Colors.green : Colors.orange,
-        ),
-        _buildPopupItem(
-          value: 'block',
-          icon: Icons.block,
-          text: isBlocked ? ref.tr('unblock_user') : ref.tr('block_user'),
-          iconColor: isBlocked ? Colors.green : Colors.red,
-        ),
+        _buildPopupItem(value: 'mute', icon: isMuted ? Icons.notifications_active : Icons.notifications_off, text: isMuted ? ref.tr('unmute_chat') : ref.tr('mute_chat'), iconColor: isMuted ? Colors.green : Colors.grey),
+        _buildPopupItem(value: 'block_call', icon: isCallBlocked ? Icons.phone_callback : Icons.phone_disabled, text: isCallBlocked ? ref.tr('unblock_call') : ref.tr('block_call'), iconColor: isCallBlocked ? Colors.green : Colors.orange),
+        _buildPopupItem(value: 'block', icon: Icons.block, text: isBlocked ? ref.tr('unblock_user') : ref.tr('block_user'), iconColor: isBlocked ? Colors.green : Colors.red),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildPopupItem({
-    required String value,
-    required IconData icon,
-    required String text,
-    required Color iconColor,
-  }) {
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 12),
-          Text(
-            text,
-            style: GoogleFonts.notoSansBengali(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
+  PopupMenuItem<String> _buildPopupItem({required String value, required IconData icon, required String text, required Color iconColor}) {
+    return PopupMenuItem(value: value, child: Row(children: [Icon(icon, color: iconColor, size: 20), const SizedBox(width: 12), Text(text, style: GoogleFonts.notoSansBengali(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87))]));
   }
 
   Widget _buildChatBody(UserModel? currentUser) {
@@ -305,6 +268,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildMessageBubble(MessageModel msg, bool isMe) {
+    if (msg.type == 'call' || msg.type == 'video_call') {
+      return _buildCallLogBubble(msg);
+    }
+
     return Align(alignment: isMe ? Alignment.centerRight : Alignment.centerLeft, child: Column(crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
       Container(margin: const EdgeInsets.only(bottom: 2), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75), decoration: BoxDecoration(color: isMe ? Colors.red.shade600 : Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)]), child: Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14))),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -313,6 +280,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ])),
       const SizedBox(height: 6),
     ]));
+  }
+
+  Widget _buildCallLogBubble(MessageModel msg) {
+    final isVideo = msg.type == 'video_call';
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(isVideo ? Icons.videocam : Icons.call, size: 16, color: Colors.grey.shade700),
+            const SizedBox(width: 8),
+            Text(
+              msg.duration != null ? '${isVideo ? 'ভিডিও কল' : 'ভয়েস কল'} (${msg.duration})' : (isVideo ? 'মিসড ভিডিও কল' : 'মিসড ভয়েস কল'),
+              style: GoogleFonts.notoSansBengali(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildInputArea() {
