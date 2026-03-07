@@ -195,6 +195,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 title: '${ref.tr('blood_group')} & ${ref.tr('gender')}',
                 icon: Icons.info_outline_rounded,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: _buildDropdown(ref.tr('group'), _bloodGroups, _selectedBloodGroup, (v) => setState(() => _selectedBloodGroup = v))),
                     const SizedBox(width: 12),
@@ -328,14 +329,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         DropdownButtonFormField<String>(
           value: (selected != null && items.contains(selected)) ? selected : null,
           isExpanded: true,
+          icon: const Icon(Icons.arrow_drop_down, size: 20),
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 18, color: Colors.redAccent),
+            prefixIcon: Icon(isGender ? Icons.person_outline : Icons.bloodtype_outlined, size: 20, color: Colors.red.shade300),
             filled: true,
             fillColor: Colors.grey.shade50,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade400)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.5)),
+            errorStyle: const TextStyle(fontSize: 11),
           ),
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(isGender ? ref.tr(e) : e, style: const TextStyle(fontSize: 14)))).toList(),
           onChanged: onChanged,
