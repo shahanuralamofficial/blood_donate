@@ -1,18 +1,17 @@
-import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import '../../../data/models/message_model.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelId;
   final String otherUserName;
   final bool isVideoCall;
-  final bool isIncoming;
+  final bool isIncoming; // নতুন প্যারামিটার
 
   const CallScreen({
     super.key,
@@ -28,264 +27,207 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> {
   static const String appId = "1a3cffb089de46c8bc49934befb8b9d2";
-  RtcEngine? _engine;
   int? _remoteUid;
   bool _localUserJoined = false;
   bool _muted = false;
+  bool _videoDisabled = false;
+  late RtcEngine _engine;
+
+  // কল স্ট্যাটাস
   bool _hasAccepted = false;
-  
   Timer? _timer;
   int _secondsElapsed = 0;
   bool _isCallConnected = false;
-  Timer? _ringingTimer;
 
   @override
   void initState() {
     super.initState();
-    _hasAccepted = !widget.isIncoming;
-    _initAgora();
+    _hasAccepted = !widget.isIncoming; // যদি আউটগোয়িং হয় তবে অটো একসেপ্টেড
+    initAgora();
+  }
+
+  Future<void> initAgora() async {
+    // ইঞ্জিন ইনিশিয়ালাইজ
+    _engine = createAgoraRtcEngine();
+    await _engine.initialize(const RtcEngineContext(
+      appId: appId,
+      channelProfile: ChannelProfileType.channelProfileCommunication,
+    ));
+
+    _engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          debugPrint("Local user joined: ${connection.localUid}");
+          setState(() {
+            _localUserJoined = true;
+          });
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          debugPrint("Remote user joined: $remoteUid");
+          setState(() {
+            _remoteUid = remoteUid;
+            _isCallConnected = true;
+          });
+          _startTimer();
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+          debugPrint("Remote user offline: $remoteUid");
+          _endCall();
+        },
+        onLeaveChannel: (RtcConnection connection, RtcStats stats) {
+          debugPrint("Leave channel");
+          if (mounted) Navigator.pop(context);
+        },
+      ),
+    );
+
+    // আউটগোয়িং কল হলে সাথে সাথে জয়েন করবে
+    if (!widget.isIncoming) {
+      _joinChannel();
+    }
+  }
+
+  Future<void> _joinChannel() async {
+    // পারমিশন চেক
+    await [
+      Permission.microphone,
+      if (widget.isVideoCall) Permission.camera,
+    ].request();
+
+    await _engine.enableAudio();
+    await _engine.setEnableSpeakerphone(true);
+
+    if (widget.isVideoCall) {
+      await _engine.enableVideo();
+      await _engine.startPreview();
+    }
+
+    await _engine.joinChannel(
+      token: "",
+      channelId: widget.channelId,
+      uid: 0,
+      options: const ChannelMediaOptions(
+        autoSubscribeAudio: true,
+        autoSubscribeVideo: true,
+        publishMicrophoneTrack: true,
+        publishCameraTrack: true,
+      ),
+    );
     
-    if (widget.isIncoming) {
-      _startRingingEffect();
-    }
-
-    _ringingTimer = Timer(const Duration(seconds: 45), () {
-      if (mounted && !_isCallConnected) {
-        debugPrint("Call timeout - no connection established");
-        _onExitPressed();
-      }
+    setState(() {
+      _hasAccepted = true;
     });
-  }
-
-  void _startRingingEffect() {
-    // এখানে আপনি audioplayers ব্যবহার করে রিংটোন বাজাতে পারেন
-    // আপাতত হ্যাপটিক ফিডব্যাক দেওয়া হচ্ছে
-    HapticFeedback.vibrate();
-    Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (!mounted || _isCallConnected || _hasAccepted) {
-        timer.cancel();
-      } else {
-        HapticFeedback.vibrate();
-      }
-    });
-  }
-
-  Future<void> _initAgora() async {
-    try {
-      debugPrint("Initializing Agora for channel: ${widget.channelId.trim()}");
-      final statuses = await [
-        Permission.microphone,
-        if (widget.isVideoCall) Permission.camera,
-      ].request();
-
-      if (statuses[Permission.microphone] != PermissionStatus.granted ||
-          (widget.isVideoCall && statuses[Permission.camera] != PermissionStatus.granted)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("কল করার জন্য মাইক্রোফোন ও ক্যামেরা পারমিশন প্রয়োজন"))
-          );
-        }
-        _onExitPressed();
-        return;
-      }
-
-      _engine = createAgoraRtcEngine();
-      await _engine!.initialize(const RtcEngineContext(
-        appId: appId,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-      ));
-
-      _engine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            debugPrint("Join success: ${connection.localUid}");
-            if (mounted) setState(() => _localUserJoined = true);
-          },
-          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-            debugPrint("User joined callback: $remoteUid");
-            if (mounted) {
-              setState(() => _remoteUid = remoteUid);
-              // ইনকামিং কলের ক্ষেত্রে যদি অলরেডি একসেপ্ট করা থাকে, তবে কানেকশন চেক করবে।
-              if (_hasAccepted && widget.isIncoming) {
-                debugPrint("Receiver already accepted, checking connection.");
-                _startCallConnection();
-              }
-            }
-          },
-          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-            debugPrint("User offline: $remoteUid");
-            _onExitPressed();
-          },
-          onRemoteAudioStateChanged: (connection, remoteUid, state, reason, elapsed) {
-            debugPrint("Remote audio state changed: $remoteUid, state: $state");
-            if (state == RemoteAudioState.remoteAudioStateDecoding && _hasAccepted) {
-              if (mounted) setState(() => _remoteUid = remoteUid);
-              _startCallConnection();
-            }
-          },
-        ),
-      );
-
-      await _engine!.enableAudio();
-      await _engine!.setEnableSpeakerphone(true);
-      await _engine!.setParameters('{"che.audio.opensl":true}');
-      
-      if (widget.isVideoCall) {
-        await _engine!.enableVideo();
-        await _engine!.startPreview();
-      }
-
-      await _engine!.joinChannel(
-        token: "",
-        channelId: widget.channelId.trim(),
-        uid: 0,
-        options: ChannelMediaOptions(
-          clientRoleType: ClientRoleType.clientRoleBroadcaster,
-          publishMicrophoneTrack: _hasAccepted,
-          publishCameraTrack: widget.isVideoCall && _hasAccepted,
-          autoSubscribeAudio: true,
-          autoSubscribeVideo: true,
-        ),
-      );
-    } catch (e) {
-      debugPrint("Agora Error: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("কল সংযোগে ত্রুটি হয়েছে")));
-        _onExitPressed();
-      }
-    }
-  }
-
-  void _startCallConnection() {
-    if (_isCallConnected) return;
-    _ringingTimer?.cancel(); // স্টপ টাইমার যদি কানেক্ট হয়ে যায়
-    if (mounted) {
-      setState(() => _isCallConnected = true);
-      _startTimer();
-    }
-  }
-
-  Future<void> _acceptCall() async {
-    if (_engine == null) return;
-    debugPrint("Accepting call... Current Remote UID: $_remoteUid");
-    try {
-      // Ensure we use the correct media options for the call type
-      await _engine!.updateChannelMediaOptions(
-        ChannelMediaOptions(
-          publishMicrophoneTrack: true,
-          publishCameraTrack: widget.isVideoCall,
-          autoSubscribeAudio: true,
-          autoSubscribeVideo: true,
-          clientRoleType: ClientRoleType.clientRoleBroadcaster,
-        ),
-      );
-      
-      await _engine!.muteLocalAudioStream(false);
-      if (widget.isVideoCall) {
-        await _engine!.muteLocalVideoStream(false);
-      }
-      
-      if (mounted) {
-        setState(() {
-          _hasAccepted = true;
-          // If the remote user is already here, connect immediately
-          if (_remoteUid != null) {
-            debugPrint("Remote user already present, starting connection.");
-            _startCallConnection();
-          } else {
-            debugPrint("Call accepted, waiting for remote user to join...");
-          }
-        });
-      }
-    } catch (e) {
-      debugPrint("Accept Call Error: $e");
-    }
   }
 
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
-        setState(() => _secondsElapsed++);
-      } else {
-        timer.cancel();
+        setState(() {
+          _secondsElapsed++;
+        });
       }
     });
   }
 
-  String _formatDuration(int seconds) {
-    final mins = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  String _formatDuration(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  void _onExitPressed() {
-    if (!mounted) return;
-    Navigator.of(context).pop();
-    _cleanupAndSave();
-  }
-
-  Future<void> _cleanupAndSave() async {
+  Future<void> _endCall() async {
     _timer?.cancel();
-    _timer = null;
-    _ringingTimer?.cancel();
+    
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid != null) {
+      String messageText;
+      String? finalDuration;
 
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    // ডুপ্লিকেট মেসেজ এড়াতে শুধুমাত্র কলার (Initiator) মেসেজটি চ্যাটে সেভ করবে।
-    if (uid != null && !widget.isIncoming) {
-      String msg = widget.isVideoCall ? "মিসড ভিডিও কল" : "মিসড ভয়েস কল";
-      String? duration;
       if (_isCallConnected && _secondsElapsed > 0) {
-        msg = widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে";
-        duration = _formatDuration(_secondsElapsed);
+        finalDuration = _formatDuration(_secondsElapsed);
+        messageText = widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে";
+      } else {
+        messageText = widget.isVideoCall ? "মিসড ভিডিও কল" : "মিসড ভয়েস কল";
+        finalDuration = null;
       }
-      
-      FirebaseFirestore.instance
+
+      final message = MessageModel(
+        senderId: currentUid,
+        text: messageText,
+        timestamp: DateTime.now(),
+        type: widget.isVideoCall ? 'video_call' : 'call',
+        duration: finalDuration,
+      );
+
+      await FirebaseFirestore.instance
           .collection('chats')
-          .doc(widget.channelId.trim())
+          .doc(widget.channelId)
           .collection('messages')
-          .add(MessageModel(
-            senderId: uid,
-            text: msg,
-            timestamp: DateTime.now(),
-            type: widget.isVideoCall ? 'video_call' : 'call',
-            duration: duration,
-          ).toMap());
+          .add(message.toMap());
+    }
+
+    try {
+      await _engine.leaveChannel();
+    } catch (e) {
+      debugPrint("Leave error: $e");
     }
     
-    try {
-      if (_engine != null) {
-        await _engine!.leaveChannel();
-        await _engine!.release();
-        _engine = null;
-      }
-    } catch (_) {}
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _ringingTimer?.cancel();
+    _engine.leaveChannel();
+    _engine.release();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
-        fit: StackFit.expand,
         children: [
           _buildVideoView(),
-          Container(color: Colors.black.withOpacity(0.5)),
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 80),
-                _buildUserInfo(),
+                const Center(
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.redAccent,
+                    child: Icon(Icons.person, size: 60, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  widget.otherUserName,
+                  style: GoogleFonts.notoSansBengali(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _isCallConnected 
+                      ? _formatDuration(_secondsElapsed) 
+                      : (widget.isIncoming && !_hasAccepted ? "Incoming Call..." : "Calling..."),
+                  style: const TextStyle(color: Colors.white70, fontSize: 18),
+                ),
+                
                 const Spacer(),
-                _buildControls(),
-                const SizedBox(height: 60),
+                
+                // বাটন এরিয়া
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 60),
+                  child: widget.isIncoming && !_hasAccepted 
+                      ? _buildIncomingControls() // ইনকামিং কলের জন্য Accept/Decline
+                      : _buildInCallControls(),   // কল চলাকালীন কন্ট্রোলস
+                ),
               ],
             ),
           ),
@@ -294,137 +236,125 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
-  Widget _buildUserInfo() {
-    return Column(
-      children: [
-        if (!widget.isVideoCall || _remoteUid == null)
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.redAccent.withOpacity(0.8),
-            child: const Icon(Icons.person, size: 60, color: Colors.white),
-          ),
-        const SizedBox(height: 20),
-        Text(
-          widget.otherUserName,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          _isCallConnected 
-              ? _formatDuration(_secondsElapsed) 
-              : (widget.isIncoming && !_hasAccepted ? "ইনকামিং কল..." : "কল হচ্ছে..."),
-          style: GoogleFonts.notoSansBengali(color: Colors.white70, fontSize: 18),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildControls() {
-    if (widget.isIncoming && !_hasAccepted) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildCircleBtn(onTap: _onExitPressed, icon: Icons.call_end, color: Colors.red, label: "বাতিল"),
-          _buildCircleBtn(onTap: _acceptCall, icon: widget.isVideoCall ? Icons.videocam : Icons.call, color: Colors.green, label: "রিসিভ"),
-        ],
-      );
-    }
+  Widget _buildIncomingControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildCircleBtn(
-          onTap: () {
-            if (_engine != null) {
-              setState(() => _muted = !_muted);
-              _engine!.muteLocalAudioStream(_muted);
-            }
-          },
-          icon: _muted ? Icons.mic_off : Icons.mic,
-          color: _muted ? Colors.red : Colors.white24,
-          label: _muted ? "আনমিউট" : "মিউট",
+        // Decline বাটন
+        _buildActionButton(
+          onPressed: _endCall,
+          icon: Icons.call_end,
+          color: Colors.red,
+          isLarge: true,
+          label: "Decline",
         ),
-        _buildCircleBtn(onTap: _onExitPressed, icon: Icons.call_end, color: Colors.red, label: "শেষ", isLarge: true),
-        if (widget.isVideoCall)
-          _buildCircleBtn(onTap: () => _engine?.switchCamera(), icon: Icons.switch_camera, color: Colors.white24, label: "ক্যামেরা"),
+        // Accept বাটন
+        _buildActionButton(
+          onPressed: _joinChannel,
+          icon: widget.isVideoCall ? Icons.videocam : Icons.call,
+          color: Colors.green,
+          isLarge: true,
+          label: "Accept",
+        ),
       ],
     );
   }
 
-  Widget _buildCircleBtn({required VoidCallback onTap, required IconData icon, required Color color, String? label, bool isLarge = false}) {
-    double size = isLarge ? 80 : 65;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildInCallControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: ElevatedButton(
-            onPressed: onTap,
-            style: ElevatedButton.styleFrom(
-              shape: const CircleBorder(),
-              padding: EdgeInsets.zero,
-              backgroundColor: color,
-              foregroundColor: Colors.white,
-              elevation: 8,
-            ),
-            child: Icon(icon, size: size * 0.45),
-          ),
+        _buildActionButton(
+          onPressed: () {
+            setState(() => _muted = !_muted);
+            _engine.muteLocalAudioStream(_muted);
+          },
+          icon: _muted ? Icons.mic_off : Icons.mic,
+          color: _muted ? Colors.red : Colors.white24,
+          label: _muted ? "Unmute" : "Mute",
         ),
-        if (label != null) ...[
-          const SizedBox(height: 8),
-          Text(label, style: GoogleFonts.notoSansBengali(color: Colors.white, fontSize: 14)),
-        ]
+        _buildActionButton(
+          onPressed: _endCall,
+          icon: Icons.call_end,
+          color: Colors.red,
+          isLarge: true,
+          label: "End",
+        ),
+        if (widget.isVideoCall)
+          _buildActionButton(
+            onPressed: () => _engine.switchCamera(),
+            icon: Icons.switch_camera,
+            color: Colors.white24,
+            label: "Switch",
+          ),
       ],
     );
   }
 
   Widget _buildVideoView() {
-    if (!widget.isVideoCall || _engine == null) return Container(color: Colors.black);
-    
-    // ইনকামিং কল রিসিভ করার আগে নিজের প্রিভিউ দেখা যাবে
-    if (widget.isIncoming && !_hasAccepted) {
-       return _localUserJoined 
-           ? AgoraVideoView(controller: VideoViewController(rtcEngine: _engine!, canvas: const VideoCanvas(uid: 0)))
-           : Container(color: Colors.black);
-    }
-
+    if (!widget.isVideoCall || !_hasAccepted) return Container(color: const Color(0xFF1A1A1A));
     return Stack(
       children: [
-        // মেইন উইন্ডো: রিমোট ইউজার থাকলে তাকে দেখাবে, নাহলে নিজের ভিডিও ফুল স্ক্রিনে দেখাবে
-        _remoteUid != null
-            ? AgoraVideoView(
-                controller: VideoViewController.remote(
-                  rtcEngine: _engine!,
-                  canvas: VideoCanvas(uid: _remoteUid),
-                  connection: RtcConnection(channelId: widget.channelId.trim()),
-                ),
-              )
-            : (_localUserJoined 
-                ? AgoraVideoView(controller: VideoViewController(rtcEngine: _engine!, canvas: const VideoCanvas(uid: 0)))
-                : Container(color: Colors.black)),
-        
-        // PIP (Picture-in-Picture): কল কানেক্টেড হলে নিজের ভিডিও ছোট করে উপরে দেখাবে
-        if (_localUserJoined && _remoteUid != null)
+        Center(
+          child: _remoteUid != null
+              ? AgoraVideoView(
+                  controller: VideoViewController.remote(
+                    rtcEngine: _engine,
+                    canvas: VideoCanvas(uid: _remoteUid),
+                    connection: RtcConnection(channelId: widget.channelId),
+                  ),
+                )
+              : Container(color: Colors.black),
+        ),
+        if (_localUserJoined && !_videoDisabled)
           Positioned(
-            top: 50,
+            top: 40,
             right: 20,
-            width: 120,
-            height: 160,
+            width: 110,
+            height: 150,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  border: Border.all(color: Colors.white24, width: 1),
-                  borderRadius: BorderRadius.circular(15),
-                ),
+                color: Colors.black54,
                 child: AgoraVideoView(
-                  controller: VideoViewController(rtcEngine: _engine!, canvas: const VideoCanvas(uid: 0)),
+                  controller: VideoViewController(
+                    rtcEngine: _engine,
+                    canvas: const VideoCanvas(uid: 0),
+                  ),
                 ),
               ),
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required Color color,
+    required String label,
+    bool isLarge = false,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onPressed,
+          child: Container(
+            padding: EdgeInsets.all(isLarge ? 20 : 14),
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: isLarge ? 32 : 24),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
       ],
     );
   }
