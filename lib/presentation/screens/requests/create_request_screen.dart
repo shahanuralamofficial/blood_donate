@@ -226,7 +226,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                             icon: Icons.chat_bubble_outline,
                             keyboardType: TextInputType.phone,
                             isRequired: false,
-                            hintText: ref.tr('whatsapp_hint_text'),
+                            hintText: ref.tr('whatsapp_hint'),
                           ),
                         ],
                       ),
