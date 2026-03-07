@@ -9,6 +9,7 @@ import '../../../data/models/user_model.dart';
 import 'edit_profile_screen.dart';
 import 'reviews_list_screen.dart';
 import 'rank_progress_screen.dart';
+import '../auth/auth_wrapper.dart';
 
 
 class PersonalProfileScreen extends ConsumerWidget {
@@ -52,9 +53,7 @@ class PersonalProfileScreen extends ConsumerWidget {
                     );
 
                     if (shouldLogout == true) {
-                      // প্রথমে অফলাইন স্ট্যাটাস আপডেট করা
                       await ref.read(userStatusProvider).updateStatus(false);
-                      // তারপর লগআউট করা
                       await FirebaseAuth.instance.signOut();
                     }
                   },
@@ -86,7 +85,7 @@ class PersonalProfileScreen extends ConsumerWidget {
                       ],
                       _buildStatsGrid(ref, user),
                       const SizedBox(height: 24),
-                      _buildInfoSection(context, ref, user), // Added context for nav
+                      _buildInfoSection(context, ref, user),
                       const SizedBox(height: 24),
                       _buildReviewCard(context, user),
                       const SizedBox(height: 24),
@@ -135,97 +134,107 @@ class PersonalProfileScreen extends ConsumerWidget {
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, UserModel user) {
     final passwordController = TextEditingController();
-    bool isLoading = false;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(ref.tr('delete_account_title')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                ref.tr('delete_account_confirm'),
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: ref.tr('your_password'),
-                  hintText: ref.tr('enter_password'),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+        builder: (context, setState) {
+          bool isLoading = false;
+          return AlertDialog(
+            title: Text(ref.tr('delete_account_title')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ref.tr('delete_account_confirm'),
+                  style: const TextStyle(fontSize: 14),
                 ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: ref.tr('your_password'),
+                    hintText: ref.tr('enter_password'),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(context),
+                child: Text(ref.tr('no')),
+              ),
+              ElevatedButton(
+                onPressed: isLoading ? null : () async {
+                  if (passwordController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('password_required'))));
+                    return;
+                  }
+
+                  setState(() => isLoading = true);
+
+                  try {
+                    final currentUser = FirebaseAuth.instance.currentUser;
+                    if (currentUser != null) {
+                      if (currentUser.email != null) {
+                        final credential = EmailAuthProvider.credential(
+                          email: currentUser.email!,
+                          password: passwordController.text,
+                        );
+                        await currentUser.reauthenticateWithCredential(credential);
+                      }
+
+                      try {
+                        await ref.read(userStatusProvider).updateStatus(false);
+                      } catch (e) {
+                        debugPrint("Status update error: $e");
+                      }
+
+                      await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+                      await currentUser.delete();
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+                          (route) => false,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(ref.tr('account_deleted_success'))),
+                        );
+                      }
+                    }
+                  } on FirebaseAuthException catch (e) {
+                    if (context.mounted) setState(() => isLoading = false);
+                    String message = ref.tr('something_went_wrong');
+                    if (e.code == 'wrong-password') {
+                      message = ref.tr('wrong_password');
+                    } else if (e.code == 'requires-recent-login') {
+                      message = 'দয়া করে পুনরায় লগইন করে চেষ্টা করুন।';
+                    }
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                  } catch (e) {
+                    if (context.mounted) setState(() => isLoading = false);
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${ref.tr('error_try_again')}: ${e.toString()}")));
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                child: isLoading 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text(ref.tr('yes')),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(context),
-              child: Text(ref.tr('no')),
-            ),
-            ElevatedButton(
-              onPressed: isLoading ? null : () async {
-                if (passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('password_required'))));
-                  return;
-                }
-
-                setState(() => isLoading = true);
-
-                try {
-                  final currentUser = FirebaseAuth.instance.currentUser;
-                  if (currentUser != null && currentUser.email != null) {
-                    // ১. পাসওয়ার্ড দিয়ে পুনরায় অথেন্টিকেট করা
-                    final credential = EmailAuthProvider.credential(
-                      email: currentUser.email!,
-                      password: passwordController.text,
-                    );
-                    await currentUser.reauthenticateWithCredential(credential);
-
-                    // ২. স্ট্যাটাস অফলাইন করা
-                    await ref.read(userStatusProvider).updateStatus(false);
-
-                    // ৩. ডাটাবেস থেকে ইউজার ডকুমেন্ট ডিলিট করা
-                    await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
-
-                    // ৪. ফায়ারবেস অথ থেকে ইউজার ডিলিট করা
-                    await currentUser.delete();
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(ref.tr('account_deleted_success'))),
-                      );
-                    }
-                  }
-                } on FirebaseAuthException catch (e) {
-                  setState(() => isLoading = false);
-                  String message = ref.tr('something_went_wrong');
-                  if (e.code == 'wrong-password') message = ref.tr('wrong_password');
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-                } catch (e) {
-                  setState(() => isLoading = false);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('error_try_again'))));
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: isLoading 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(ref.tr('yes')),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
-
-
 
   Widget _buildHeader(BuildContext context, UserModel user) {
     return Container(
@@ -415,9 +424,6 @@ class PersonalProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildReviewCard(BuildContext context, UserModel user) {
-    // Need ref here for translation, but it's a stateless widget's method called from build where ref is available.
-    // However, _buildReviewCard definition in this file doesn't have ref. 
-    // I should add WidgetRef ref to the parameters if I want to use ref.tr
     return Consumer(
       builder: (context, ref, child) => InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsListScreen(userId: user.uid, userName: user.name))),
