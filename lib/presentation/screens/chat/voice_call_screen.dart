@@ -134,24 +134,34 @@ class _CallScreenState extends State<CallScreen> {
     _timer?.cancel();
     
     // কল লগ সেভ করা
-    if (_isCallConnected && _secondsElapsed > 0) {
-      final currentUid = FirebaseAuth.instance.currentUser?.uid;
-      if (currentUid != null) {
-        final durationStr = _formatDuration(_secondsElapsed);
-        final message = MessageModel(
-          senderId: currentUid,
-          text: widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে",
-          timestamp: DateTime.now(),
-          type: widget.isVideoCall ? 'video_call' : 'call',
-          duration: durationStr,
-        );
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid != null) {
+      String messageText;
+      String? finalDuration;
 
-        await FirebaseFirestore.instance
-            .collection('chats')
-            .doc(widget.channelId)
-            .collection('messages')
-            .add(message.toMap());
+      if (_isCallConnected && _secondsElapsed > 0) {
+        // কল কানেক্ট হয়েছিল
+        finalDuration = _formatDuration(_secondsElapsed);
+        messageText = widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে";
+      } else {
+        // কল কানেক্ট হয়নি (মিসড কল)
+        messageText = widget.isVideoCall ? "মিসড ভিডিও কল" : "মিসড ভয়েস কল";
+        finalDuration = null; // মিসড কলের জন্য ডিউরেশন নেই
       }
+
+      final message = MessageModel(
+        senderId: currentUid,
+        text: messageText,
+        timestamp: DateTime.now(),
+        type: widget.isVideoCall ? 'video_call' : 'call',
+        duration: finalDuration,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.channelId)
+          .collection('messages')
+          .add(message.toMap());
     }
 
     try {

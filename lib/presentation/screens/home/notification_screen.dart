@@ -50,11 +50,11 @@ class NotificationScreen extends ConsumerWidget {
                   return _buildEmptyState(ref);
                 }
 
-                // চ্যাট বাদে সব নোটিফিকেশন ফিল্টার করা
+                // চ্যাট এবং কল বাদে সব নোটিফিকেশন ফিল্টার করা
                 final notifications = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final type = data['data']?['type'] ?? 'general';
-                  return type != 'chat';
+                  return type != 'chat' && type != 'call';
                 }).toList();
 
                 if (notifications.isEmpty) {
