@@ -412,11 +412,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         margin: const EdgeInsets.only(bottom: 2), 
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75), 
         decoration: BoxDecoration(color: isMe ? Colors.red.shade600 : Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)]), 
-        child: msg.type == 'image' 
+      child: msg.type == 'image' 
           ? _buildImageContent(msg.fileUrl!, isMe, msg.text)
           : msg.type == 'video'
             ? _buildVideoContent(msg.fileUrl!, isMe, msg.text)
-            : Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), child: Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14)))
+            : Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isMe ? Colors.red.shade600 : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14))
+              )
       ),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(DateFormat('hh:mm a', ref.watch(languageProvider).languageCode).format(msg.timestamp), style: TextStyle(fontSize: 9, color: Colors.grey.shade600)),
@@ -429,13 +436,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildImageContent(String url, bool isMe, String caption) {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.circular(16),
           child: InkWell(
             onTap: () {
-              // TODO: Open full screen image view
+              // Full screen logic can be added here
             },
             child: CachedNetworkImage(
               imageUrl: url,
@@ -451,11 +458,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ),
         if (caption.isNotEmpty && caption != "ছবি")
-          Padding(
+          Container(
+            width: 200,
+            margin: const EdgeInsets.only(top: 4),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isMe ? Colors.red.shade600 : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Text(
               caption,
-              style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14),
+              style: TextStyle(
+                color: isMe ? Colors.white : Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
       ],
