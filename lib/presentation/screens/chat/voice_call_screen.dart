@@ -11,12 +11,14 @@ class CallScreen extends StatefulWidget {
   final String channelId;
   final String otherUserName;
   final bool isVideoCall;
+  final bool isIncoming; // নতুন প্যারামিটার
 
   const CallScreen({
     super.key,
     required this.channelId,
     required this.otherUserName,
     this.isVideoCall = false,
+    this.isIncoming = false,
   });
 
   @override
@@ -31,7 +33,8 @@ class _CallScreenState extends State<CallScreen> {
   bool _videoDisabled = false;
   late RtcEngine _engine;
 
-  // কল টাইম ট্র্যাকিং
+  // কল স্ট্যাটাস
+  bool _hasAccepted = false;
   Timer? _timer;
   int _secondsElapsed = 0;
   bool _isCallConnected = false;
@@ -39,16 +42,11 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void initState() {
     super.initState();
+    _hasAccepted = !widget.isIncoming; // যদি আউটগোয়িং হয় তবে অটো একসেপ্টেড
     initAgora();
   }
 
   Future<void> initAgora() async {
-    // পারমিশন চেক
-    await [
-      Permission.microphone,
-      if (widget.isVideoCall) Permission.camera,
-    ].request();
-
     // ইঞ্জিন ইনিশিয়ালাইজ
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
@@ -80,26 +78,30 @@ class _CallScreenState extends State<CallScreen> {
           debugPrint("Leave channel");
           if (mounted) Navigator.pop(context);
         },
-        onError: (ErrorCodeType err, String msg) {
-          debugPrint("Agora Error: $err, $msg");
-        }
       ),
     );
 
-    // অডিও কনফিগারেশন (উভয় কলের জন্য)
+    // আউটগোয়িং কল হলে সাথে সাথে জয়েন করবে
+    if (!widget.isIncoming) {
+      _joinChannel();
+    }
+  }
+
+  Future<void> _joinChannel() async {
+    // পারমিশন চেক
+    await [
+      Permission.microphone,
+      if (widget.isVideoCall) Permission.camera,
+    ].request();
+
     await _engine.enableAudio();
     await _engine.setEnableSpeakerphone(true);
-    await _engine.setAudioProfile(
-      profile: AudioProfileType.audioProfileDefault,
-      scenario: AudioScenarioType.audioScenarioGameStreaming,
-    );
 
     if (widget.isVideoCall) {
       await _engine.enableVideo();
       await _engine.startPreview();
     }
 
-    // চ্যানেলে জয়েন করা
     await _engine.joinChannel(
       token: "",
       channelId: widget.channelId,
@@ -111,6 +113,10 @@ class _CallScreenState extends State<CallScreen> {
         publishCameraTrack: true,
       ),
     );
+    
+    setState(() {
+      _hasAccepted = true;
+    });
   }
 
   void _startTimer() {
@@ -133,20 +139,17 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _endCall() async {
     _timer?.cancel();
     
-    // কল লগ সেভ করা
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     if (currentUid != null) {
       String messageText;
       String? finalDuration;
 
       if (_isCallConnected && _secondsElapsed > 0) {
-        // কল কানেক্ট হয়েছিল
         finalDuration = _formatDuration(_secondsElapsed);
         messageText = widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে";
       } else {
-        // কল কানেক্ট হয়নি (মিসড কল)
         messageText = widget.isVideoCall ? "মিসড ভিডিও কল" : "মিসড ভয়েস কল";
-        finalDuration = null; // মিসড কলের জন্য ডিউরেশন নেই
+        finalDuration = null;
       }
 
       final message = MessageModel(
@@ -187,93 +190,43 @@ class _CallScreenState extends State<CallScreen> {
       backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
         children: [
-          // ভিডিও ভিউ (শুধুমাত্র ভিডিও কলের জন্য)
           _buildVideoView(),
-          
-          // কল ইনফো এবং ইউআই
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 50),
-                // ইউজার আইকন এবং নাম
-                if (!widget.isVideoCall || _remoteUid == null) ...[
-                  const Center(
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.redAccent,
-                      child: Icon(Icons.person, size: 60, color: Colors.white),
-                    ),
+                const SizedBox(height: 80),
+                const Center(
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.redAccent,
+                    child: Icon(Icons.person, size: 60, color: Colors.white),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    widget.otherUserName,
-                    style: GoogleFonts.notoSansBengali(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  widget.otherUserName,
+                  style: GoogleFonts.notoSansBengali(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
-                
+                ),
                 const SizedBox(height: 10),
-                // কানেক্টিং বা ডিউরেশন টেক্সট
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    _isCallConnected 
-                        ? _formatDuration(_secondsElapsed) 
-                        : "Calling...",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+                Text(
+                  _isCallConnected 
+                      ? _formatDuration(_secondsElapsed) 
+                      : (widget.isIncoming && !_hasAccepted ? "Incoming Call..." : "Calling..."),
+                  style: const TextStyle(color: Colors.white70, fontSize: 18),
                 ),
                 
                 const Spacer(),
                 
-                // কল কন্ট্রোল বাটনসমূহ
+                // বাটন এরিয়া
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 50),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // মিউট বাটন
-                      _buildActionButton(
-                        onPressed: () {
-                          setState(() => _muted = !_muted);
-                          _engine.muteLocalAudioStream(_muted);
-                        },
-                        icon: _muted ? Icons.mic_off : Icons.mic,
-                        color: _muted ? Colors.red : Colors.white24,
-                        label: _muted ? "Unmute" : "Mute",
-                      ),
-                      
-                      // কল এন্ড বাটন
-                      _buildActionButton(
-                        onPressed: _endCall,
-                        icon: Icons.call_end,
-                        color: Colors.red,
-                        isLarge: true,
-                        label: "End",
-                      ),
-                      
-                      // ভিডিও পজ বা ক্যামেরা সুইচ
-                      if (widget.isVideoCall)
-                        _buildActionButton(
-                          onPressed: () => _engine.switchCamera(),
-                          icon: Icons.switch_camera,
-                          color: Colors.white24,
-                          label: "Switch",
-                        ),
-                    ],
-                  ),
+                  padding: const EdgeInsets.only(bottom: 60),
+                  child: widget.isIncoming && !_hasAccepted 
+                      ? _buildIncomingControls() // ইনকামিং কলের জন্য Accept/Decline
+                      : _buildInCallControls(),   // কল চলাকালীন কন্ট্রোলস
                 ),
               ],
             ),
@@ -283,8 +236,63 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 
+  Widget _buildIncomingControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        // Decline বাটন
+        _buildActionButton(
+          onPressed: _endCall,
+          icon: Icons.call_end,
+          color: Colors.red,
+          isLarge: true,
+          label: "Decline",
+        ),
+        // Accept বাটন
+        _buildActionButton(
+          onPressed: _joinChannel,
+          icon: widget.isVideoCall ? Icons.videocam : Icons.call,
+          color: Colors.green,
+          isLarge: true,
+          label: "Accept",
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInCallControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildActionButton(
+          onPressed: () {
+            setState(() => _muted = !_muted);
+            _engine.muteLocalAudioStream(_muted);
+          },
+          icon: _muted ? Icons.mic_off : Icons.mic,
+          color: _muted ? Colors.red : Colors.white24,
+          label: _muted ? "Unmute" : "Mute",
+        ),
+        _buildActionButton(
+          onPressed: _endCall,
+          icon: Icons.call_end,
+          color: Colors.red,
+          isLarge: true,
+          label: "End",
+        ),
+        if (widget.isVideoCall)
+          _buildActionButton(
+            onPressed: () => _engine.switchCamera(),
+            icon: Icons.switch_camera,
+            color: Colors.white24,
+            label: "Switch",
+          ),
+      ],
+    );
+  }
+
   Widget _buildVideoView() {
-    if (!widget.isVideoCall) return Container(color: const Color(0xFF1A1A1A));
+    if (!widget.isVideoCall || !_hasAccepted) return Container(color: const Color(0xFF1A1A1A));
     return Stack(
       children: [
         Center(
@@ -334,17 +342,10 @@ class _CallScreenState extends State<CallScreen> {
         GestureDetector(
           onTap: onPressed,
           child: Container(
-            padding: EdgeInsets.all(isLarge ? 18 : 14),
+            padding: EdgeInsets.all(isLarge ? 20 : 14),
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              boxShadow: isLarge ? [
-                BoxShadow(
-                  color: Colors.red.withOpacity(0.3),
-                  blurRadius: 15,
-                  spreadRadius: 5,
-                )
-              ] : null,
             ),
             child: Icon(icon, color: Colors.white, size: isLarge ? 32 : 24),
           ),

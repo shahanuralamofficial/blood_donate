@@ -105,6 +105,7 @@ class NotificationService {
             channelId: channelId,
             otherUserName: senderName,
             isVideoCall: isVideo,
+            isIncoming: true, // এটি ইনকামিং কল
           ),
         ),
       );
