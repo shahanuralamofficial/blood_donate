@@ -31,6 +31,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _dailyFact = '';
   List<String> _donationFacts = [];
+  bool _isDialogShowing = false;
 
   @override
   void initState() {
@@ -97,7 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (user == null) return Scaffold(body: Center(child: Text(ref.tr('user_not_found'))));
 
         // প্রোফাইল অসম্পূর্ণ থাকলে ডায়ালগ দেখানো
-        if ((user.bloodGroup == null || user.bloodGroup!.isEmpty || user.address == null) && mounted) {
+        if ((user.bloodGroup == null || user.bloodGroup!.isEmpty || user.address == null) && mounted && !_isDialogShowing) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showIncompleteProfileDialog();
           });
@@ -490,6 +491,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showIncompleteProfileDialog() {
+    if (_isDialogShowing) return;
+    _isDialogShowing = true;
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -505,11 +509,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         content: Text(ref.tr('profile_incomplete_msg')),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              _isDialogShowing = false;
+              Navigator.pop(context);
+            },
             child: Text(ref.tr('later'), style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
+              _isDialogShowing = false;
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
             },
@@ -521,6 +529,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) => _isDialogShowing = false);
   }
 }

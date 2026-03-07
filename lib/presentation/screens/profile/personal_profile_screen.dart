@@ -404,6 +404,75 @@ class PersonalProfileScreen extends ConsumerWidget {
           _buildInfoRow(Icons.person_outline_rounded, ref.tr('gender'), gender, Colors.blue),
           const Divider(height: 32, thickness: 0.5),
           _buildInfoRow(Icons.location_on_outlined, ref.tr('location'), location, Colors.green),
+          const Divider(height: 32, thickness: 0.5),
+          _buildEmailVerificationRow(context, ref),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmailVerificationRow(BuildContext context, WidgetRef ref) {
+    final user = FirebaseAuth.instance.currentUser;
+    final isVerified = user?.emailVerified ?? false;
+
+    return InkWell(
+      onTap: isVerified ? null : () async {
+        try {
+          await user?.sendEmailVerification();
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(ref.tr('verification_email_sent'))),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(ref.tr('error_try_again'))),
+            );
+          }
+        }
+      },
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: (isVerified ? Colors.blue : Colors.orange).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isVerified ? Icons.verified_user_rounded : Icons.mark_email_unread_rounded,
+              color: isVerified ? Colors.blue : Colors.orange,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(ref.tr('email_address'), style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                Text(
+                  user?.email ?? '',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (!isVerified)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                ref.tr('verify_now'),
+                style: TextStyle(color: Colors.orange.shade900, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
         ],
       ),
     );

@@ -15,10 +15,7 @@ class AuthWrapper extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user != null) {
-          if (user.emailVerified) {
-            return const RootScreen();
-          }
-          return const VerifyEmailScreen();
+          return const RootScreen();
         }
         return const LoginScreen();
       },

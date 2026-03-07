@@ -159,9 +159,6 @@ class _RootScreenState extends ConsumerState<RootScreen> {
 
       if ((user.bloodGroup == null || user.address == null) && !_profileAlertShown) {
         _profileAlertShown = true;
-        Future.delayed(const Duration(seconds: 2), () {
-          _showProfileCompleteDialog();
-        });
       }
     });
 
