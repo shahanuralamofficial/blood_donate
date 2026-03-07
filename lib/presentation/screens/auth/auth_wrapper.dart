@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../home/root_screen.dart';
 import 'login_screen.dart';
-import 'verify_email_screen.dart';
+
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
