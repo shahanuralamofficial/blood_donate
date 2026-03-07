@@ -196,6 +196,17 @@ class NotificationService {
             _notifiedChatIds.add(chatId);
           }
 
+          // ৩. কল নোটিফিকেশন সরাসরি ওপেন করা (যদি ফোরগ্রাউন্ডে থাকে)
+          if (notificationData != null && notificationData['type'] == 'call') {
+            // কল আসলে সাথে সাথে স্ক্রিনে নিয়ে যাবে
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _navigateBasedOnData(notificationData);
+            });
+            
+            // নোটিফিকেশনটিকে সাথে সাথে 'Read' মার্ক করে দিচ্ছি যাতে বারবার কল স্ক্রিন ওপেন না হয়
+            change.doc.reference.update({'isRead': true});
+          }
+
           _showLocalNotification(
             title: _localizeStatic(data['title'], notificationData),
             body: _localizeStatic(data['body'], notificationData),
