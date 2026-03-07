@@ -51,7 +51,7 @@ dependencies:
   permission_handler: ^11.3.1
   share_plus: ^10.1.4
   url_launcher: ^6.3.1
-
+  agora_rtc_engine: ^6.3.2
 
   # PDF & Reporting
   pdf: ^3.11.3

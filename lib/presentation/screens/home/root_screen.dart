@@ -336,13 +336,69 @@ class _RootScreenState extends ConsumerState<RootScreen> {
                     icon: Icons.info_outline_rounded,
                     title: ref.tr('about_us'),
                     color: Colors.grey.shade700,
-                    onTap: () { Navigator.pop(context); },
+                    onTap: () { 
+                      Navigator.pop(context);
+                      _showAboutDialog();
+                    },
                   ),
                 ],
               ),
             ),
           ),
           _buildDrawerFooter(),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(ref.tr('about_us'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.red,
+              child: Icon(Icons.bloodtype, color: Colors.white, size: 40),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'রক্তদান - Blood Donate',
+              style: GoogleFonts.notoSansBengali(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'এটি একটি সম্পূর্ণ অলাভজনক প্ল্যাটফর্ম যার লক্ষ্য জরুরি প্রয়োজনে রক্তদাতার সন্ধান সহজ করা।',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+            _buildSupportOption(
+              icon: Icons.facebook_rounded,
+              title: 'Facebook Page',
+              subtitle: 'আমাদের ফেসবুক পেজে যুক্ত হন',
+              color: const Color(0xFF1877F2),
+              onTap: () => _launchUrl('https://www.facebook.com/blooddonate'),
+            ),
+            const SizedBox(height: 12),
+            _buildSupportOption(
+              icon: Icons.telegram_rounded,
+              title: 'Telegram Channel',
+              subtitle: 'লেটেস্ট আপডেট পেতে জয়েন করুন',
+              color: const Color(0xFF0088cc),
+              onTap: () => _launchUrl('https://t.me/blood_donatebd'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(ref.tr('close'), style: GoogleFonts.notoSansBengali()),
+          ),
         ],
       ),
     );
@@ -572,7 +628,7 @@ class _RootScreenState extends ConsumerState<RootScreen> {
               color: const Color(0xFF0088cc),
               onTap: () {
                 Navigator.pop(context);
-                _launchUrl('https://t.me/sn_alam');
+                _launchUrl('https://t.me/blood_donatebd');
               },
             ),
           ],

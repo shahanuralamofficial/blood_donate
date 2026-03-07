@@ -15,6 +15,9 @@ class UserModel {
   final DateTime? createdAt;
   final Map<String, dynamic>? address;
   final List<String> savedDonors;
+  final List<String> blockedUsers; // নতুন: যাদের ব্লক করা হয়েছে
+  final List<String> callBlockedUsers; // নতুন: যাদের কল ব্লক করা হয়েছে
+  final List<String> mutedChats;   // নতুন: যাদের নোটিফিকেশন মিউট করা হয়েছে
   final String? fcmToken;
   final String? whatsappNumber;
   final double averageRating;
@@ -46,6 +49,9 @@ class UserModel {
     this.createdAt,
     this.address,
     this.savedDonors = const [],
+    this.blockedUsers = const [],
+    this.callBlockedUsers = const [],
+    this.mutedChats = const [],
     this.fcmToken,
     this.whatsappNumber,
     this.averageRating = 5.0,
@@ -96,6 +102,9 @@ class UserModel {
       createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
       address: map['address'] != null ? Map<String, dynamic>.from(map['address']) : null,
       savedDonors: List<String>.from(map['savedDonors'] ?? []),
+      blockedUsers: List<String>.from(map['blockedUsers'] ?? []),
+      callBlockedUsers: List<String>.from(map['callBlockedUsers'] ?? []),
+      mutedChats: List<String>.from(map['mutedChats'] ?? []),
       fcmToken: map['fcmToken'],
       whatsappNumber: map['whatsappNumber'],
       averageRating: (map['averageRating'] ?? 5.0).toDouble(),
@@ -128,6 +137,9 @@ class UserModel {
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'address': address,
       'savedDonors': savedDonors,
+      'blockedUsers': blockedUsers,
+      'callBlockedUsers': callBlockedUsers,
+      'mutedChats': mutedChats,
       'fcmToken': fcmToken,
       'whatsappNumber': whatsappNumber,
       'averageRating': averageRating,

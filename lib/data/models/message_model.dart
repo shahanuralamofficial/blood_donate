@@ -5,12 +5,16 @@ class MessageModel {
   final String text;
   final DateTime timestamp;
   final bool isRead;
+  final String type; // 'text', 'call', 'video_call'
+  final String? duration;
 
   MessageModel({
     required this.senderId,
     required this.text,
     required this.timestamp,
     this.isRead = false,
+    this.type = 'text',
+    this.duration,
   });
 
   factory MessageModel.fromMap(Map<String, dynamic> map) {
@@ -19,6 +23,8 @@ class MessageModel {
       text: map['text'] ?? '',
       timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isRead: map['isRead'] ?? false,
+      type: map['type'] ?? 'text',
+      duration: map['duration'],
     );
   }
 
@@ -28,6 +34,8 @@ class MessageModel {
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': isRead,
+      'type': type,
+      'duration': duration,
     };
   }
 }

@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../localization/app_translations.dart';
+import '../../presentation/screens/chat/voice_call_screen.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -93,6 +94,20 @@ class NotificationService {
         'otherUserName': senderName,
         'otherUserId': senderId,
       });
+    } else if (type == 'call') {
+      final channelId = data['channelId'];
+      final senderName = data['senderName'] ?? 'User';
+      final isVideo = data['isVideo'] == 'true';
+      
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => CallScreen(
+            channelId: channelId,
+            otherUserName: senderName,
+            isVideoCall: isVideo,
+          ),
+        ),
+      );
     } else if (type == 'blood_request' || type == 'emergency' || type == 'request' || type == 'donation_confirm') {
       // যদি রক্ত দিয়েছে এমন নোটিফিকেশন হয় বা সাধারণ রিকোয়েস্ট হয়, তবে ডিটেইলস পেজে যাবে
       if (requestId != null) {
@@ -130,7 +145,7 @@ class NotificationService {
         .collection('notifications')
         .where('isRead', isEqualTo: false)
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
@@ -154,6 +169,17 @@ class NotificationService {
             if (senderId == user.uid) {
               change.doc.reference.update({'isRead': true});
               continue;
+            }
+
+            // যদি এই চ্যাটটি মিউট করা থাকে, তবে নোটিফিকেশন দেখাবে না
+            final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+            final userData = userDoc.data();
+            if (userData != null) {
+              final List<dynamic> mutedChats = userData['mutedChats'] ?? [];
+              if (mutedChats.contains(chatId)) {
+                change.doc.reference.update({'isRead': true});
+                continue;
+              }
             }
 
             // ইউজার যদি অলরেডি এই চ্যাটরুমে থাকে, তবে নোটিফিকেশন দেখাবে না এবং এটাকে Read মার্ক করবে
@@ -219,11 +245,16 @@ class NotificationService {
   }
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
-    _showLocalNotification(
-      title: message.notification?.title, 
-      body: message.notification?.body,
-      payload: jsonEncode(message.data),
-    );
+    final data = message.data;
+    if (data['type'] == 'call') {
+      _navigateBasedOnData(data);
+    } else {
+      _showLocalNotification(
+        title: message.notification?.title, 
+        body: message.notification?.body,
+        payload: jsonEncode(message.data),
+      );
+    }
   }
 
   Future<void> _showLocalNotification({String? title, String? body, String? payload}) async {
