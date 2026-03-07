@@ -246,15 +246,22 @@ class NotificationService {
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final data = message.data;
+    debugPrint('Foreground Message Received: ${data['type']}');
+    
     if (data['type'] == 'call') {
-      _navigateBasedOnData(data);
-    } else {
-      _showLocalNotification(
-        title: message.notification?.title, 
-        body: message.notification?.body,
-        payload: jsonEncode(message.data),
-      );
+      // যদি কল আসে, তবে সরাসরি কল স্ক্রিনে নিয়ে যাবে
+      // ছোট একটি ডিলে দিচ্ছি যাতে নেভিগেটর সঠিকভাবে রেন্ডার হতে পারে
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _navigateBasedOnData(data);
+      });
     }
+    
+    // লোকাল নোটিফিকেশন সবসময় দেখাবে (যাতে ইউজার অন্তত জানতে পারে কে কল দিচ্ছে)
+    _showLocalNotification(
+      title: message.notification?.title ?? _localizeStatic(data['title'], data), 
+      body: message.notification?.body ?? _localizeStatic(data['body'], data),
+      payload: jsonEncode(message.data),
+    );
   }
 
   Future<void> _showLocalNotification({String? title, String? body, String? payload}) async {
