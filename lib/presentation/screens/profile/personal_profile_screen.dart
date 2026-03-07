@@ -196,6 +196,14 @@ class PersonalProfileScreen extends ConsumerWidget {
                       }
 
                       await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+                      
+                      // ডিলিট করার সময় ডোনার কালেকশন থেকেও ডাটা রিমুভ করা হচ্ছে
+                      try {
+                        await FirebaseFirestore.instance.collection('donors').doc(user.uid).delete();
+                      } catch (e) {
+                        debugPrint("Donor record deletion error: $e");
+                      }
+
                       await currentUser.delete();
 
                       if (context.mounted) {
