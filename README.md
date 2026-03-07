@@ -3,23 +3,25 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Riverpod](https://img.shields.io/badge/Riverpod-00C4B4?style=for-the-badge&logo=dart&logoColor=white)](https://riverpod.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Agora](https://img.shields.io/badge/Agora-80C41C?style=for-the-badge&logo=agora&logoColor=white)](https://www.agora.io)
+[![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)](https://cloudinary.com)
 
-**Blood Donate** is a modern, real-time blood donation platform designed to bridge the gap between donors and recipients. Built with a focus on user experience, it features a "Modern Red" aesthetic, robust localization (Bangla/English), and a gamified ranking system to encourage life-saving contributions.
+**Blood Donate** is a high-performance, real-time blood donation ecosystem built to save lives through technology. It features a "Modern Red" aesthetic, robust localization (Bangla/English), real-time communication, and integrated video/voice calling.
 
 ---
 
 ## 📸 App Showcase
 
 <p align="center">
-  <img src="./assets/screenshots/home.png" width="32%" alt="Home Screen" />
-  <img src="./assets/screenshots/request.png" width="32%" alt="Request Screen" />
-  <img src="./assets/screenshots/search.png" width="32%" alt="Search Screen" />
+  <img src="./assets/screenshots/home.png" width="31%" alt="Home Screen" />
+  <img src="./assets/screenshots/request.png" width="31%" alt="Request Screen" />
+  <img src="./assets/screenshots/donor.png" width="31%" alt="Donor List" />
 </p>
 
 <p align="center">
-  <img src="./assets/screenshots/profile.png" width="32%" alt="User Profile" />
-  <img src="./assets/screenshots/chat.png" width="32%" alt="Chat System" />
+  <img src="./assets/screenshots/profile.png" width="31%" alt="User Profile" />
+  <img src="./assets/screenshots/chat.png" width="31%" alt="Chat System" />
+  <img src="./assets/screenshots/search.png" width="31%" alt="Search Screen" />
 </p>
 
 ---
@@ -27,54 +29,55 @@
 ## ✨ Key Features
 
 ### 🩸 Smart Blood Requests & Management
-- **Localized Precision**: Integrated with comprehensive Bangladeshi division/district/thana/union data.
-- **Intelligent Forms**: Context-aware hints (e.g., `hospital_hint`, `problem_hint`) guide users through quick request creation.
-- **WhatsApp Fallback**: Automated logic uses primary phone numbers for WhatsApp if not provided separately.
-- **Emergency Priority**: High-visibility alerts for urgent blood needs with location-based push notifications.
+- **Hyper-Local Data**: Integrated with comprehensive Bangladeshi division, district, thana, and union data for precise location matching.
+- **Intelligent Forms**: Context-aware guidance for quick request creation.
+- **WhatsApp Integration**: Automatic fallback to WhatsApp for better communication.
+- **Emergency Priority**: High-visibility alerts for urgent blood needs with push notifications.
+
+### 📞 Advanced Communication (Real-time)
+- **Voice & Video Calling**: Powered by **Agora RTC** for direct and secure communication between donors and recipients.
+- **Smart Chat System**: Real-time messaging with **Image & Video sharing** capabilities.
+- **Media Previews**: Send media with captions and preview them before sending.
+- **Cloudinary Integration**: Efficient and fast media hosting for chat and profile pictures.
 
 ### 🏅 Gamification & Donor Ranks
 Encouraging regular donations through a dynamic milestone-based ranking system:
-- 🌱 **Newbie** (0 Donations) | 🥉 **Bronze** (1+) | 🥈 **Silver** (5+)
-- 🥇 **Gold** (15+) | 💎 **Platinum** (30+) | 👑 **Diamond** (50+)
+- 🌱 **Newbie** | 🥉 **Bronze** | 🥈 **Silver** | 🥇 **Gold** | 💎 **Platinum** | 👑 **Diamond**
 
-### 💬 Real-time Communication
-- **Direct Messaging**: Secure in-app chat system between donors and recipients.
-- **Privacy First**: Optional email verification and secure data handling.
-- **Smart Notifications**: Instant alerts for messages, nearby requests, and rank updates.
-
-### 📄 Professional Reporting & History
-- **PDF Generation**: Download professional donation/receipt history with proper Bengali typography support.
-- **Activity Tracking**: Comprehensive logs of all completed, pending, and cancelled requests.
+### 📄 Professional Tools
+- **PDF Reports**: Professional donation/receipt history generation with Bengali typography support.
+- **Profile Customization**: Users can update profile pictures and details seamlessly.
+- **Push Notifications**: Instant alerts for nearby requests, messages, and call logs.
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
-This project implements **Clean Architecture** principles to ensure scalability, maintainability, and ease of testing.
+This project follows **Clean Architecture** to ensure long-term maintainability.
 
 - **Frontend**: Flutter (Dart)
-- **State Management**: [Riverpod](https://riverpod.dev/) (Refined provider-based state handling)
-- **Backend Service**: Firebase Ecosystem
-  - **Firestore**: Real-time NoSQL database with optimized indexing.
-  - **Cloud Messaging (FCM)**: Cross-platform push notifications.
-  - **Firebase Auth**: Secure authentication flow.
+- **State Management**: [Riverpod](https://riverpod.dev/) (Provider-based logic)
+- **Backend**: 
+  - **Firebase**: Firestore, Cloud Messaging (FCM), Firebase Auth.
+  - **Cloudinary**: Media storage & optimization.
+  - **Agora**: Real-time voice and video engine.
 - **UI/UX**: 
-  - **Theme**: "Modern Red" palette (`0xFFE53935`) with rounded design language (20-24px radius).
-  - **Fonts**: Google Fonts (Noto Sans Bengali) for native readability.
-  - **Localization**: Fully dynamic BN/EN translation system.
+  - **Theme**: "Modern Red" palette with a focus on accessibility.
+  - **Fonts**: Google Fonts (Noto Sans Bengali).
+  - **Localization**: Full BN/EN dynamic translation system.
 
 ### 📂 Project Structure
 ```text
 lib/
-├── core/             # Themes, Routing, Localization, Global Services
-├── data/             # Models, Repositories, and Data Sources (Firebase)
-├── domain/           # Business Logic, Interfaces, and Entities
-└── presentation/     # UI Screens, Widgets, and Riverpod Providers
+├── core/             # Global Themes, Services (Cloudinary, Agora), Localization
+├── data/             # Models, Repositories, and Firebase Data Sources
+├── domain/           # Business Logic Interfaces and Entities
+└── presentation/     # UI Screens (Auth, Chat, Home, Profile) and Providers
 ```
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Getting Started
 
 1. **Clone the repository**:
    ```bash
@@ -86,44 +89,23 @@ lib/
    flutter pub get
    ```
 
-3. **Firebase Configuration**:
-   - Create a project in the [Firebase Console](https://console.firebase.google.com/).
-   - Add an Android app and place the `google-services.json` in `android/app/`.
-   - Enable Firestore, Auth (Email/Pass), and Cloud Messaging.
+3. **Firebase & Cloudinary Setup**:
+   - Place `google-services.json` in `android/app/`.
+   - Update `cloudinary_service.dart` with your Cloudinary credentials.
+   - Update Agora App ID in your calling service.
 
-4. **Environment Check**:
-   - Ensure your assets folder contains `unions.json` for location data.
-   - Run `flutter doctor` to verify your environment.
-
-5. **Run the app**:
+4. **Run the app**:
    ```bash
    flutter run
    ```
 
 ---
 
-## 🎯 Development Roadmap
-- [ ] **Map Integration**: Visualizing nearby donors on Google Maps.
-- [ ] **Dark Mode**: Implementing a refined dark version of the Modern Red theme.
-- [ ] **Advanced Filtering**: Enhanced donor search based on last donation date and availability.
-- [ ] **Volunteer Dashboard**: Dedicated interface for blood donation organizations.
-
----
-
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contribution
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ---
 <p align="center">
   <b>Developed with ❤️ for the Community.</b><br>
-  <i>"Donate Blood, Save Lives"</i>
+  <i>"Your contribution can save a life today."</i>
 </p>
