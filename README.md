@@ -1,110 +1,129 @@
-# Blood Donate 🩸 | জীবনের প্রয়োজনে রক্তদান
+# রক্তদান - Blood Donate 🩸
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg?style=for-the-badge&logo=flutter)](https://flutter.dev)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%20|%20Firestore%20|%20Cloud%20Messaging-orange.svg?style=for-the-badge&logo=firebase)](https://firebase.google.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Riverpod](https://img.shields.io/badge/Riverpod-00C4B4?style=for-the-badge&logo=dart&logoColor=white)](https://riverpod.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-**Blood Donate** একটি আধুনিক এবং রিয়েল-টাইম মোবাইল অ্যাপ্লিকেশন যা রক্তদাতা এবং রক্তগ্রহীতাদের মধ্যে দূরত্ব কমিয়ে জীবন বাঁচাতে সাহায্য করে। এটি শুধুমাত্র একটি ব্লাড রিকোয়েস্ট অ্যাপ নয়, বরং এতে রয়েছে গ্যামিফিকেশন, প্রফেশনাল রিপোর্ট জেনারেশন এবং সিকিউর চ্যাটিং সিস্টেম।
+**Blood Donate** is a modern, real-time blood donation platform designed to bridge the gap between donors and recipients. Built with a focus on user experience, it features a "Modern Red" aesthetic, robust localization (Bangla/English), and a gamified ranking system to encourage life-saving contributions.
 
 ---
 
 ## 📸 App Showcase
 
 <p align="center">
-  <img src="https://via.placeholder.com/200x400?text=Login+UI" width="22%" />
-  <img src="https://via.placeholder.com/200x400?text=Home+UI" width="22%" />
-  <img src="https://via.placeholder.com/200x400?text=Chat+UI" width="22%" />
-  <img src="https://via.placeholder.com/200x400?text=Profile+UI" width="22%" />
+  <img src="./assets/screenshots/home.png" width="32%" alt="Home Screen" />
+  <img src="./assets/screenshots/request.png" width="32%" alt="Request Screen" />
+  <img src="./assets/screenshots/search.png" width="32%" alt="Search Screen" />
+</p>
+
+<p align="center">
+  <img src="./assets/screenshots/profile.png" width="32%" alt="User Profile" />
+  <img src="./assets/screenshots/chat.png" width="32%" alt="Chat System" />
 </p>
 
 ---
 
 ## ✨ Key Features
 
-### 🩸 Smart Blood Requests
-- **Location-Based Alerts**: বিভাগ, জেলা এবং থানা অনুযায়ী নোটিফিকেশন সিস্টেম।
-- **Urgent Filtering**: রক্তের গ্রুপ এবং এরিয়া অনুযায়ী দ্রুত ডোনার খুঁজে পাওয়ার সুবিধা।
-- **Real-time Updates**: আবেদনের বর্তমান অবস্থা (পেন্ডিং, একসেপ্টেড, কমপ্লিটেড) সাথে সাথে দেখা যায়।
+### 🩸 Smart Blood Requests & Management
+- **Localized Precision**: Integrated with comprehensive Bangladeshi division/district/thana/union data.
+- **Intelligent Forms**: Context-aware hints (e.g., `hospital_hint`, `problem_hint`) guide users through quick request creation.
+- **WhatsApp Fallback**: Automated logic uses primary phone numbers for WhatsApp if not provided separately.
+- **Emergency Priority**: High-visibility alerts for urgent blood needs with location-based push notifications.
 
 ### 🏅 Gamification & Donor Ranks
-ডোনারদের উৎসাহিত করতে আমরা একটি ডায়নামিক র‍্যাঙ্কিং সিস্টেম ব্যবহার করি:
-- 🌱 **Newbie**: ০ টি রক্তদান।
-- 🥉 **Bronze**: ১ টি রক্তদান।
-- 🥈 **Silver**: ৫ টি রক্তদান।
-- 🥇 **Gold**: ১৫ টি রক্তদান।
-- 💎 **Platinum**: ৩০ টি রক্তদান।
-- 👑 **Diamond**: ৫০ টি রক্তদান।
+Encouraging regular donations through a dynamic milestone-based ranking system:
+- 🌱 **Newbie** (0 Donations) | 🥉 **Bronze** (1+) | 🥈 **Silver** (5+)
+- 🥇 **Gold** (15+) | 💎 **Platinum** (30+) | 👑 **Diamond** (50+)
 
-### 💬 Seamless Communication
-- **In-App Chat**: ডোনার এবং রোগীর পরিবারের মধ্যে সরাসরি এবং নিরাপদ কথা বলার সুযোগ।
-- **Push Notifications**: নতুন মেসেজ বা ব্লাড রিকোয়েস্টের জন্য ইনস্ট্যান্ট অ্যালার্ট।
+### 💬 Real-time Communication
+- **Direct Messaging**: Secure in-app chat system between donors and recipients.
+- **Privacy First**: Optional email verification and secure data handling.
+- **Smart Notifications**: Instant alerts for messages, nearby requests, and rank updates.
 
-### 📄 Professional Reporting
-- **PDF Report**: আপনার করা সমস্ত রক্তদান এবং গ্রহণের হিস্ট্রি প্রফেশনাল PDF আকারে ডাউনলোড করার সুবিধা।
-- **Bengali Typography**: যুক্তবর্ণ এবং বাংলা ফন্ট সম্বলিত নিখুঁত বাংলা রিপোর্ট জেনারেশন।
+### 📄 Professional Reporting & History
+- **PDF Generation**: Download professional donation/receipt history with proper Bengali typography support.
+- **Activity Tracking**: Comprehensive logs of all completed, pending, and cancelled requests.
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
-এই অ্যাপটি আধুনিক **Clean Architecture** অনুসরণ করে তৈরি করা হয়েছে যা মেইনটেইন করা এবং স্কেল করা সহজ।
+This project implements **Clean Architecture** principles to ensure scalability, maintainability, and ease of testing.
 
-- **State Management**: [Riverpod](https://riverpod.dev/) (Scalable and testable state management)
-- **Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore) (Real-time NoSQL)
-- **Authentication**: Firebase Auth (Phone & Email)
-- **Typography**: Google Fonts (Noto Sans Bengali)
-- **Design Pattern**: Feature-driven Folder Structure
+- **Frontend**: Flutter (Dart)
+- **State Management**: [Riverpod](https://riverpod.dev/) (Refined provider-based state handling)
+- **Backend Service**: Firebase Ecosystem
+  - **Firestore**: Real-time NoSQL database with optimized indexing.
+  - **Cloud Messaging (FCM)**: Cross-platform push notifications.
+  - **Firebase Auth**: Secure authentication flow.
+- **UI/UX**: 
+  - **Theme**: "Modern Red" palette (`0xFFE53935`) with rounded design language (20-24px radius).
+  - **Fonts**: Google Fonts (Noto Sans Bengali) for native readability.
+  - **Localization**: Fully dynamic BN/EN translation system.
 
 ### 📂 Project Structure
 ```text
 lib/
-├── core/             # থিম, রাউটিং, ইউটিলস এবং গ্লোবাল সার্ভিসেস
-├── data/             # মডেলস এবং ডাটা সোর্স (Firebase implementation)
-├── domain/           # বিজনেস লজিক এবং রিপোজিটরি ইন্টারফেস
-└── presentation/     # UI স্ক্রিন এবং রিভারপড প্রোভাইডার
+├── core/             # Themes, Routing, Localization, Global Services
+├── data/             # Models, Repositories, and Data Sources (Firebase)
+├── domain/           # Business Logic, Interfaces, and Entities
+└── presentation/     # UI Screens, Widgets, and Riverpod Providers
 ```
 
 ---
 
 ## 🚀 Installation & Setup
 
-১. আপনার কম্পিউটারে রিপোজিটরি ক্লোন করুন:
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/shahanuralamofficial/blood_donate.git
    ```
 
-২. প্রয়োজনীয় প্যাকেজগুলো ইনস্টল করুন:
+2. **Install dependencies**:
    ```bash
    flutter pub get
    ```
 
-৩. ফায়ারবেস কনফিগারেশন:
-   - [Firebase Console](https://console.firebase.google.com/) থেকে একটি নতুন প্রজেক্ট তৈরি করুন।
-   - `google-services.json` ফাইলটি `android/app/` ফোল্ডারে রাখুন।
+3. **Firebase Configuration**:
+   - Create a project in the [Firebase Console](https://console.firebase.google.com/).
+   - Add an Android app and place the `google-services.json` in `android/app/`.
+   - Enable Firestore, Auth (Email/Pass), and Cloud Messaging.
 
-৪. অ্যাপটি রান করুন:
+4. **Environment Check**:
+   - Ensure your assets folder contains `unions.json` for location data.
+   - Run `flutter doctor` to verify your environment.
+
+5. **Run the app**:
    ```bash
    flutter run
    ```
 
 ---
 
-## 🎯 Upcoming Features (Roadmap)
-- [ ] গুগল ম্যাপ ইন্টিগ্রেশন (কাছের ডোনারদের ম্যাপে দেখা)।
-- [ ] ডার্ক মোড সাপোর্ট।
-- [ ] ডোনার রিভিউ এবং রেটিং সিস্টেমের আরও উন্নত ফিল্টারিং।
-- [ ] স্বেচ্ছাসেবী সংগঠনগুলোর জন্য আলাদা ড্যাশবোর্ড।
+## 🎯 Development Roadmap
+- [ ] **Map Integration**: Visualizing nearby donors on Google Maps.
+- [ ] **Dark Mode**: Implementing a refined dark version of the Modern Red theme.
+- [ ] **Advanced Filtering**: Enhanced donor search based on last donation date and availability.
+- [ ] **Volunteer Dashboard**: Dedicated interface for blood donation organizations.
 
 ---
 
 ## 📄 License
-এই প্রজেক্টটি MIT লাইসেন্সের অধীনে প্রকাশিত। বিস্তারিত জানতে [LICENSE](LICENSE) ফাইলটি দেখুন।
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contribution
-আপনি যদি এই প্রজেক্টে অবদান রাখতে চান, তবে নির্দ্বিধায় **Pull Request** পাঠান অথবা **Issues** সেকশনে আপনার মতামত জানান।
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 <p align="center">
   <b>Developed with ❤️ for the Community.</b><br>
-  <i>"রক্ত দিন, জীবন বাঁচান"</i>
+  <i>"Donate Blood, Save Lives"</i>
 </p>
