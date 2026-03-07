@@ -1,16 +1,22 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../data/models/user_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/message_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/cloudinary_service.dart';
 import '../donors/donor_public_profile_screen.dart';
 import 'voice_call_screen.dart';
+import 'video_player_widget.dart';
 import '../../providers/language_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -36,6 +42,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isSending = false;
   String? _receiverId;
+  File? _selectedMedia;
+  bool _isMediaVideo = false;
+  final _captionController = TextEditingController();
 
   @override
   void initState() {
@@ -58,6 +67,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
     NotificationService.currentChatId = null;
     _messageController.dispose();
+    _captionController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -158,6 +168,67 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  void _pickMedia({required bool isVideo}) async {
+    final picker = ImagePicker();
+    final XFile? file = isVideo 
+        ? await picker.pickVideo(source: ImageSource.gallery)
+        : await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+
+    if (file == null) return;
+
+    setState(() {
+      _selectedMedia = File(file.path);
+      _isMediaVideo = isVideo;
+      _captionController.clear();
+    });
+  }
+
+  void _sendMediaMessage() async {
+    if (_selectedMedia == null || _isSending) return;
+    
+    final user = ref.read(currentUserDataProvider).value;
+    if (user == null) return;
+
+    final mediaFile = _selectedMedia!;
+    final isVideo = _isMediaVideo;
+    final caption = _captionController.text.trim();
+
+    setState(() {
+      _isSending = true;
+      _selectedMedia = null; // Clear preview immediately
+    });
+
+    try {
+      final String? downloadUrl = await CloudinaryService.uploadFile(mediaFile, isVideo: isVideo);
+      
+      if (downloadUrl != null) {
+        final message = MessageModel(
+          senderId: user.uid,
+          text: caption.isNotEmpty ? caption : (isVideo ? "ভিডিও ফাইল" : "ছবি"),
+          timestamp: DateTime.now(),
+          type: isVideo ? 'video' : 'image',
+          fileUrl: downloadUrl,
+        );
+
+        await ref.read(messageRepositoryProvider).sendMessage(widget.requestId, message);
+        
+        if (_receiverId != null) {
+          await NotificationService().sendNotificationToUser(
+            receiverId: _receiverId!,
+            title: user.name,
+            body: isVideo ? 'আপনাকে একটি ভিডিও পাঠিয়েছেন' : 'আপনাকে একটি ছবি পাঠিয়েছেন',
+            data: {'type': 'chat', 'chatId': widget.requestId},
+          );
+        }
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
@@ -248,15 +319,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
     
     final messagesAsync = ref.watch(messagesStreamProvider(widget.requestId));
-    return Column(children: [
-      if (widget.requestMention != null) _buildRequestMention(),
-      Expanded(child: messagesAsync.when(
-        data: (messages) => ListView.builder(controller: _scrollController, reverse: true, padding: const EdgeInsets.all(16), itemCount: messages.length, itemBuilder: (context, index) => _buildMessageBubble(messages[index], messages[index].senderId == currentUser?.uid)),
-        loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
-        error: (e, s) => Center(child: Text('Error: $e')),
-      )),
-      _buildInputArea(),
-    ]);
+    return Stack(
+      children: [
+        Column(children: [
+          if (widget.requestMention != null) _buildRequestMention(),
+          Expanded(child: messagesAsync.when(
+            data: (messages) => ListView.builder(controller: _scrollController, reverse: true, padding: const EdgeInsets.all(16), itemCount: messages.length, itemBuilder: (context, index) => _buildMessageBubble(messages[index], messages[index].senderId == currentUser?.uid)),
+            loading: () => const Center(child: CircularProgressIndicator(color: Colors.red)),
+            error: (e, s) => Center(child: Text('Error: $e')),
+          )),
+          _buildInputArea(),
+        ]),
+        if (_selectedMedia != null) _buildMediaPreview(),
+      ],
+    );
+  }
+
+  Widget _buildMediaPreview() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black,
+        child: SafeArea(
+          child: Column(
+            children: [
+              AppBar(
+                backgroundColor: Colors.transparent,
+                leading: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => setState(() => _selectedMedia = null),
+                ),
+                title: Text(_isMediaVideo ? "ভিডিও প্রিভিউ" : "ছবি প্রিভিউ", style: const TextStyle(color: Colors.white)),
+              ),
+              Expanded(
+                child: Center(
+                  child: _isMediaVideo 
+                    ? const Icon(Icons.play_circle_fill, size: 80, color: Colors.white)
+                    : Image.file(_selectedMedia!, fit: BoxFit.contain),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.black54,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _captionController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: "ক্যাপশন লিখুন...",
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          filled: true,
+                          fillColor: Colors.white10,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      child: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.white),
+                        onPressed: _sendMediaMessage,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildRequestMention() {
@@ -273,13 +408,90 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     return Align(alignment: isMe ? Alignment.centerRight : Alignment.centerLeft, child: Column(crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [
-      Container(margin: const EdgeInsets.only(bottom: 2), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75), decoration: BoxDecoration(color: isMe ? Colors.red.shade600 : Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)]), child: Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14))),
+      Container(
+        margin: const EdgeInsets.only(bottom: 2), 
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75), 
+        decoration: BoxDecoration(color: isMe ? Colors.red.shade600 : Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)]), 
+        child: msg.type == 'image' 
+          ? _buildImageContent(msg.fileUrl!, isMe, msg.text)
+          : msg.type == 'video'
+            ? _buildVideoContent(msg.fileUrl!, isMe, msg.text)
+            : Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), child: Text(msg.text, style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14)))
+      ),
       Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(DateFormat('hh:mm a', ref.watch(languageProvider).languageCode).format(msg.timestamp), style: TextStyle(fontSize: 9, color: Colors.grey.shade600)),
         if (isMe) ...[const SizedBox(width: 4), Icon(msg.isRead ? Icons.done_all : Icons.done, size: 12, color: msg.isRead ? Colors.blue : Colors.grey)],
       ])),
       const SizedBox(height: 6),
     ]));
+  }
+
+  Widget _buildImageContent(String url, bool isMe, String caption) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: InkWell(
+            onTap: () {
+              // TODO: Open full screen image view
+            },
+            child: CachedNetworkImage(
+              imageUrl: url,
+              placeholder: (context, url) => Container(
+                width: 200,
+                height: 200,
+                color: Colors.grey.shade200,
+                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        if (caption.isNotEmpty && caption != "ছবি")
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              caption,
+              style: TextStyle(color: isMe ? Colors.white : Colors.black, fontSize: 14),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildVideoContent(String url, bool isMe, String caption) {
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VideoPlayerWidget(videoUrl: url))),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 200,
+            height: 150,
+            color: Colors.black,
+            child: const Icon(Icons.video_collection, color: Colors.white, size: 40),
+          ),
+          const CircleAvatar(
+            backgroundColor: Colors.white54,
+            child: Icon(Icons.play_arrow, color: Colors.black),
+          ),
+          if (caption.isNotEmpty && caption != "ভিডিও ফাইল")
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                color: Colors.black45,
+                child: Text(caption, style: const TextStyle(color: Colors.white, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildCallLogBubble(MessageModel msg) {
@@ -306,9 +518,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildInputArea() {
     return Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, -2))]), child: SafeArea(child: Row(children: [
+      IconButton(
+        icon: const Icon(Icons.add_circle_outline, color: Colors.grey),
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            builder: (context) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.image),
+                    title: const Text('ছবি পাঠান'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickMedia(isVideo: false);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.videocam),
+                    title: const Text('ভিডিও পাঠান'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickMedia(isVideo: true);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
       Expanded(child: Container(padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(24)), child: TextField(controller: _messageController, decoration: InputDecoration(hintText: ref.tr('type_message'), border: InputBorder.none), onSubmitted: (_) => _sendMessage()))),
       const SizedBox(width: 8),
-      CircleAvatar(backgroundColor: Colors.red, child: IconButton(icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20), onPressed: _sendMessage)),
+      _isSending
+          ? const SizedBox(width: 40, height: 40, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
+          : CircleAvatar(backgroundColor: Colors.red, child: IconButton(icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20), onPressed: _sendMessage)),
     ])));
   }
 }

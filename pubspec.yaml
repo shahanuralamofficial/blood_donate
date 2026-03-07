@@ -58,6 +58,14 @@ dependencies:
   printing: ^5.13.2
   bangla_pdf_fixer: ^1.0.1
 
+  # image_picker
+  image_picker: ^1.0.7
+  http: ^1.2.0
+  video_player: ^2.8.2
+  chewie: ^1.8.1
+
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

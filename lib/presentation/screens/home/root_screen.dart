@@ -114,7 +114,7 @@ class _RootScreenState extends ConsumerState<RootScreen> {
               if (user != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<Widget>(
                     builder: (_) => EditProfileScreen(user: user),
                   ),
                 );

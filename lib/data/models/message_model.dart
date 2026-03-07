@@ -5,8 +5,9 @@ class MessageModel {
   final String text;
   final DateTime timestamp;
   final bool isRead;
-  final String type; // 'text', 'call', 'video_call'
+  final String type; // 'text', 'call', 'video_call', 'image', 'video'
   final String? duration;
+  final String? fileUrl; // For images or videos
 
   MessageModel({
     required this.senderId,
@@ -15,6 +16,7 @@ class MessageModel {
     this.isRead = false,
     this.type = 'text',
     this.duration,
+    this.fileUrl,
   });
 
   factory MessageModel.fromMap(Map<String, dynamic> map) {
@@ -25,6 +27,7 @@ class MessageModel {
       isRead: map['isRead'] ?? false,
       type: map['type'] ?? 'text',
       duration: map['duration'],
+      fileUrl: map['fileUrl'],
     );
   }
 
@@ -32,10 +35,11 @@ class MessageModel {
     return {
       'senderId': senderId,
       'text': text,
-      'timestamp': FieldValue.serverTimestamp(),
+      'timestamp': timestamp, // Keeping actual timestamp for immediate UI update
       'isRead': isRead,
       'type': type,
       'duration': duration,
+      'fileUrl': fileUrl,
     };
   }
 }

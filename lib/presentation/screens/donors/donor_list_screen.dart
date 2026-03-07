@@ -12,7 +12,6 @@ import '../../providers/auth_provider.dart';
 import '../../../core/services/location_service.dart';
 import '../chat/chat_screen.dart';
 import 'donor_public_profile_screen.dart';
-
 import '../../providers/language_provider.dart';
 
 class DonorListScreen extends ConsumerStatefulWidget {
@@ -214,7 +213,7 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -376,15 +375,14 @@ class _DonorListScreenState extends ConsumerState<DonorListScreen> {
                             final currentUid = FirebaseAuth.instance.currentUser?.uid;
                             if (currentUid == null) return;
 
-                            // একটি ইউনিক চ্যাট আইডি তৈরি করা (সবসময় একই ফরম্যাটে যাতে দুইজন ইউজারের একটিই চ্যাট থাকে)
                             final List<String> ids = [currentUid, user.uid];
-                            ids.sort(); // আইডিগুলো সর্ট করলে A_B এবং B_A একই আইডি (A_B) দিবে
+                            ids.sort();
                             final chatId = 'direct_${ids[0]}_${ids[1]}';
 
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
+                              MaterialPageRoute<Widget>(
+                                builder: (context) => ChatScreen(
                                   requestId: chatId,
                                   otherUserName: user.name,
                                   otherUserId: user.uid,

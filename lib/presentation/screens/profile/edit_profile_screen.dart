@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../../data/models/user_model.dart';
+import '../../../core/services/cloudinary_service.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   final UserModel user;
@@ -30,6 +33,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedThana;
   bool _isAvailable = true;
   bool _isLoadingData = true;
+  bool _isUploadingImage = false;
+  String? _profileImageUrl;
   Map<String, dynamic> _allLocationData = {};
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -45,6 +50,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _selectedBloodGroup = widget.user.bloodGroup;
     _selectedGender = widget.user.gender;
     _isAvailable = widget.user.isAvailable;
+    _profileImageUrl = widget.user.profileImageUrl;
     
     if (widget.user.address != null) {
       _selectedDivision = widget.user.address!['division'];
@@ -80,6 +86,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    if (image == null) return;
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final String? downloadUrl = await CloudinaryService.uploadFile(File(image.path));
+      if (downloadUrl != null) {
+        setState(() => _profileImageUrl = downloadUrl);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) return;
     final uid = widget.user.uid;
@@ -102,6 +128,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'bloodGroup': _selectedBloodGroup,
         'gender': _selectedGender,
         'isAvailable': _isAvailable,
+        'profileImageUrl': _profileImageUrl,
         'address': {
           'division': _selectedDivision,
           'district': _selectedDistrict,
@@ -165,6 +192,45 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.red.shade100, width: 4),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                      ),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.grey.shade200,
+                        backgroundImage: _profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null,
+                        child: _profileImageUrl == null ? const Icon(Icons.person, size: 60, color: Colors.grey) : null,
+                      ),
+                    ),
+                    if (_isUploadingImage)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle),
+                          child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+                        ),
+                      ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: _isUploadingImage ? null : _pickAndUploadImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
               _buildSectionCard(
                 title: ref.tr('personal_info'),
                 icon: Icons.person_outline_rounded,
