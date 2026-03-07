@@ -92,9 +92,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator(color: Colors.red))),
-      error: (e, _) => Scaffold(body: Center(child: Text('${ref.tr('error_try_again')}'))),
+      error: (e, _) => Scaffold(body: Center(child: Text(ref.tr('error_try_again')))),
       data: (user) {
         if (user == null) return Scaffold(body: Center(child: Text(ref.tr('user_not_found'))));
+
+        // প্রোফাইল অসম্পূর্ণ থাকলে ডায়ালগ দেখানো
+        if ((user.bloodGroup == null || user.bloodGroup!.isEmpty || user.address == null) && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showIncompleteProfileDialog();
+          });
+        }
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FA),
@@ -215,6 +222,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildNotificationIcon(String uid) {
+    if (uid.isEmpty) return const SizedBox.shrink();
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications').where('isRead', isEqualTo: false).snapshots(),
       builder: (context, snapshot) {
@@ -243,6 +251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildChatIcon(String uid) {
+    if (uid.isEmpty) return const SizedBox.shrink();
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('direct_chats').where('participants', arrayContains: uid).snapshots(),
       builder: (context, snapshot) {
@@ -476,6 +485,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ]),
           ]),
         ),
+      ),
+    );
+  }
+
+  void _showIncompleteProfileDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Color(0xFFE53935)),
+            const SizedBox(width: 12),
+            Text(ref.tr('profile_incomplete'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(ref.tr('profile_incomplete_msg')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(ref.tr('later'), style: const TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(ref.tr('update_now'), style: const TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

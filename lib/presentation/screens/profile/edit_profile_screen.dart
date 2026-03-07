@@ -82,14 +82,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) return;
+    final uid = widget.user.uid;
+    if (uid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.tr('error_try_again')), backgroundColor: Colors.red));
+      return;
+    }
 
     try {
       showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
       
-      await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).update({
+      final phone = _phoneController.text.trim();
+      final whatsapp = _whatsappController.text.trim();
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'whatsappNumber': _whatsappController.text.trim().isEmpty ? _phoneController.text.trim() : _whatsappController.text.trim(),
+        'phone': phone,
+        'whatsappNumber': whatsapp.isEmpty ? phone : whatsapp,
         'email': _emailController.text.trim(),
         'bloodGroup': _selectedBloodGroup,
         'gender': _selectedGender,
@@ -278,6 +286,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller, IconData icon, {bool isPhone = false}) {
+    String hint = '';
+    if (label == ref.tr('full_name')) hint = ref.tr('name_hint');
+    else if (label == ref.tr('email_address')) hint = ref.tr('email_hint');
+    else if (label == ref.tr('phone_number')) hint = ref.tr('phone_hint');
+    else if (label == ref.tr('whatsapp_number')) hint = ref.tr('whatsapp_hint');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -288,6 +302,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
           style: const TextStyle(fontSize: 15),
           decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.notoSansBengali(fontSize: 13, color: Colors.grey.shade400),
             prefixIcon: Icon(icon, size: 20, color: Colors.red.shade300),
             filled: true,
             fillColor: Colors.grey.shade50,
@@ -297,7 +313,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.5)),
             errorStyle: const TextStyle(fontSize: 11),
           ),
-          validator: (v) => (v == null || v.isEmpty) && label != ref.tr('email_address') ? ref.tr('enter_info') : null,
+          validator: (v) => (v == null || v.isEmpty) && label != ref.tr('email_address') && label != ref.tr('whatsapp_number') ? ref.tr('enter_info') : null,
         ),
       ],
     );
