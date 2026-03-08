@@ -26,6 +26,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            // শুধুমাত্র প্রয়োজনীয় আর্কিটেকচারগুলো রাখলে সাইজ কিছুটা কমবে
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
+        }
     }
 
     buildTypes {
