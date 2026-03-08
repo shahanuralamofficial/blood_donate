@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +11,7 @@ import '../../../data/models/blood_request_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/blood_request_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/cloudinary_service.dart';
 import '../../providers/language_provider.dart';
 
 class CreateRequestScreen extends ConsumerStatefulWidget {
@@ -39,6 +42,8 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
   String? _selectedThana;
   String? _selectedUnion;
   bool _isLoadingData = true;
+  File? _patientImage;
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -65,6 +70,13 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (image != null) {
+      setState(() => _patientImage = File(image.path));
+    }
+  }
+
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBloodGroup == null) {
@@ -80,6 +92,11 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
     if (user == null) return;
 
     setState(() => _isLoadingData = true);
+
+    String? imageUrl;
+    if (_patientImage != null) {
+      imageUrl = await CloudinaryService.uploadFile(_patientImage!);
+    }
     
     final request = BloodRequestModel(
       requestId: '',
@@ -93,6 +110,7 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       hospitalName: _hospitalController.text.trim(),
       patientProblem: _problemController.text.trim(),
       description: _descriptionController.text.trim(),
+      patientImageUrl: imageUrl,
       whatsappNumber: _whatsappController.text.trim().isEmpty ? _phoneController.text.trim() : _whatsappController.text.trim(),
       division: _selectedDivision ?? '',
       district: _selectedDistrict ?? '',
@@ -197,6 +215,8 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                       icon: Icons.person_search_outlined,
                       child: Column(
                         children: [
+                          _buildImagePickerArea(),
+                          const SizedBox(height: 20),
                           _buildInputField(
                             controller: _patientNameController,
                             label: ref.tr('patient_name_opt'),
@@ -311,6 +331,53 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildImagePickerArea() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(ref.tr('patient_image_opt'), style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: _pickImage,
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+            ),
+            child: _patientImage != null
+                ? Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.file(_patientImage!, width: double.infinity, height: 120, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: InkWell(
+                          onTap: () => setState(() => _patientImage = null),
+                          child: const CircleAvatar(backgroundColor: Colors.red, radius: 14, child: Icon(Icons.close, color: Colors.white, size: 16)),
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade400, size: 32),
+                      const SizedBox(height: 8),
+                      Text(ref.tr('add_patient_image'), style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 

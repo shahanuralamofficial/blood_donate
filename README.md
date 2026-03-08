@@ -25,30 +25,30 @@
 ## ✨ Key Features
 
 ### 🚀 Advanced Communication
-- **Real-time Video & Voice Calls**: Direct and secure communication between donors and recipients via **Agora RTC**.
-- **Rich Messaging Engine**: Chat with support for **Images & Videos**, powered by **Cloudinary**.
-- **Interactive Media Previews**: Preview images/videos with captions before sending.
+- **Real-time Video & Voice Calls**: Seamless communication via **Agora RTC** for donors and recipients.
+- **Rich Media Messaging**: Share **Images & Videos** in chat with high-speed delivery powered by **Cloudinary**.
+- **Interactive Previews**: Send media with **Captions** and enjoy an integrated video player experience.
 
-### 🩸 Smart Donor Ecosystem
+### 🩸 Smart Blood Request System
+- **Patient Photo Support**: Optionally upload the patient's photo to increase the credibility of the request.
 - **Hyper-Local Precision**: Integrated with detailed Bangladeshi location data (Division, District, Upazila, Union).
-- **Gamified Ranking System**: Incentivizing donors with ranks from **Newbie** to **Diamond**.
-- **Instant Emergency Alerts**: High-visibility blood request cards with location-based notifications.
+- **Emergency Priority**: High-visibility alerts and push notifications for urgent blood requirements.
 
-### 📄 Professional Management
-- **PDF Generation**: Download professional donation history reports with full Bengali font support.
-- **Dynamic Profile System**: Upload and manage profile pictures with ease.
-- **Bi-lingual Interface**: Fully localized experience in both **Bangla** and **English**.
+### 🏅 Gamification & Management
+- **Donor Ranks**: Dynamic milestone-based ranking system from **Newbie** to **Diamond**.
+- **PDF History**: Generate professional donation reports and receipts with full Bengali font support.
+- **Bi-lingual UI**: Fully localized experience in both **Bangla** and **English**.
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
 - **Frontend**: Flutter (Dart)
-- **State Management**: [Riverpod](https://riverpod.dev/) (Refined logic and data flow)
-- **Real-time Backend**: Firebase (Firestore, Cloud Messaging, Auth, Storage)
-- **Media Engine**: Cloudinary (High-speed image/video hosting)
+- **State Management**: [Riverpod](https://riverpod.dev/) (Scalable & predictable logic)
+- **Backend**: Firebase (Firestore, Cloud Messaging, Auth, Storage)
+- **Media Hosting**: Cloudinary (Image & Video optimization)
 - **RTC Engine**: Agora RTC SDK
-- **Architecture**: Clean Architecture (Layered separation of concerns)
+- **Design Pattern**: Clean Architecture (Separation of Concerns)
 
 ---
 
@@ -59,9 +59,9 @@
    git clone https://github.com/shahanuralamofficial/blood_donate.git
    ```
 
-2. **Configure Services**:
-   - Update `google-services.json` in `android/app/`.
-   - Update your **Agora App ID** and **Cloudinary Credentials** in the `core/services` folder.
+2. **Setup Services**:
+   - Add `google-services.json` to `android/app/`.
+   - Update **Agora App ID** and **Cloudinary Credentials** in `core/services/`.
 
 3. **Install & Run**:
    ```bash
@@ -77,5 +77,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 <p align="center">
   <b>Developed with ❤️ for the Community.</b><br>
-  <i>"Your one drop of blood can save a life today."</i>
+  <i>"Your one drop of blood can bring a smile to a family."</i>
 </p>
