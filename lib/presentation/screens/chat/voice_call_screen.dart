@@ -34,6 +34,7 @@ class _CallScreenState extends State<CallScreen> {
   int? _remoteUid;
   bool _localUserJoined = false;
   bool _muted = false;
+  bool _videoDisabled = false;
   bool _isSpeakerOn = false;
 
   bool _hasAccepted = false;
@@ -487,13 +488,25 @@ class _CallScreenState extends State<CallScreen> {
           label: "শেষ",
           isLarge: true,
         ),
-        if (widget.isVideoCall)
+        if (widget.isVideoCall) ...[
+          _buildActionButton(
+            onPressed: () {
+              if (_engine != null) {
+                setState(() => _videoDisabled = !_videoDisabled);
+                _engine!.muteLocalVideoStream(_videoDisabled);
+              }
+            },
+            icon: _videoDisabled ? Icons.videocam_off : Icons.videocam,
+            color: _videoDisabled ? Colors.red : Colors.white24,
+            label: _videoDisabled ? "ভিডিও অন" : "ভিডিও অফ",
+          ),
           _buildActionButton(
             onPressed: () => _engine?.switchCamera(),
             icon: Icons.switch_camera,
             color: Colors.white24,
             label: "ক্যামেরা",
           ),
+        ],
       ],
     );
   }
@@ -576,3 +589,4 @@ class _CallScreenState extends State<CallScreen> {
     );
   }
 }
+

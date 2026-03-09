@@ -1,81 +1,55 @@
-# রক্তদান - Blood Donate 🩸
+# Blood Donate App 🩸
 
-**A premium, real-time blood donation application designed to save lives through seamless connectivity.**
+একটি আধুনিক এবং জীবনরক্ষাকারী রক্তদান অ্যাপ, যা রক্তদাতা এবং গ্রহীতাদের মধ্যে দ্রুত সংযোগ স্থাপন করে। এতে রয়েছে রিয়েল-টাইম চ্যাট, অডিও/ভিডিও কল এবং ক্লাউড স্টোরেজ সুবিধা।
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
-[![Riverpod](https://img.shields.io/badge/Riverpod-00C4B4?style=for-the-badge&logo=dart&logoColor=white)](https://riverpod.dev)
-[![Agora](https://img.shields.io/badge/Agora-80C41C?style=for-the-badge&logo=agora&logoColor=white)](https://www.agora.io)
-[![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)](https://cloudinary.com)
+## ✨ মূল ফিচারসমূহ (Features)
 
----
+*   **🩸 রক্ত অনুসন্ধান (Donor Search):** এলাকা এবং ব্লাড গ্রুপ অনুযায়ী দ্রুত রক্তদাতা খুঁজে পাওয়ার সুবিধা।
+*   **💬 চ্যাট সিস্টেম (Real-time Chat):** চ্যাট অপশনের মাধ্যমে রক্তদাতার সাথে সরাসরি কথা বলার সুযোগ।
+*   **📞 অডিও ও ভিডিও কল (Agora RTC):** সরাসরি অ্যাপের ভেতর থেকেই হাই-কোয়ালিটি অডিও এবং ভিডিও কল করার সুবিধা।
+*   **🔔 রিংটোন ও ভাইব্রেশন:** কল আসলে প্রফেশনাল রিংটোন এবং ভাইব্রেশন অ্যালার্ট।
+*   **🖼️ ইমেজ শেয়ারিং (Cloudinary):** চ্যাটে ছবি আদান-প্রদান এবং ক্লাউড স্টোরেজ সাপোর্ট।
+*   **📍 লোকেশন ভিত্তিক সেবা:** ব্যবহারকারীর নিকটস্থ রক্তদাতাদের তালিকা দেখা।
+*   **🔒 নিরাপদ লগইন:** ফায়ারবেস অথেন্টিকেশন (Firebase Authentication) এর মাধ্যমে নিরাপদ অ্যাক্সেস।
 
-## 📸 App Showcase
+## 🛠️ ব্যবহৃত প্রযুক্তি (Tech Stack)
 
-| Home Screen | Donor Search | Blood Request |
-| :---: | :---: | :---: |
-| <img src="./assets/screenshots/home.png" width="100%" alt="Home" /> | <img src="./assets/screenshots/donor.png" width="100%" alt="Donor" /> | <img src="./assets/screenshots/request.png" width="100%" alt="Request" /> |
+*   **Framework:** Flutter (Android & iOS)
+*   **Backend:** Firebase (Firestore, Auth, Storage)
+*   **Real-time Audio/Video:** Agora SDK
+*   **Image Management:** Cloudinary
+*   **State Management:** Provider
+*   **Local Audio:** Audioplayers & Vibration
 
-| Real-time Chat | User Profile | Advanced Search |
-| :---: | :---: | :---: |
-| <img src="./assets/screenshots/chat.png" width="100%" alt="Chat" /> | <img src="./assets/screenshots/profile.png" width="100%" alt="Profile" /> | <img src="./assets/screenshots/search.png" width="100%" alt="Search" /> |
+## 🚀 সেটআপ করার নিয়ম (Getting Started)
 
----
-
-## ✨ Key Features
-
-### 🚀 Advanced Communication
-- **Real-time Video & Voice Calls**: Seamless communication via **Agora RTC** for donors and recipients.
-- **Rich Media Messaging**: Share **Images & Videos** in chat with high-speed delivery powered by **Cloudinary**.
-- **Interactive Previews**: Send media with **Captions** and enjoy an integrated video player experience.
-
-### 🩸 Smart Blood Request System
-- **Patient Photo Support**: Optionally upload the patient's photo to increase the credibility of the request.
-- **Hyper-Local Precision**: Integrated with detailed Bangladeshi location data (Division, District, Upazila, Union).
-- **Emergency Priority**: High-visibility alerts and push notifications for urgent blood requirements.
-
-### 🏅 Gamification & Management
-- **Donor Ranks**: Dynamic milestone-based ranking system from **Newbie** to **Diamond**.
-- **PDF History**: Generate professional donation reports and receipts with full Bengali font support.
-- **Bi-lingual UI**: Fully localized experience in both **Bangla** and **English**.
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-- **Frontend**: Flutter (Dart)
-- **State Management**: [Riverpod](https://riverpod.dev/) (Scalable & predictable logic)
-- **Backend**: Firebase (Firestore, Cloud Messaging, Auth, Storage)
-- **Media Hosting**: Cloudinary (Image & Video optimization)
-- **RTC Engine**: Agora RTC SDK
-- **Design Pattern**: Clean Architecture (Separation of Concerns)
-
----
-
-## 🚀 Getting Started
-
-1. **Clone the repository**:
+১. রিপোজিটরি ক্লোন করুন:
    ```bash
-   git clone https://github.com/shahanuralamofficial/blood_donate.git
+   git clone https://github.com/yourusername/blood_donate.git
    ```
 
-2. **Setup Services**:
-   - Add `google-services.json` to `android/app/`.
-   - Update **Agora App ID** and **Cloudinary Credentials** in `core/services/`.
-
-3. **Install & Run**:
+২. ডিপেনডেন্সি ইনস্টল করুন:
    ```bash
    flutter pub get
+   ```
+
+৩. অ্যাসেট ফোল্ডারে আপনার রিংটোন ফাইলগুলো যোগ করুন:
+   - `assets/sounds/incoming_call.mp3`
+   - `assets/sounds/outgoing_call.mp3`
+
+৪. অ্যাপটি রান করুন:
+   ```bash
    flutter run
    ```
 
----
+## 📂 প্রোজেক্ট স্ট্রাকচার
 
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+*   `lib/presentation`: UI এবং স্টেট ম্যানেজমেন্ট।
+*   `lib/data`: মডেল এবং রিপোজিটরি (Firestore Integration)।
+*   `assets`: ইমেজ এবং সাউন্ড ফাইল।
+
+## 📄 লাইসেন্স
+এই প্রোজেক্টটি [MIT License](LICENSE) এর অধীনে লাইসেন্সকৃত।
 
 ---
-<p align="center">
-  <b>Developed with ❤️ for the Community.</b><br>
-  <i>"Your one drop of blood can bring a smile to a family."</i>
-</p>
+**Blood Donate App** - জীবন বাঁচাই হাতে হাত রেখে। ❤️
