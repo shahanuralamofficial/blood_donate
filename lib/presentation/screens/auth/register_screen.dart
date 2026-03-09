@@ -68,7 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      _showErrorSnackBar('ত্রুটি: ${e.toString()}');
+      _showErrorSnackBar('${ref.tr('error')}: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
