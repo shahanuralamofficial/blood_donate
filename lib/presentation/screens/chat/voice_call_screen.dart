@@ -96,6 +96,13 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _stopRingtone() async {
     debugPrint("Stopping Ringtone and Vibration...");
     await _audioPlayer.stop();
+    // অডিও ফোকাস ছেড়ে দেওয়া যাতে অ্যাগোরা কল অডিও ঠিকমতো পায়
+    await _audioPlayer.setAudioContext(AudioContext(
+      android: AudioContextAndroid(
+        usageType: AndroidUsageType.media,
+        audioFocus: AndroidAudioFocus.none,
+      ),
+    ));
     Vibration.cancel();
   }
 
@@ -189,6 +196,8 @@ class _CallScreenState extends State<CallScreen> {
 
       if (widget.isVideoCall) {
         await _engine!.enableVideo();
+        setState(() => _isSpeakerOn = true);
+        await _engine!.setEnableSpeakerphone(true);
       }
       await _engine!.enableAudio();
 
@@ -459,15 +468,19 @@ class _CallScreenState extends State<CallScreen> {
           label: _muted ? "আনমিউট" : "মিউট",
         ),
         _buildActionButton(
-          onPressed: () {
+          onPressed: () async {
             if (_engine != null) {
-              setState(() => _isSpeakerOn = !_isSpeakerOn);
-              _engine!.setEnableSpeakerphone(_isSpeakerOn);
+              final bool newState = !_isSpeakerOn;
+              await _engine!.setEnableSpeakerphone(newState);
+              if (mounted) {
+                setState(() => _isSpeakerOn = newState);
+              }
+              debugPrint("Speaker toggled: $newState");
             }
           },
           icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_down,
           color: _isSpeakerOn ? Colors.blue : Colors.white24,
-          label: _isSpeakerOn ? "লাউড" : "স্পিকার",
+          label: _isSpeakerOn ? "লাউডস্পিকার" : "স্পিকার",
         ),
         _buildActionButton(
           onPressed: _endCall,
