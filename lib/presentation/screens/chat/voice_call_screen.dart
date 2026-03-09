@@ -34,7 +34,6 @@ class _CallScreenState extends State<CallScreen> {
   int? _remoteUid;
   bool _localUserJoined = false;
   bool _muted = false;
-  bool _videoDisabled = false;
   bool _isSpeakerOn = false;
 
   bool _hasAccepted = false;
@@ -389,18 +388,17 @@ class _CallScreenState extends State<CallScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 80),
-                _buildUserInfo(),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 60),
-                  child: widget.isIncoming && !_hasAccepted
-                      ? _buildIncomingControls()
-                      : _buildInCallControls(),
-                ),
-              ],
-            ),
-          ),
-        ],
+        _buildUserInfo(),
+        const Spacer(),
+        if (widget.isIncoming && !_hasAccepted)
+          _buildIncomingControls()
+        else
+          _buildInCallControls(),
+        const SizedBox(height: 60),
+      ],
+    ),
+  ),
+],
       ),
     );
   }
