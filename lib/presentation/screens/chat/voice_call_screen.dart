@@ -33,6 +33,7 @@ class _CallScreenState extends State<CallScreen> {
   bool _localUserJoined = false;
   bool _muted = false;
   bool _videoDisabled = false;
+  bool _isSpeakerOn = false;
 
   bool _hasAccepted = false;
   bool _isCallConnected = false;
@@ -132,7 +133,9 @@ class _CallScreenState extends State<CallScreen> {
           },
           onUserOffline: (connection, uid, reason) {
             debugPrint("Remote user left: $uid");
-            _endCall();
+            // যদি অপরপক্ষ কল শেষ করে দেয়, তবে আমাদের ফোন থেকে আর মেসেজ পাঠানোর দরকার নেই
+            // কারণ তার ফোন থেকে অলরেডি মেসেজ পাঠানো হয়েছে।
+            _endCall(shouldUpdateFirestore: false);
           },
         ),
       );
@@ -227,7 +230,11 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _endCall({bool shouldUpdateFirestore = true}) async {
     if (!mounted) return;
     
-    debugPrint("Ending call. Should update Firestore: $shouldUpdateFirestore");
+    // Capture the duration before canceling anything
+    final int finalDuration = _secondsElapsed;
+    final bool talkHappened = finalDuration > 0;
+    
+    debugPrint("Ending call. Duration: $finalDuration, Talk Happened: $talkHappened");
     
     _timer?.cancel();
     _callStreamSubscription?.cancel();
@@ -237,33 +244,48 @@ class _CallScreenState extends State<CallScreen> {
     }
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    final cleanChannelId = widget.channelId.trim();
+    final String cleanChannelId = widget.channelId.trim();
 
     if (uid != null && cleanChannelId.isNotEmpty && shouldUpdateFirestore) {
-      String text;
-      String? duration;
+      String messageText;
+      String? durationStr;
 
-      if (_isCallConnected && _secondsElapsed > 0) {
-        text = widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে";
-        duration = _formatDuration(_secondsElapsed);
+      if (talkHappened) {
+        messageText = widget.isVideoCall ? "ভিডিও কল শেষ হয়েছে" : "ভয়েস কল শেষ হয়েছে";
+        durationStr = _formatDuration(finalDuration);
       } else {
-        text = widget.isVideoCall ? "মিসড ভিডিও কল" : "মিসড ভয়েস কল";
+        messageText = widget.isVideoCall ? "মিসড ভিডিও কল" : "মিসড ভয়েস কল";
+        durationStr = null;
       }
 
       try {
-        await FirebaseFirestore.instance
-            .collection('chats')
-            .doc(cleanChannelId)
-            .collection('messages')
-            .add(MessageModel(
-              senderId: uid,
-              text: text,
-              timestamp: DateTime.now(),
-              type: widget.isVideoCall ? 'video_call' : 'call',
-              duration: duration,
-            ).toMap());
+        final Map<String, dynamic> messageData = {
+          'senderId': uid,
+          'text': messageText,
+          'timestamp': FieldValue.serverTimestamp(),
+          'type': widget.isVideoCall ? 'video_call' : 'call',
+          'duration': durationStr,
+          'isRead': false,
+        };
+
+        // Correct collection for this app is 'direct_chats'
+        final chatDocRef = FirebaseFirestore.instance.collection('direct_chats').doc(cleanChannelId);
+        
+        // 1. Add message to the messages sub-collection
+        await chatDocRef.collection('messages').add(messageData);
+
+        // 2. Update chat metadata for the chat list
+        await chatDocRef.set({
+          'lastMessage': messageText,
+          'lastMessageSenderId': uid,
+          'lastMessageTime': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'unread': true,
+        }, SetOptions(merge: true));
+
+        debugPrint("Call log saved successfully to direct_chats/$cleanChannelId");
       } catch (e) {
-        debugPrint("Firestore Message Save Error: $e");
+        debugPrint("CRITICAL: Firestore Message Save Error: $e");
       }
     }
 
@@ -383,6 +405,17 @@ class _CallScreenState extends State<CallScreen> {
           icon: _muted ? Icons.mic_off : Icons.mic,
           color: _muted ? Colors.red : Colors.white24,
           label: _muted ? "আনমিউট" : "মিউট",
+        ),
+        _buildActionButton(
+          onPressed: () {
+            if (_engine != null) {
+              setState(() => _isSpeakerOn = !_isSpeakerOn);
+              _engine!.setEnableSpeakerphone(_isSpeakerOn);
+            }
+          },
+          icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_down,
+          color: _isSpeakerOn ? Colors.blue : Colors.white24,
+          label: _isSpeakerOn ? "লাউড" : "স্পিকার",
         ),
         _buildActionButton(
           onPressed: _endCall,

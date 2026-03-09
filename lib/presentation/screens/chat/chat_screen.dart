@@ -561,28 +561,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildCallLogBubble(MessageModel msg) {
-    final isVideo = msg.type == 'video_call';
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(isVideo ? Icons.videocam : Icons.call, size: 16, color: Colors.grey.shade700),
-            const SizedBox(width: 8),
-            Text(
-              msg.duration != null ? '${isVideo ? 'ভিডিও কল' : 'ভয়েস কল'} (${msg.duration})' : (isVideo ? 'মিসড ভিডিও কল' : 'মিসড ভয়েস কল'),
-              style: GoogleFonts.notoSansBengali(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildInputArea() {
     return Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, -2))]), child: SafeArea(child: Row(children: [
       IconButton(
