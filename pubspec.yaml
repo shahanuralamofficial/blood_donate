@@ -64,6 +64,7 @@ dependencies:
   video_player: ^2.8.2
   chewie: ^1.8.1
   audioplayers: ^6.1.0
+  vibration: ^2.0.1
 
 
 dev_dependencies:
@@ -88,3 +89,4 @@ flutter:
     - assets/images/
     - assets/unions.json
     - assets/donation_facts.json
+    - assets/sounds/

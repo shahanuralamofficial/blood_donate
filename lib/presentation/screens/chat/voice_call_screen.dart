@@ -5,8 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 import 'dart:async';
-import '../../../data/models/message_model.dart';
 
 class CallScreen extends StatefulWidget {
   final String channelId;
@@ -29,6 +29,7 @@ class CallScreen extends StatefulWidget {
 class _CallScreenState extends State<CallScreen> {
   static const String appId = "1a3cffb089de46c8bc49934befb8b9d2";
   RtcEngine? _engine;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   int? _remoteUid;
   bool _localUserJoined = false;
@@ -51,6 +52,51 @@ class _CallScreenState extends State<CallScreen> {
     _initAgora();
     _listenToCallStatus();
     _updateCallStatus('calling');
+    // ১ সেকেন্ড দেরি করে রিংটোন চালু করা হচ্ছে যাতে অ্যাগোরা ইন্টারাপ্ট না করে
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) _playRingtone();
+    });
+  }
+
+  Future<void> _playRingtone() async {
+    try {
+      // ইনকামিং এবং আউটগোয়িং এর জন্য আলাদা ফাইল সেট করা হচ্ছে
+      final String soundAsset = widget.isIncoming 
+          ? 'sounds/incoming_call.mp3' 
+          : 'sounds/outgoing_call.mp3';
+
+      if (widget.isIncoming && !_hasAccepted) {
+        // ভাইব্রেশন (ইনকামিং কলের জন্য)
+        if (await Vibration.hasVibrator() ?? false) {
+          Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
+        }
+        
+        await _audioPlayer.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            usageType: AndroidUsageType.notificationRingtone,
+            contentType: AndroidContentType.music,
+            audioFocus: AndroidAudioFocus.gainTransient,
+          ),
+        ));
+        
+        await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+        await _audioPlayer.play(AssetSource(soundAsset));
+      } else if (!widget.isIncoming && !_isCallConnected) {
+        // আউটগোয়িং ডায়ালিং টোন
+        await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+        await _audioPlayer.play(AssetSource(soundAsset));
+      }
+    } catch (e) {
+      debugPrint("Audio Play Error: $e");
+      // ব্যাকআপ সাউন্ড (যদি অ্যাসেট না পাওয়া যায়)
+      _audioPlayer.play(UrlSource('https://actions.google.com/sounds/v1/phone/cell_phone_ringing.ogg'));
+    }
+  }
+
+  Future<void> _stopRingtone() async {
+    debugPrint("Stopping Ringtone and Vibration...");
+    await _audioPlayer.stop();
+    Vibration.cancel();
   }
 
   void _listenToCallStatus() {
@@ -194,6 +240,7 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _acceptCall() async {
     debugPrint("Accept button clicked");
+    await _stopRingtone();
     if (mounted) {
       setState(() {
         _hasAccepted = true; 
@@ -209,6 +256,7 @@ class _CallScreenState extends State<CallScreen> {
     debugPrint("Checking Timer: _remoteUid=$_remoteUid, _hasAccepted=$_hasAccepted");
     
     if (_remoteUid != null && _remoteUid != 0 && _hasAccepted) {
+      _stopRingtone();
       if (mounted) {
         setState(() {
           _isCallConnected = true;
@@ -231,6 +279,7 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _endCall({bool shouldUpdateFirestore = true}) async {
     if (!mounted) return;
     
+    await _stopRingtone();
     // Capture the duration before canceling anything
     final int finalDuration = _secondsElapsed;
     final bool talkHappened = finalDuration > 0;
@@ -309,6 +358,8 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     _timer?.cancel();
     _callStreamSubscription?.cancel();
+    _stopRingtone();
+    _audioPlayer.dispose();
     if (_engine != null) {
       _engine!.leaveChannel();
       _engine!.release();
