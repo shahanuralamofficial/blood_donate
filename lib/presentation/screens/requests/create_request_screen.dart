@@ -339,40 +339,47 @@ class _CreateRequestScreenState extends ConsumerState<CreateRequestScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(ref.tr('patient_image_opt'), style: GoogleFonts.notoSansBengali(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         InkWell(
           onTap: _pickImage,
           child: Container(
-            height: 120,
+            height: 70, // Height reduced for compact look
             width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
             ),
             child: _patientImage != null
-                ? Stack(
+                ? Row(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.file(_patientImage!, width: double.infinity, height: 120, fit: BoxFit.cover),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(_patientImage!, width: 50, height: 50, fit: BoxFit.cover),
                       ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: InkWell(
-                          onTap: () => setState(() => _patientImage = null),
-                          child: const CircleAvatar(backgroundColor: Colors.red, radius: 14, child: Icon(Icons.close, color: Colors.white, size: 16)),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Text(
+                          "Image Selected",
+                          style: TextStyle(color: Colors.green.shade700, fontSize: 13, fontWeight: FontWeight.w500),
                         ),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => _patientImage = null),
+                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                       ),
                     ],
                   )
-                : Column(
+                : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade400, size: 32),
-                      const SizedBox(height: 8),
-                      Text(ref.tr('add_patient_image'), style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                      Icon(Icons.add_a_photo_outlined, color: Colors.red.shade400, size: 20),
+                      const SizedBox(width: 10),
+                      Text(
+                        ref.tr('add_patient_image'),
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
                     ],
                   ),
           ),
