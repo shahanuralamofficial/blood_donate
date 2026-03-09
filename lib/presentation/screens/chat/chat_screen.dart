@@ -402,6 +402,56 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ]));
   }
 
+  Widget _buildCallLogBubble(MessageModel msg) {
+    final bool isMissed = msg.text.contains("মিসড") || msg.text.contains("Missed");
+    final bool isVideo = msg.type == 'video_call';
+
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isMissed ? Colors.red.shade50 : Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isMissed ? Colors.red.shade100 : Colors.blue.shade100),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMissed 
+                  ? Icons.call_missed 
+                  : (isVideo ? Icons.videocam : Icons.call),
+              size: 16,
+              color: isMissed ? Colors.red : Colors.blue,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              msg.text,
+              style: GoogleFonts.notoSansBengali(
+                fontSize: 12,
+                color: isMissed ? Colors.red.shade700 : Colors.blue.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (msg.duration != null && msg.duration!.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              Text(
+                "(${msg.duration})",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.blue.shade900,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageBubble(MessageModel msg, bool isMe) {
     if (msg.type == 'call' || msg.type == 'video_call') {
       return _buildCallLogBubble(msg);
