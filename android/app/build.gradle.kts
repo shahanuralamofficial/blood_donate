@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.blood_donate"
+    namespace = "com.blood_donate_app.bd"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.blood_donate"
+        applicationId = "com.blood_donate_app.bd"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
