@@ -63,7 +63,7 @@ dependencies:
   http: ^1.2.0
   video_player: ^2.8.2
   chewie: ^1.8.1
-
+  flutter_ringtone_player: ^3.2.0
 
 
 dev_dependencies:
