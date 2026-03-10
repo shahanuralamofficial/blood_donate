@@ -8,6 +8,10 @@
 -dontwarn com.google.mlkit.vision.text.japanese.**
 -dontwarn com.google.mlkit.vision.text.korean.**
 
+# Play Core rules (to fix R8 errors with Flutter's deferred components)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+
 # Flutter and Firebase generic rules
 -keep class io.flutter.app.** { *; }
 -keep class io.flutter.plugin.** { *; }
