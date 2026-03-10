@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:301334429914:android:1dac091922a31bf8b125e3",
+        "mobilesdk_app_id": "1:301334429914:android:78142f30ee8dc386b125e3",
         "android_client_info": {
-          "package_name": "com.example.blood_donate"
+          "package_name": "com.blood_donate_app.bd"
         }
       },
       "oauth_client": [
@@ -29,6 +29,13 @@
             {
               "client_id": "301334429914-27fu9bebnp02t8jcorhnr7v1p9g63k2m.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "301334429914-hqlt77giehlch8v3m2etqf3dk2vvh2q1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bloodDonate"
+              }
             }
           ]
         }
