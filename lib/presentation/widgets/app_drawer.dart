@@ -78,22 +78,33 @@ class AppDrawer extends ConsumerWidget {
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: Divider(),
                   ),
-                  _buildSectionTitle('AI & Health Features'),
+                  _buildSectionTitle(ref.tr('ai_health_features')),
                   _buildItem(
                     icon: Icons.camera_alt_rounded,
-                    title: 'Prescription Reader',
-                    subtitle: 'AI Powered OCR',
+                    title: ref.tr('prescription_reader'),
+                    subtitle: ref.tr('ai_powered_ocr'),
                     color: Colors.teal.shade600,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrescriptionReaderScreen())),
                   ),
                   _buildItem(
+                    icon: Icons.local_hospital_rounded,
+                    title: ref.tr('hospitals'),
+                    subtitle: ref.tr('nearby_facilities'),
+                    color: Colors.green.shade700,
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(ref.tr('coming_soon_msg'))),
+                      );
+                    },
+                  ),
+                  _buildItem(
                     icon: Icons.medical_services_rounded,
-                    title: 'Doctors & Labs',
-                    subtitle: 'Coming Soon',
+                    title: ref.tr('doctors_and_labs'),
+                    subtitle: ref.tr('coming_soon'),
                     color: Colors.indigo.shade600,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Feature Coming Soon!')),
+                        SnackBar(content: Text(ref.tr('coming_soon_msg'))),
                       );
                     },
                   ),

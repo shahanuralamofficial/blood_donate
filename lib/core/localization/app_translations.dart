@@ -346,6 +346,11 @@ class AppTranslations {
       'unblock_to_call': 'Unblock to make a call',
       'unblock_call_to_call': 'Unblock calls to call this user',
       'cannot_call_this_user': 'You cannot call this user',
+      'prescription_reader': 'Prescription Reader',
+      'ai_powered_ocr': 'AI Powered OCR',
+      'nearby_facilities': 'Nearby Facilities',
+      'doctors_and_labs': 'Doctors & Labs',
+      'ai_health_features': 'AI & Health Features',
     },
     'bn': {
       'app_title': 'রক্তদান',
@@ -693,6 +698,11 @@ class AppTranslations {
       'unblock_to_call': 'কল করতে হলে আনব্লক করুন',
       'unblock_call_to_call': 'কল করতে হলে কল ব্লক সরান',
       'cannot_call_this_user': 'আপনি এই ইউজারকে কল করতে পারবেন না',
+      'prescription_reader': 'প্রেসক্রিপশন রিডার',
+      'ai_powered_ocr': 'এআই চালিত রিডার',
+      'nearby_facilities': 'নিকটস্থ সুবিধাসমূহ',
+      'doctors_and_labs': 'ডাক্তার ও ল্যাব',
+      'ai_health_features': 'এআই ও স্বাস্থ্য সেবা',
     },
   };
 }
