@@ -1,15 +1,14 @@
-import 'package:blood_donate_app/core/providers/language_provider.dart';
-import 'package:blood_donate_app/presentation/screens/history/activity_history_screen.dart';
-import 'package:blood_donate_app/presentation/screens/home/home_screen.dart';
-import 'package:blood_donate_app/presentation/screens/profile/personal_profile_screen.dart';
-import 'package:blood_donate_app/presentation/screens/requests/blood_requests_screen.dart';
-import 'package:blood_donate_app/presentation/screens/search/donor_search_screen.dart';
-import 'package:blood_donate_app/presentation/widgets/app_drawer.dart';
+import 'package:blood_donate/presentation/providers/language_provider.dart';
+import 'package:blood_donate/presentation/screens/history/history_screen.dart';
+import 'package:blood_donate/presentation/screens/home/home_screen.dart';
+import 'package:blood_donate/presentation/screens/profile/personal_profile_screen.dart';
+import 'package:blood_donate/presentation/screens/requests/request_list_screen.dart';
+import 'package:blood_donate/presentation/screens/donors/donor_list_screen.dart';
+import 'package:blood_donate/presentation/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:blood_donate_app/core/providers/auth_provider.dart';
+import 'package:blood_donate/presentation/providers/auth_provider.dart';
 
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
@@ -23,9 +22,9 @@ class _RootScreenState extends ConsumerState<RootScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const BloodRequestsScreen(),
-    const DonorSearchScreen(),
-    const ActivityHistoryScreen(),
+    const RequestListScreen(),
+    const DonorListScreen(),
+    const HistoryScreen(),
   ];
 
   @override
@@ -37,34 +36,35 @@ class _RootScreenState extends ConsumerState<RootScreen> {
   }
 
   void _checkProfileIncomplete() {
-    final user = ref.read(authProvider).user;
-    if (user != null) {
-      final isIncomplete = user.bloodGroup == null || 
-                          user.bloodGroup!.isEmpty || 
-                          user.address == null || 
-                          user.address!.isEmpty;
-      
-      if (isIncomplete) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text(ref.tr('profile_incomplete'), style: const TextStyle(fontWeight: FontWeight.bold)),
-            content: Text(ref.tr('complete_profile_msg')),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
-                },
-                child: Text(ref.tr('complete_now')),
-              ),
-            ],
-          ),
-        );
+    final userAsync = ref.read(currentUserDataProvider);
+    userAsync.whenData((user) {
+      if (user != null) {
+        final isIncomplete = user.bloodGroup == null || 
+                            user.bloodGroup!.isEmpty || 
+                            user.address == null;
+        
+        if (isIncomplete) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(ref.tr('profile_incomplete'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              content: Text(ref.tr('complete_profile_msg')),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
+                  },
+                  child: Text(ref.tr('complete_now')),
+                ),
+              ],
+            ),
+          );
+        }
       }
-    }
+    });
   }
 
   @override
@@ -76,7 +76,7 @@ class _RootScreenState extends ConsumerState<RootScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
