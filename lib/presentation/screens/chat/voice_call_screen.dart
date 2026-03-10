@@ -41,6 +41,7 @@ class _CallScreenState extends State<CallScreen> {
   bool _isCallConnected = false;
 
   Timer? _timer;
+  Timer? _ringTimeoutTimer;
   int _secondsElapsed = 0;
 
   StreamSubscription<DocumentSnapshot>? _callStreamSubscription;
@@ -55,6 +56,14 @@ class _CallScreenState extends State<CallScreen> {
     // ১ সেকেন্ড দেরি করে রিংটোন চালু করা হচ্ছে যাতে অ্যাগোরা ইন্টারাপ্ট না করে
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) _playRingtone();
+    });
+
+    // ৬০ সেকেন্ডের রিংটোন টাইমআউট সেট করা হচ্ছে
+    _ringTimeoutTimer = Timer(const Duration(seconds: 60), () {
+      if (mounted && !_isCallConnected) {
+        debugPrint("Call timeout reached (60s). Ending call...");
+        _endCall();
+      }
     });
   }
 
@@ -249,6 +258,7 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _acceptCall() async {
     debugPrint("Accept button clicked");
+    _ringTimeoutTimer?.cancel();
     await _stopRingtone();
     if (mounted) {
       setState(() {
@@ -288,6 +298,7 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _endCall({bool shouldUpdateFirestore = true}) async {
     if (!mounted) return;
     
+    _ringTimeoutTimer?.cancel();
     await _stopRingtone();
     // Capture the duration before canceling anything
     final int finalDuration = _secondsElapsed;
@@ -366,6 +377,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _ringTimeoutTimer?.cancel();
     _callStreamSubscription?.cancel();
     _stopRingtone();
     _audioPlayer.dispose();

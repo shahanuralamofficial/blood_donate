@@ -4,14 +4,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-class PrescriptionReaderScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/language_provider.dart';
+
+class PrescriptionReaderScreen extends ConsumerStatefulWidget {
   const PrescriptionReaderScreen({super.key});
 
   @override
-  State<PrescriptionReaderScreen> createState() => _PrescriptionReaderScreenState();
+  ConsumerState<PrescriptionReaderScreen> createState() => _PrescriptionReaderScreenState();
 }
 
-class _PrescriptionReaderScreenState extends State<PrescriptionReaderScreen> {
+class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScreen> {
   final ImagePicker _picker = ImagePicker();
   final FlutterTts _flutterTts = FlutterTts();
   bool _isProcessing = false;
@@ -41,12 +44,12 @@ class _PrescriptionReaderScreenState extends State<PrescriptionReaderScreen> {
         _showResultDialog(_recognizedText);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No text found in the image.")),
+          SnackBar(content: Text(ref.tr('no_data_found'))),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("${ref.tr('error')}: $e")),
       );
     } finally {
       setState(() {
@@ -58,20 +61,49 @@ class _PrescriptionReaderScreenState extends State<PrescriptionReaderScreen> {
   void _showResultDialog(String text) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.description, color: Colors.red),
+            const Icon(Icons.description_rounded, color: Colors.red),
             const SizedBox(width: 10),
-            const Text("Prescription Result"),
+            Text(ref.tr('prescription_reader')),
           ],
         ),
         content: SingleChildScrollView(
-          child: Text(text, style: GoogleFonts.poppins()),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        ref.tr('prescription_disclaimer'),
+                        style: const TextStyle(fontSize: 11, color: Colors.brown, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 15),
+              Text(text, style: GoogleFonts.poppins(fontSize: 14)),
+            ],
+          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.volume_up, color: Colors.blue),
+            icon: const Icon(Icons.volume_up_rounded, color: Colors.blue),
             onPressed: () => _flutterTts.speak(text),
           ),
           TextButton(
@@ -79,7 +111,7 @@ class _PrescriptionReaderScreenState extends State<PrescriptionReaderScreen> {
               _flutterTts.stop();
               Navigator.pop(context);
             },
-            child: const Text("Close"),
+            child: Text(ref.tr('ok')),
           ),
         ],
       ),
@@ -96,36 +128,51 @@ class _PrescriptionReaderScreenState extends State<PrescriptionReaderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("AI Prescription Reader"),
+        title: Text(ref.tr('prescription_reader')),
         backgroundColor: const Color(0xFFE53935),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.camera_alt, size: 100, color: Colors.grey.shade300),
-            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.document_scanner_rounded, size: 80, color: Colors.red.shade300),
+            ),
+            const SizedBox(height: 30),
             Text(
-              "Take a clear photo of the prescription",
-              style: GoogleFonts.notoSansBengali(fontSize: 16, color: Colors.grey.shade600),
+              ref.tr('prescription_reader'),
+              style: GoogleFonts.notoSansBengali(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              ref.tr('tagline_text'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 40),
             if (_isProcessing)
               const CircularProgressIndicator(color: Colors.red)
             else
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Column(
                 children: [
                   _buildActionButton(
-                    icon: Icons.camera,
-                    label: "Camera",
+                    icon: Icons.camera_alt_rounded,
+                    label: ref.tr('camera'),
                     onTap: () => _processImage(ImageSource.camera),
                   ),
-                  const SizedBox(width: 20),
+                  const SizedBox(height: 15),
                   _buildActionButton(
-                    icon: Icons.photo_library,
-                    label: "Gallery",
+                    icon: Icons.photo_library_rounded,
+                    label: ref.tr('gallery'),
                     onTap: () => _processImage(ImageSource.gallery),
                   ),
                 ],
@@ -137,20 +184,18 @@ class _PrescriptionReaderScreenState extends State<PrescriptionReaderScreen> {
   }
 
   Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE53935),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ],
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon),
+        label: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFE53935),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 2,
         ),
       ),
     );

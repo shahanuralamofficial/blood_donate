@@ -351,6 +351,11 @@ class AppTranslations {
       'nearby_facilities': 'Nearby Facilities',
       'doctors_and_labs': 'Doctors & Labs',
       'ai_health_features': 'AI & Health Features',
+      'prescription_disclaimer': 'Disclaimer: AI results may be inaccurate. Please verify with the original prescription or consult a doctor.',
+      'feature_under_development': 'This feature is currently under development to provide you with the best experience. Stay with us!',
+      'go_back': 'Go Back',
+      'camera': 'Camera',
+      'gallery': 'Gallery',
     },
     'bn': {
       'app_title': 'রক্তদান',
@@ -703,6 +708,11 @@ class AppTranslations {
       'nearby_facilities': 'নিকটস্থ সুবিধাসমূহ',
       'doctors_and_labs': 'ডাক্তার ও ল্যাব',
       'ai_health_features': 'এআই ও স্বাস্থ্য সেবা',
+      'prescription_disclaimer': 'সতর্কতা: এআই-এর ফলাফল ভুল হতে পারে। দয়া করে মূল প্রেসক্রিপশনের সাথে মিলিয়ে নিন বা ডাক্তারের পরামর্শ নিন।',
+      'feature_under_development': 'আপনাকে সেরা সেবা দেওয়ার জন্য এই ফিচারটির কাজ চলছে। আমাদের সাথেই থাকুন!',
+      'go_back': 'ফিরে যান',
+      'camera': 'ক্যামেরা',
+      'gallery': 'গ্যালারি',
     },
   };
 }

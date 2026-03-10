@@ -9,6 +9,7 @@ import '../screens/profile/personal_profile_screen.dart';
 import '../screens/history/history_screen.dart';
 import '../screens/donors/saved_donors_screen.dart';
 import '../screens/home/prescription_reader_screen.dart';
+import '../screens/home/coming_soon_screen.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -91,22 +92,30 @@ class AppDrawer extends ConsumerWidget {
                     title: ref.tr('hospitals'),
                     subtitle: ref.tr('nearby_facilities'),
                     color: Colors.green.shade700,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(ref.tr('coming_soon_msg'))),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ComingSoonScreen(
+                          title: ref.tr('hospitals'),
+                          icon: Icons.local_hospital_rounded,
+                        ),
+                      ),
+                    ),
                   ),
                   _buildItem(
                     icon: Icons.medical_services_rounded,
                     title: ref.tr('doctors_and_labs'),
                     subtitle: ref.tr('coming_soon'),
                     color: Colors.indigo.shade600,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(ref.tr('coming_soon_msg'))),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ComingSoonScreen(
+                          title: ref.tr('doctors_and_labs'),
+                          icon: Icons.medical_services_rounded,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
