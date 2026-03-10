@@ -13,6 +13,8 @@ import '../profile/personal_profile_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import 'home_screen.dart';
 
+import '../widgets/app_drawer.dart'; // Add this
+
 class RootScreen extends ConsumerStatefulWidget {
   const RootScreen({super.key});
 
@@ -108,13 +110,18 @@ class _RootScreenState extends ConsumerState<RootScreen> {
         _showCelebrationDialog(user.rank);
       }
 
-      if ((user.bloodGroup == null || user.address == null) && !_profileAlertShown) {
+      // প্রোফাইল কমপ্লিট চেক লজিক আপডেট
+      bool isProfileIncomplete = (user.bloodGroup == null || user.bloodGroup!.isEmpty) || 
+                               (user.address == null || user.address!.isEmpty);
+
+      if (isProfileIncomplete && !_profileAlertShown) {
         _profileAlertShown = true;
+        // পপআপ দেখানোর জন্য এখানে ফাংশনটি কল করা যেতে পারে যদি প্রয়োজন হয়
       }
     });
 
     return Scaffold(
-      drawer: _buildDrawer(context, userAsync.value),
+      drawer: const AppDrawer(), // সরাসরি AppDrawer উইজেটটি ব্যবহার করা হচ্ছে
       body: _screens[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
