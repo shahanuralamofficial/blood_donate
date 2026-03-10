@@ -19,6 +19,7 @@ import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/reviews_list_screen.dart';
+import '../../widgets/app_drawer.dart'; // Add this line
 import 'notification_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -106,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8F9FA),
+          drawer: const AppDrawer(), // Add this line
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateRequestScreen())),
             backgroundColor: const Color(0xFFE53935),

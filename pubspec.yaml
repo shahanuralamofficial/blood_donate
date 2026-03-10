@@ -66,6 +66,10 @@ dependencies:
   audioplayers: ^6.1.0
   vibration: ^2.0.1
 
+  #Ml
+  google_mlkit_text_recognition: ^0.15.1
+  flutter_tts: ^4.2.5
+
 
 dev_dependencies:
   flutter_test:

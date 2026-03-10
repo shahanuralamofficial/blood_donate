@@ -134,13 +134,13 @@ class PersonalProfileScreen extends ConsumerWidget {
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, UserModel user) {
     final passwordController = TextEditingController();
+    bool isLoading = false;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          bool isLoading = false;
           return AlertDialog(
             title: Text(ref.tr('delete_account_title')),
             content: Column(
@@ -180,34 +180,36 @@ class PersonalProfileScreen extends ConsumerWidget {
 
                   try {
                     final currentUser = FirebaseAuth.instance.currentUser;
-                    if (currentUser != null) {
-                      if (currentUser.email != null) {
-                        final credential = EmailAuthProvider.credential(
-                          email: currentUser.email!,
-                          password: passwordController.text,
-                        );
-                        await currentUser.reauthenticateWithCredential(credential);
-                      }
+                    if (currentUser != null && currentUser.email != null) {
+                      // Re-authenticate first
+                      final credential = EmailAuthProvider.credential(
+                        email: currentUser.email!,
+                        password: passwordController.text,
+                      );
+                      await currentUser.reauthenticateWithCredential(credential);
 
+                      // 1. Update status to offline
                       try {
                         await ref.read(userStatusProvider).updateStatus(false);
                       } catch (e) {
                         debugPrint("Status update error: $e");
                       }
 
+                      // 2. Delete from Firestore (users collection)
                       await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
                       
-                      // ডিলিট করার সময় ডোনার কালেকশন থেকেও ডাটা রিমুভ করা হচ্ছে
+                      // 3. Delete from donors collection
                       try {
                         await FirebaseFirestore.instance.collection('donors').doc(user.uid).delete();
                       } catch (e) {
                         debugPrint("Donor record deletion error: $e");
                       }
-
+                      
+                      // 4. Finally delete from Auth
                       await currentUser.delete();
 
                       if (context.mounted) {
-                        Navigator.pop(context);
+                        Navigator.pop(context); // Close dialog
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (context) => const AuthWrapper()),
@@ -219,17 +221,23 @@ class PersonalProfileScreen extends ConsumerWidget {
                       }
                     }
                   } on FirebaseAuthException catch (e) {
-                    if (context.mounted) setState(() => isLoading = false);
-                    String message = ref.tr('something_went_wrong');
-                    if (e.code == 'wrong-password') {
-                      message = ref.tr('wrong_password');
-                    } else if (e.code == 'requires-recent-login') {
-                      message = 'দয়া করে পুনরায় লগইন করে চেষ্টা করুন।';
+                    if (context.mounted) {
+                      setState(() => isLoading = false);
+                      String message = ref.tr('something_went_wrong');
+                      if (e.code == 'wrong-password') {
+                        message = ref.tr('wrong_password');
+                      } else if (e.code == 'requires-recent-login') {
+                        message = 'দয়া করে পুনরায় লগইন করে চেষ্টা করুন।';
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
                     }
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
                   } catch (e) {
-                    if (context.mounted) setState(() => isLoading = false);
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${ref.tr('error_try_again')}: ${e.toString()}")));
+                    if (context.mounted) {
+                      setState(() => isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("${ref.tr('error_try_again')}: ${e.toString()}")),
+                      );
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),

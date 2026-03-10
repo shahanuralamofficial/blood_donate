@@ -8,7 +8,6 @@ import '../../providers/auth_provider.dart';
 import '../history/history_screen.dart';
 import '../donors/donor_list_screen.dart';
 import '../requests/request_list_screen.dart';
-import '../profile/edit_profile_screen.dart';
 import '../../providers/language_provider.dart';
 import '../profile/personal_profile_screen.dart';
 import '../donors/saved_donors_screen.dart';
@@ -78,54 +77,6 @@ class _RootScreenState extends ConsumerState<RootScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(ref.tr('ok')),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showProfileCompleteDialog() {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.person_pin_rounded, color: Colors.blue, size: 30),
-            const SizedBox(width: 10),
-            Text(ref.tr('profile_incomplete')),
-          ],
-        ),
-        content: Text(
-          ref.tr('profile_incomplete_msg'),
-          style: const TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(ref.tr('later'), style: const TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              final user = ref.read(currentUserDataProvider).value;
-              if (user != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<Widget>(
-                    builder: (_) => EditProfileScreen(user: user),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: Text(ref.tr('do_it_now')),
           ),
         ],
       ),

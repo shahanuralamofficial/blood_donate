@@ -67,7 +67,7 @@ class _CallScreenState extends State<CallScreen> {
 
       if (widget.isIncoming && !_hasAccepted) {
         // ভাইব্রেশন (ইনকামিং কলের জন্য)
-        if (await Vibration.hasVibrator() ?? false) {
+        if (await Vibration.hasVibrator()) {
           Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
         }
         
