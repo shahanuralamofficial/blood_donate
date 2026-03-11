@@ -66,9 +66,15 @@ dependencies:
   audioplayers: ^6.1.0
   vibration: ^2.0.1
 
-  #Ml
+  # Image Processing & ML
+  image: ^4.2.0
+  edge_detection: ^1.1.2
   google_mlkit_text_recognition: ^0.15.1
   flutter_tts: ^4.2.5
+
+  # Data Parsing
+  string_similarity: ^2.0.0
+  csv: ^6.0.0
 
 
 dev_dependencies:
@@ -94,3 +100,4 @@ flutter:
     - assets/unions.json
     - assets/donation_facts.json
     - assets/sounds/
+    - assets/medicine.csv

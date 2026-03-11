@@ -63,6 +63,32 @@ class NotificationService {
     }
   }
 
+  Future<void> showLocalNotification({
+    int id = 0,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    await _localNotifications.show(
+      id,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'medicine_reminder_channel',
+          'Medicine Reminders',
+          channelDescription: 'Notifications for medicine intake',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@mipmap/launcher_icon',
+          playSound: true,
+          enableVibration: true,
+        ),
+      ),
+      payload: payload,
+    );
+  }
+
   // নোটিফিকেশনে ক্লিক করলে এখানে আসবে (Foreground/Background)
   void _onDidReceiveNotificationResponse(NotificationResponse response) {
     if (response.payload != null) {

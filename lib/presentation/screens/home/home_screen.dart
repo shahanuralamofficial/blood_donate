@@ -19,6 +19,8 @@ import '../chat/chat_list_screen.dart';
 import '../donors/saved_donors_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/reviews_list_screen.dart';
+import 'medicine_reminder_screen.dart';
+import 'prescription_reader_screen.dart';
 import '../../widgets/app_drawer.dart'; // Add this line
 import 'notification_screen.dart';
 
@@ -99,9 +101,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (user == null) return Scaffold(body: Center(child: Text(ref.tr('user_not_found'))));
 
         // প্রোফাইল অসম্পূর্ণ থাকলে ডায়ালগ দেখানো
-        if ((user.bloodGroup == null || user.bloodGroup!.isEmpty || user.address == null) && mounted && !_isDialogShowing) {
+        final bool isAddressIncomplete = user.address == null || 
+            (user.address!['division']?.toString().trim().isEmpty ?? true) || 
+            (user.address!['district']?.toString().trim().isEmpty ?? true);
+            
+        final bool isBloodGroupIncomplete = user.bloodGroup == null || user.bloodGroup!.trim().isEmpty;
+
+        // সেশনে একবারই দেখানো হবে
+        final hasShownDialog = ref.watch(profileIncompleteDialogShownProvider);
+
+        if ((isBloodGroupIncomplete || isAddressIncomplete) && mounted && !hasShownDialog && !_isDialogShowing) {
+          ref.read(profileIncompleteDialogShownProvider.notifier).state = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showIncompleteProfileDialog();
+            if (mounted) _showIncompleteProfileDialog();
           });
         }
 
@@ -134,6 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildWelcomeSection(user),
+                        const SizedBox(height: 24),
+                        _buildHealthAITools(),
                         const SizedBox(height: 24),
                         _buildQuickStats(user),
                         const SizedBox(height: 24),
@@ -316,6 +330,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildHealthAITools() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(ref.tr('health_ai_tools'), style: GoogleFonts.notoSansBengali(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildAIToolCard(
+              title: ref.tr('prescription_reader'),
+              icon: Icons.document_scanner_rounded,
+              color: Colors.red,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrescriptionReaderScreen())),
+            ),
+            const SizedBox(width: 12),
+            _buildAIToolCard(
+              title: ref.tr('medicine_reminders'),
+              icon: Icons.alarm_rounded,
+              color: Colors.blue,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MedicineReminderScreen())),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAIToolCard({required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.1)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 30),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.notoSansBengali(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildQuickStats(UserModel user) {
     return Column(
       children: [
@@ -493,7 +562,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showIncompleteProfileDialog() {
-    if (_isDialogShowing) return;
+    if (_isDialogShowing || !mounted) return;
     _isDialogShowing = true;
     
     showDialog(
@@ -505,21 +574,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             const Icon(Icons.error_outline_rounded, color: Color(0xFFE53935)),
             const SizedBox(width: 12),
-            Text(ref.tr('profile_incomplete'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold)),
+            Expanded(child: Text(ref.tr('profile_incomplete'), style: GoogleFonts.notoSansBengali(fontWeight: FontWeight.bold))),
           ],
         ),
         content: Text(ref.tr('profile_incomplete_msg')),
         actions: [
           TextButton(
             onPressed: () {
-              _isDialogShowing = false;
               Navigator.pop(context);
             },
             child: Text(ref.tr('later'), style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
-              _isDialogShowing = false;
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
             },
@@ -531,6 +598,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-    ).then((_) => _isDialogShowing = false);
+    ).then((_) {
+      if (mounted) {
+        setState(() {
+          _isDialogShowing = false;
+        });
+      }
+    });
   }
 }

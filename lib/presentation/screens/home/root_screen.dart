@@ -30,42 +30,9 @@ class _RootScreenState extends ConsumerState<RootScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkProfileIncomplete();
-    });
   }
 
-  void _checkProfileIncomplete() {
-    final userAsync = ref.read(currentUserDataProvider);
-    userAsync.whenData((user) {
-      if (user != null) {
-        final isIncomplete = user.bloodGroup == null || 
-                            user.bloodGroup!.isEmpty || 
-                            user.address == null;
-        
-        if (isIncomplete) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text(ref.tr('profile_incomplete'), style: const TextStyle(fontWeight: FontWeight.bold)),
-              content: Text(ref.tr('complete_profile_msg')),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalProfileScreen()));
-                  },
-                  child: Text(ref.tr('complete_now')),
-                ),
-              ],
-            ),
-          );
-        }
-      }
-    });
-  }
+  // Removed redundant _checkProfileIncomplete from here as it's handled in HomeScreen
 
   @override
   Widget build(BuildContext context) {
@@ -108,11 +75,5 @@ class _RootScreenState extends ConsumerState<RootScreen> {
       ),
       drawer: const AppDrawer(),
     );
-  }
-
-  void _launchUrl(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    }
   }
 }

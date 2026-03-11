@@ -54,6 +54,9 @@ final currentUserDataProvider = StreamProvider<UserModel?>((ref) {
   );
 });
 
+// প্রোফাইল ইনকমপ্লিট ডায়ালগ এই সেশনে দেখানো হয়েছে কি না
+final profileIncompleteDialogShownProvider = StateProvider<bool>((ref) => false);
+
 // ইউজার অনলাইন স্ট্যাটাস আপডেট করার ফাংশন
 Future<void> _updateUserOnlineStatus(String uid, bool isOnline) async {
   try {
