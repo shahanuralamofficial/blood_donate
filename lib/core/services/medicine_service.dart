@@ -42,7 +42,7 @@ class MedicineService {
   Future<void> init() async {
     if (_isLoaded) return;
     try {
-      final String rawCsv = await rootBundle.loadString('assets/medicines.csv');
+      final String rawCsv = await rootBundle.loadString('assets/medicine.csv');
       List<List<dynamic>> rows = const CsvToListConverter().convert(rawCsv);
       
       for (var row in rows) {
