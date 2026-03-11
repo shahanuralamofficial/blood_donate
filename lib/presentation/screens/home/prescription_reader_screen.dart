@@ -285,7 +285,10 @@ class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScr
                             label: ref.tr('view'),
                             textColor: Colors.white,
                             onPressed: () {
-                              // Navigator.push to MedicineReminderScreen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const MedicineReminderScreen()),
+                              );
                             },
                           ),
                         ),

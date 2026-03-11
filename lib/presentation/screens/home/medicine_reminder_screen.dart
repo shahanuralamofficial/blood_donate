@@ -95,7 +95,7 @@ class MedicineReminderScreen extends ConsumerWidget {
                         labelText: ref.tr('duration_days'),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      items: [3, 5, 7, 10, 14, 30].map((d) => DropdownMenuItem(value: d, child: Text("$d ${ref.tr('days_remaining').split(' ').last}"))).toList(),
+                      items: [3, 5, 7, 10, 14, 30].map((d) => DropdownMenuItem(value: d, child: Text("$d ${ref.tr('days')}"))).toList(),
                       onChanged: (val) => setState(() => duration = val!),
                     ),
                   ),
