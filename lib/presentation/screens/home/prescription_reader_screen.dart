@@ -15,6 +15,7 @@ import '../../providers/medicine_reminder_provider.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/language_provider.dart';
+import 'medicine_reminder_screen.dart';
 
 class PrescriptionReaderScreen extends ConsumerStatefulWidget {
   const PrescriptionReaderScreen({super.key});
@@ -396,6 +397,20 @@ class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScr
                     label: ref.tr('gallery'),
                     onTap: () => _processImage(ImageSource.gallery),
                     isSecondary: true,
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MedicineReminderScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_note_rounded, color: Colors.grey),
+                    label: Text(
+                      ref.tr('add_reminder_manually'),
+                      style: GoogleFonts.notoSansBengali(color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
