@@ -142,11 +142,12 @@ class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScr
   }
 
   void _showResultDialog() {
+    final screenContext = context;
     showDialog(
-      context: context,
+      context: screenContext,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
           titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           title: Row(
@@ -262,7 +263,7 @@ class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScr
                   child: ElevatedButton(
                     onPressed: () {
                       _flutterTts.stop();
-                      Navigator.pop(context);
+                      Navigator.pop(dialogContext);
                       
                       // Save reminders for detected medicines
                       for (var result in _results) {
@@ -276,7 +277,7 @@ class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScr
                         }
                       }
 
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(screenContext).showSnackBar(
                         SnackBar(
                           content: Text(ref.tr('medicine_saved_with_reminder')),
                           backgroundColor: Colors.green,
@@ -286,7 +287,7 @@ class _PrescriptionReaderScreenState extends ConsumerState<PrescriptionReaderScr
                             textColor: Colors.white,
                             onPressed: () {
                               Navigator.push(
-                                context,
+                                screenContext,
                                 MaterialPageRoute(builder: (_) => const MedicineReminderScreen()),
                               );
                             },
