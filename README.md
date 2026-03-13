@@ -1,6 +1,6 @@
-# রক্তদান - Blood Donate 🩸
+# Blood Donate – Find Blood Donors 🩸
 
-**রক্তদান - Blood Donate** is a premium, life-saving mobile application designed to bridge the gap between blood donors and those in need. Built with Flutter and Firebase, it offers a seamless experience for finding donors, managing requests, and staying connected within the community.
+**Blood Donate – Find Blood Donors** is a premium, life-saving mobile application designed to bridge the gap between blood donors and those in need. Built with Flutter and Firebase, it offers a seamless experience for finding donors, managing requests, and staying connected within the community.
 
 ---
 
@@ -94,4 +94,4 @@
 This project is licensed under the **MIT License**.
 
 ---
-**Blood Donate App** - *Saving lives through technology.* ❤️
+**Blood Donate – Find Blood Donors** - *Saving lives through technology.* ❤️
