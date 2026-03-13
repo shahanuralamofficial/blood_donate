@@ -1,16 +1,21 @@
 # রক্তদান - Blood Donate 🩸
 
-**রক্তদান - Blood Donate** is a premium, life-saving mobile application designed to bridge the gap between blood donors and those in need. Built with a focus on speed, reliability, and a premium user experience, it empowers users to find donors, communicate in real-time, and even leverage AI for medical tasks.
+**রক্তদান - Blood Donate** is a premium, life-saving mobile application designed to bridge the gap between blood donors and those in need. Built with Flutter and Firebase, it offers a seamless experience for finding donors, managing requests, and staying connected within the community.
 
 ---
 
 ## 📱 App Showcase
 
 <p align="center">
-  <img src="https://via.placeholder.com/200x400?text=Splash+Screen" width="200" alt="Splash Screen">
-  <img src="https://via.placeholder.com/200x400?text=Home+Screen" width="200" alt="Home Screen">
-  <img src="https://via.placeholder.com/200x400?text=Donor+Search" width="200" alt="Donor Search">
-  <img src="https://via.placeholder.com/200x400?text=AI+Reader" width="200" alt="AI Reader">
+  <img src="assets/screenshots/home.png" width="250" alt="Home Screen">
+  <img src="assets/screenshots/search.png" width="250" alt="Search Donors">
+  <img src="assets/screenshots/donor.png" width="250" alt="Donor Profile">
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/request.png" width="250" alt="Blood Request">
+  <img src="assets/screenshots/chat.png" width="250" alt="Real-time Chat">
+  <img src="assets/screenshots/profile.png" width="250" alt="User Profile">
 </p>
 
 ---
@@ -19,44 +24,43 @@
 
 ### 🩸 Core Donation Features
 *   **Smart Donor Search:** Quickly find blood donors filtered by blood group and specific locations (District/Upazila/Union).
-*   **Donor Registration:** Easy-to-use profile setup for volunteers to list themselves as active donors.
-*   **Real-time Availability:** See who is available to donate right now.
+*   **Emergency Requests:** Post urgent blood requirements that notify nearby matching donors.
+*   **Donor Availability:** Volunteers can list themselves as active or hidden from the donor list.
+*   **Rank System:** Rewarding frequent donors with badges (Newbie to Diamond) based on their contributions.
 
 ### 🤖 AI & Health Tools
-*   **AI Prescription Reader:** Integrated OCR (Google ML Kit) to scan and extract text from medical prescriptions instantly.
-*   **Health Facts:** Daily updated blood donation facts and health tips to keep users informed.
-*   **Coming Soon:** Dedicated sections for Hospital and Doctor directories with premium UI.
+*   **Prescription Reader:** Manage your medications easily. Currently supports manual entry with an AI-powered OCR scanner in development.
+*   **Medicine Reminders:** Set alarms for your doses (e.g., 1+0+1) to never miss a medicine.
+*   **Donation Facts:** Daily updated health tips and facts about blood donation.
 
 ### 💬 Communication Suite
 *   **Real-time Chat:** Secure, instant messaging between donors and recipients.
-*   **Voice & Video Calls:** High-quality calling powered by **Agora RTC**, featuring a professional "Ringing" interface.
-*   **Smart Call Timeout:** Automatic 60-second ringing timeout to prevent battery drain and improve UX.
-*   **Image Sharing:** Share medical reports or photos via Cloudinary-backed secure storage.
+*   **Voice & Video Calls:** High-quality calling powered by **Agora RTC**, featuring a professional ringing interface.
+*   **Image Sharing:** Secure storage for sharing medical reports or patient photos.
 
 ### 🛡️ Reliability & UX
-*   **Unified Navigation:** A clean, centralized `AppDrawer` for seamless navigation across all features.
-*   **Full Localization:** Optimized for both **Bangla** and **English** languages.
-*   **Push Notifications:** Stay updated with instant alerts for donation requests or messages.
-*   **Secure Auth:** Robust authentication via Firebase.
+*   **Full Localization:** Native support for both **Bangla** and **English**.
+*   **App Drawer Navigation:** A clean, centralized navigation system.
+*   **Push Notifications:** Instant alerts for new messages, donation requests, and rank updates.
+*   **Secure Authentication:** Robust login and registration via Firebase.
 
 ---
 
 ## 🛠️ Tech Stack
 
 *   **Frontend:** [Flutter](https://flutter.dev) (Dart)
-*   **State Management:** [Riverpod](https://riverpod.dev) (Modern & Scalable)
+*   **State Management:** [Riverpod](https://riverpod.dev)
 *   **Backend:** [Firebase](https://firebase.google.com) (Firestore, Auth, Storage, Messaging)
 *   **Real-time Media:** [Agora RTC](https://www.agora.io)
-*   **AI Engine:** [Google ML Kit](https://developers.google.com/ml-kit) (Text Recognition)
-*   **Networking:** [Dio](https://pub.dev/packages/dio) & [HTTP](https://pub.dev/packages/http)
-*   **Image Handling:** [Cloudinary](https://cloudinary.com) & [CachedNetworkImage](https://pub.dev/packages/cached_network_image)
-*   **Audio/Haptics:** [Audioplayers](https://pub.dev/packages/audioplayers) & [Vibration](https://pub.dev/packages/vibration)
+*   **Networking:** [Dio](https://pub.dev/packages/dio)
+*   **Image Processing:** [Google ML Kit](https://developers.google.com/ml-kit) (OCR)
+*   **Local Storage:** [Shared Preferences](https://pub.dev/packages/shared_preferences)
 
 ---
 
 ## 🚀 Getting Started
 
-1.  **Clone the Repo:**
+1.  **Clone the Repository:**
     ```bash
     git clone https://github.com/shahanuralamofficial/blood_donate.git
     ```
@@ -64,20 +68,25 @@
     ```bash
     flutter pub get
     ```
-3.  **Firebase Setup:**
+3.  **App Icon Generation:**
+    ```bash
+    flutter pub run flutter_launcher_icons
+    ```
+4.  **Firebase Setup:**
     - Place your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) in the respective directories.
-4.  **Run the App:**
+5.  **Run the App:**
     ```bash
     flutter run
     ```
 
 ---
 
-## 📂 Project Highlights
+## 📂 Project Structure
 
-*   **Modular Architecture:** Separated into `presentation`, `data`, and `core` layers for high maintainability.
-*   **Performance Optimized:** Refactored `RootScreen` and unified widgets to reduce widget rebuilds and code bloat.
-*   **Premium Assets:** Custom-tuned ringtones and high-quality UI components.
+*   `lib/presentation`: UI screens, widgets, and Riverpod providers.
+*   `lib/data`: Models and repository implementations.
+*   `lib/core`: App themes, constants, and localization logic.
+*   `assets`: Images, sounds, and local data files (unions, donation facts).
 
 ---
 

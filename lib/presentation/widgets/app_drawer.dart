@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../screens/profile/personal_profile_screen.dart';
 import '../screens/history/history_screen.dart';
@@ -13,6 +14,13 @@ import '../screens/home/coming_soon_screen.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
+
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $urlString');
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -116,6 +124,24 @@ class AppDrawer extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  ),
+
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(),
+                  ),
+                  _buildSectionTitle(ref.tr('support_feedback')),
+                  _buildItem(
+                    icon: Icons.facebook_rounded,
+                    title: ref.tr('facebook_page'),
+                    color: const Color(0xFF1877F2),
+                    onTap: () => _launchUrl('https://www.facebook.com/blooddonate'),
+                  ),
+                  _buildItem(
+                    icon: Icons.telegram_rounded,
+                    title: ref.tr('telegram_support'),
+                    color: const Color(0xFF26A5E4),
+                    onTap: () => _launchUrl('https://t.me/blood_donatebd'),
                   ),
                 ],
               ),
@@ -235,4 +261,3 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 }
-

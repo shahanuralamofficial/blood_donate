@@ -284,7 +284,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         Text(ref.tr('blood_group'), style: GoogleFonts.notoSansBengali(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey.shade700)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          initialValue: _selectedBloodGroup,
+          value: _selectedBloodGroup,
           items: _bloodGroups.map((bg) => DropdownMenuItem(value: bg, child: Text(bg))).toList(),
           onChanged: (v) => setState(() => _selectedBloodGroup = v),
           validator: (v) => v == null ? ref.tr('blood_group_select') : null,
