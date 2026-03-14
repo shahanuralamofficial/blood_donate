@@ -30,7 +30,8 @@ android {
 
     defaultConfig {
         applicationId = "com.blood_donate_app.bd"
-        minSdk = flutter.minSdkVersion
+        // Updated minSdk to 24 as required by flutter_tts and firebase_storage
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
